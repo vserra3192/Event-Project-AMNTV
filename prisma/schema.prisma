@@ -17,3 +17,12 @@ datasource db {
 //   createdAt DateTime @default(now())
 //   updatedAt DateTime @updatedAt
 // }
+
+Event{
+  id Int  @id @default(autoincrement())
+  title String
+  category String
+  startTime DateTime
+  endTime DateTime
+  rsvpStatus Boolean @default(false)
+}
