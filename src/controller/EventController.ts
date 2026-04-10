@@ -21,14 +21,14 @@ constructor(service: IEventService, logger: ILoggingService) {
 
     async showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
         const result = await this.service.getAllEvents();
-        if (result != ok) {
+        if (!result.ok) {
             this.logger.error('Error fetching dashboard data');
             res.status(500).send('Error fetching dashboard data');
             return;
         }
         res.status(200);
         this.logger.info('Dashboard data fetched successfully');
-        res.render('dashboard', { data: result }); // will update this to send the actual data once we have it defined
+        res.render('dashboard', { data: result.value }); // will update this to send the actual data once we have it defined
     }
 }
 
