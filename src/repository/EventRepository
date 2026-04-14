@@ -1,5 +1,7 @@
 import type {Result} from '../lib/result';
 
+export type EventStatus = 'draft' | 'published' | 'cancelled' | 'past';
+
 export type CreateEvent = {
   title: string;
   category: string;
