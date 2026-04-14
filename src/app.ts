@@ -3,6 +3,7 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
+import { IEventController } from "./controller/EventController";
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -35,6 +36,7 @@ class ExpressApp implements IApp {
 
   constructor(
     private readonly authController: IAuthController,
+    private readonly eventController: IEventController,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -275,17 +277,7 @@ class ExpressApp implements IApp {
 
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`GET /events for ${browserSession.browserLabel}`);
-
-        const searchQuery = typeof req.query.q === "string" ? req.query.q.trim() : "";
-        if (searchQuery) {
-          res.redirect(`/events/search?q=${encodeURIComponent(searchQuery)}`);
-          return;
-        }
-
-        res.render("home", {
-          session: browserSession,
-          pageError: "Event dashboard is under construction. Add event dashboard view and controller to render events here.",
-        });
+        await this.eventController.showEventDashboard(res, browserSession);
       }),
     );
 
@@ -328,7 +320,8 @@ class ExpressApp implements IApp {
 
 export function CreateApp(
   authController: IAuthController,
+  eventController: IEventController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, logger);
+  return new ExpressApp(authController, eventController, logger);
 }
