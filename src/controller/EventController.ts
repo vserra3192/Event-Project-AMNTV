@@ -8,16 +8,17 @@ import type { IAppBrowserSession, AppSessionStore, touchAppSession } from '../se
 
 export interface IEventController {
     showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
+    showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
 }
 
 class EventController implements IEventController {
-private service: IEventService;
-private logger: ILoggingService;
+    private service: IEventService;
+    private logger: ILoggingService;
 
-constructor(service: IEventService, logger: ILoggingService) {
-        this.service = service;
-        this.logger = logger;
-    }
+    constructor(service: IEventService, logger: ILoggingService) {
+            this.service = service;
+            this.logger = logger;
+        }
 
     async showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
         const result = await this.service.getAllEvents();
@@ -31,7 +32,6 @@ constructor(service: IEventService, logger: ILoggingService) {
         res.render('dashboard', { data: result.value }); // will update this to send the actual data once we have it defined
     }
 }
-
 
 export function CreateController(service: IEventService, logger: ILoggingService): IEventController {
     return new EventController(service, logger);
