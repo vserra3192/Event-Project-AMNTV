@@ -31,6 +31,18 @@ class EventController implements IEventController {
         this.logger.info('Dashboard data fetched successfully');
         res.render('dashboard', { data: result.value }); // will update this to send the actual data once we have it defined
     }
+
+    async showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+        const result = await this.service.getEventByID(eventId);
+        if (!result.ok) {
+            this.logger.error('Error fetching event data');
+            res.status(500).send('Error fetching event data');
+            return;
+        }
+        res.status(200);
+        this.logger.info('Event data fetched successfully');
+        res.render('eventEdit', { data: result.value });
+    }
 }
 
 export function CreateController(service: IEventService, logger: ILoggingService): IEventController {
