@@ -8,6 +8,16 @@ export type User = {
   role: UserRole;
 };
 
+export type CommentServiceError =
+  | CommentError
+  | { name: 'Forbidden'; message: string };
+ 
+export const Forbidden = (message: string): CommentServiceError => ({
+  name: 'Forbidden',
+  message,
+});
+
+
 export interface ICommentService {
   getCommentsByEventId(eventId: number): Promise<Result<IComment[], CommentServiceError>>;
   addComment(eventId: number, content: string, actor: User): Promise<Result<IComment, CommentServiceError>>;
