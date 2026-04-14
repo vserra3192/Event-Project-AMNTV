@@ -36,6 +36,8 @@ export interface IEventRepository {
   updateEventTitle(id: number, title: string): Promise<Result<IEvent, EventError>>;
 }
 
+
+
 /*Event{
   id Int  @id @default(autoincrement())
   title String
