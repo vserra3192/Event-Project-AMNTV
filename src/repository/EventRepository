@@ -1,6 +1,33 @@
-import type {Result} from '../lib/result';
+import type {Ok, Err, Result} from '../lib/result';
 
 export type EventStatus = 'draft' | 'published' | 'cancelled' | 'past';
+
+export interface IEvent {
+  id: number;
+  title: string;
+  description: string;
+  location: string;
+  category: string;
+  status: EventStatus;
+  capacity: number | null;
+  startDatetime: Date;
+  endDatetime: Date;
+  organizerId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type CreateEventInput = {
+  title: string;
+  description: string;
+  location: string;
+  category: string;
+  status: EventStatus;
+  capacity: number | null;
+  startDatetime: Date;
+  endDatetime: Date;
+  organizerId: string;
+};
 
 export type CreateEvent = {
   title: string;
