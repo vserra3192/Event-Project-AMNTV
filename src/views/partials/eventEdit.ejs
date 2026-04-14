@@ -1,0 +1,27 @@
+<li class="event-card" id="event-<%= event.id %>">
+  <form
+    hx-post="/entries/<%= event.id %>/title"
+    hx-target="#entries-panel"
+    hx-swap="innerHTML"
+  >
+    <label for="title-<%= event.id %>">Title</label>
+    <input
+      id="title-<%= event.id %>"
+      name="title"
+      value="<%= event.title %>"
+      required
+    />
+
+    <div class="event-actions">
+      <button type="submit">Save</button>
+      <button
+        type="button"
+        hx-get="/entries/<%= event.id %>"
+        hx-target="#event-<%= event.id %>"
+        hx-swap="outerHTML"
+      >
+        Cancel
+      </button>
+    </div>
+  </form>
+</li>
