@@ -42,7 +42,6 @@ class EventController implements IEventController {
         this.logger.info('Event data fetched successfully');
         res.render('event-edit', { data: result.value, session });
     }
-
 }
 
 export function CreateController(service: IEventService, logger: ILoggingService): IEventController {
