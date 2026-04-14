@@ -14,11 +14,6 @@ export interface CreateEventServiceInput {
 }
 
 export interface IEventService {
-  getEventByID(id: number): Promise<Result<IEvent, EventError>>;
-  getAllEvents(): Promise<Result<IEvent[], EventError>>;
-}
-
-export interface IEventService {
   createEvent(input: CreateEventServiceInput, organizerId: string): Promise<Result<IEvent, EventError>>;
   getAllEvents(): Promise<Result<IEvent[], EventError>>;
 }
