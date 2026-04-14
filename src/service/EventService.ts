@@ -16,6 +16,8 @@ export interface CreateEventServiceInput {
 export interface IEventService {
   createEvent(input: CreateEventServiceInput, organizerId: string): Promise<Result<IEvent, EventError>>;
   getAllEvents(): Promise<Result<IEvent[], EventError>>;
+  getEventByID(id: number): Promise<Result<IEvent, EventError>>;
+  getUserEvents(userId: string): Promise<Result<IEvent[], EventError>>;
 }
 
 class EventService implements IEventService {
@@ -76,6 +78,26 @@ class EventService implements IEventService {
  
   async getAllEvents(): Promise<Result<IEvent[], EventError>> {
     const result = await this.repo.getAllEvents();
+    if (result.ok === false) {
+      return Err(UnexpectedRepositoryError(result.value.message));
+    }
+    return Ok(result.value);
+  }
+
+  async getUserEvents(userId: string): Promise<Result<IEvent[], EventError>> {
+    const allEventsResult = await this.repo.getAllEvents();
+    if (allEventsResult.ok === false) {
+      return Err(UnexpectedRepositoryError(allEventsResult.value.message));
+    }
+    const userEvents = allEventsResult.value.filter(event => event.organizerId === userId);
+    return Ok(userEvents);
+  }
+
+  async getEventByID(id: number): Promise<Result<IEvent, EventError>> {
+    if (!Number.isInteger(id) || id < 1) {
+      return Err(ValidationError('Invalid event ID.'));
+    }
+    const result = await this.repo.getEventById(id);
     if (result.ok === false) {
       return Err(UnexpectedRepositoryError(result.value.message));
     }

@@ -20,7 +20,7 @@ class EventController implements IEventController {
         }
 
     async showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
-        const result = await this.service.getAllEvents();
+        const result = await this.service.getUserEvents(session.authenticatedUser?.userId ?? '');
         if (!result.ok) {
             this.logger.error('Error fetching dashboard data');
             res.status(500).send('Error fetching dashboard data');
