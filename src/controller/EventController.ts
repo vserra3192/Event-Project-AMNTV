@@ -1,8 +1,7 @@
 import type { Response } from 'express';
-import { ok } from 'node:assert';
 import type { IEventService } from '../service/EventService';
 import type { ILoggingService } from '../service/LoggingService';
-import type { IAppBrowserSession, AppSessionStore, touchAppSession } from '../session/AppSessionStore';
+import type { IAppBrowserSession } from '../session/AppSession';
 
 
 
@@ -29,7 +28,7 @@ class EventController implements IEventController {
         }
         res.status(200);
         this.logger.info('Dashboard data fetched successfully');
-        res.render('dashboard', { data: result.value }); // will update this to send the actual data once we have it defined
+        res.render('dashboard', { data: result.value, session }); // will update this to send the actual data once we have it defined
     }
     
     async showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
@@ -41,7 +40,7 @@ class EventController implements IEventController {
         }
         res.status(200);
         this.logger.info('Event data fetched successfully');
-        res.render('eventEdit', { data: result.value });
+        res.render('event-edit', { data: result.value, session });
     }
 }
 
