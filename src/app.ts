@@ -180,7 +180,7 @@ class ExpressApp implements IApp {
         }
 
         const browserSession = recordPageView(sessionStore(req));
-        await this.EventController.showEventEdit(res, browserSession);
+        await this.eventController.showEventEdit(res, browserSession, Number(req.params.id));
       }
         
     ));
