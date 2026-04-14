@@ -24,12 +24,7 @@ export const InvalidContent = (message: string): CommentError => ({
 
 export interface ICommentRepository {
   createComment(comment: IComment): Promise<Result<IComment, CommentError>>;
-
   deleteComment(id: number): Promise<Result<void, CommentError>>;
-
   getCommentById(id: number): Promise<Result<IComment, CommentError>>;
-
-  getCommentsByEventId(
-    eventId: number
-  ): Promise<Result<IComment[], CommentError>>;
+  getCommentsByEventId(eventId: number): Promise<Result<IComment[], CommentError>>;
 }
