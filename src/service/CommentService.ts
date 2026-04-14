@@ -17,7 +17,6 @@ export const Forbidden = (message: string): CommentServiceError => ({
   message,
 });
 
-
 export interface ICommentService {
   getCommentsByEventId(eventId: number): Promise<Result<IComment[], CommentServiceError>>;
   addComment(eventId: number, content: string, actor: User): Promise<Result<IComment, CommentServiceError>>;
