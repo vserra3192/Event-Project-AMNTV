@@ -170,6 +170,19 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.get(
+      "/Event/:id/Edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        await this.EventController.showEventEdit(res, browserSession);
+      }
+        
+    ));
+
     // ── Admin routes ─────────────────────────────────────────────────
 
     this.app.get(
@@ -250,6 +263,49 @@ class ExpressApp implements IApp {
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`GET /home for ${browserSession.browserLabel}`);
         res.render("home", { session: browserSession, pageError: null });
+      }),
+    );
+
+    this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events for ${browserSession.browserLabel}`);
+
+        const searchQuery = typeof req.query.q === "string" ? req.query.q.trim() : "";
+        if (searchQuery) {
+          res.redirect(`/events/search?q=${encodeURIComponent(searchQuery)}`);
+          return;
+        }
+
+        res.render("home", {
+          session: browserSession,
+          pageError: "Event dashboard is under construction. Add event dashboard view and controller to render events here.",
+        });
+      }),
+    );
+
+    this.app.get(
+      "/events/search",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        const searchQuery = typeof req.query.q === "string" ? req.query.q.trim() : "";
+        this.logger.info(`GET /events/search?q=${searchQuery} for ${browserSession.browserLabel}`);
+
+        res.render("home", {
+          session: browserSession,
+          pageError: searchQuery
+            ? `Search for "${searchQuery}" is not yet implemented. Add a search handler in the event dashboard feature.`
+            : "Please provide a search query using ?q=your+search+terms.",
+        });
       }),
     );
 
