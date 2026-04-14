@@ -3,6 +3,7 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
+import { IEventController } from "./controller/EventController";
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -35,6 +36,7 @@ class ExpressApp implements IApp {
 
   constructor(
     private readonly authController: IAuthController,
+    private readonly eventController: IEventController,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -170,6 +172,19 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.get(
+      "/Event/:id/Edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        await this.EventController.showEventEdit(res, browserSession);
+      }
+        
+    ));
+
     // ── Admin routes ─────────────────────────────────────────────────
 
     this.app.get(
@@ -253,6 +268,39 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events for ${browserSession.browserLabel}`);
+        await this.eventController.showEventDashboard(res, browserSession);
+      }),
+    );
+
+    this.app.get(
+      "/events/search",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        const searchQuery = typeof req.query.q === "string" ? req.query.q.trim() : "";
+        this.logger.info(`GET /events/search?q=${searchQuery} for ${browserSession.browserLabel}`);
+
+        res.render("home", {
+          session: browserSession,
+          pageError: searchQuery
+            ? `Search for "${searchQuery}" is not yet implemented. Add a search handler in the event dashboard feature.`
+            : "Please provide a search query using ?q=your+search+terms.",
+        });
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
@@ -272,7 +320,8 @@ class ExpressApp implements IApp {
 
 export function CreateApp(
   authController: IAuthController,
+  eventController: IEventController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, logger);
+  return new ExpressApp(authController, eventController, logger);
 }

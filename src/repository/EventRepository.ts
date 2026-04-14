@@ -1,46 +1,108 @@
-import type {Result} from '../lib/result';
+import {Ok, Err, type Result} from '../lib/result';
+import { type EventError, EventNotFound, InvalidId, UnexpectedRepositoryError } from './Errors';
+
+export type EventStatus = 'draft' | 'published' | 'cancelled' | 'past';
 
 export interface IEvent {
   id: number;
   title: string;
+  description: string;
+  location: string;
   category: string;
-  startTime: Date;
-  endTime: Date;
-  rsvpStatus: boolean;
+  status: EventStatus;
+  capacity: number | null;
+  startDatetime: Date;
+  endDatetime: Date;
+  organizerId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export type EventError =
-  | { name: "EventNotFound"; message: string }
-  | { name: "InvalidID"; message: string };
-
-export const EventNotFound = (message: string): EventError => ({
-  name: "EventNotFound",
-  message,
-});
-
-export const InvalidID = (message: string): EventError => ({
-  name: "InvalidID",
-  message,
-});
-
-export type CreateEvent = {
+export type CreateEventInput = {
   title: string;
+  description: string;
+  location: string;
   category: string;
-  startTime: Date;
-  endTime: Date;
+  status: EventStatus;
+  capacity: number | null;
+  startDatetime: Date;
+  endDatetime: Date;
+  organizerId: string;
 };
 
 export interface IEventRepository {
+  createEvent(input: CreateEventInput): Promise<Result<IEvent, EventError>>;
   getEventById(id: number): Promise<Result<IEvent, EventError>>;
   getAllEvents(): Promise<Result<IEvent[], EventError>>;
   updateEventTitle(id: number, title: string): Promise<Result<IEvent, EventError>>;
 }
 
-/*Event{
-  id Int  @id @default(autoincrement())
-  title String
-  category String
-  startTime DateTime
-  endTime DateTime
-  rsvpStatus Boolean @default(false)
-}*/
+class InMemoryEventRepository implements IEventRepository {
+  private readonly events: Map<number, IEvent> = new Map();
+  private nextId = 1;
+ 
+  async createEvent(input: CreateEventInput): Promise<Result<IEvent, EventError>> {
+    try {
+      const now = new Date();
+      const event: IEvent = {
+        id: this.nextId++,
+        title: input.title,
+        description: input.description,
+        location: input.location,
+        category: input.category,
+        status: input.status,
+        capacity: input.capacity,
+        startDatetime: input.startDatetime,
+        endDatetime: input.endDatetime,
+        organizerId: input.organizerId,
+        createdAt: now,
+        updatedAt: now,
+      };
+      this.events.set(event.id, event);
+      return Ok(event);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to create event.'));
+    }
+  }
+ 
+  async getEventById(id: number): Promise<Result<IEvent, EventError>> {
+    try {
+      if (!Number.isInteger(id) || id < 1) {
+        return Err(InvalidId(`${id} is not a valid event id.`));
+      }
+      const event = this.events.get(id) ?? null;
+      if (event === null) {
+        return Err(EventNotFound(`Event with id ${id} was not found.`));
+      }
+      return Ok(event);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to fetch event.'));
+    }
+  }
+ 
+  async getAllEvents(): Promise<Result<IEvent[], EventError>> {
+    try {
+      return Ok([...this.events.values()]);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to list events.'));
+    }
+  }
+ 
+  async updateEventTitle(id: number, title: string): Promise<Result<IEvent, EventError>> {
+    try {
+      const existing = this.events.get(id) ?? null;
+      if (existing === null) {
+        return Err(EventNotFound(`Event with id ${id} was not found.`));
+      }
+      const updated: IEvent = { ...existing, title, updatedAt: new Date() };
+      this.events.set(id, updated);
+      return Ok(updated);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to update event title.'));
+    }
+  }
+}
+
+export function CreateInMemoryEventRepository(): IEventRepository {
+  return new InMemoryEventRepository();
+}
