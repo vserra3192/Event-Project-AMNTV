@@ -30,13 +30,6 @@ export type CreateEventInput = {
   organizerId: string;
 };
 
-export type CreateEvent = {
-  title: string;
-  category: string;
-  startTime: Date;
-  endTime: Date;
-};
-
 export interface IEventRepository {
   createEvent(input: CreateEventInput): Promise<Result<IEvent, EventError>>;
   getEventById(id: number): Promise<Result<IEvent, EventError>>;
