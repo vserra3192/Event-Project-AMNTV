@@ -1,4 +1,4 @@
-import { type Result } from "../lib/result";
+import { Err, Ok, type Result } from "../lib/result";
 
 export interface IComment {
   id: number;
@@ -27,4 +27,17 @@ export interface ICommentRepository {
   deleteComment(id: number): Promise<Result<void, CommentError>>;
   getCommentById(id: number): Promise<Result<IComment, CommentError>>;
   getCommentsByEventId(eventId: number): Promise<Result<IComment[], CommentError>>;
+}
+
+export class InMemoryCommentRepository implements ICommentRepository {
+  private store: IComment[] = [];
+  private nextId = 1;
+
+  async getCommentsByEventId(eventId: number): Promise<Result<IComment[], CommentError>> {
+    const comments = this.store
+      .filter(c => c.eventId === eventId)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+    return Ok(comments.map(c => ({ ...c })));
+  }
 }
