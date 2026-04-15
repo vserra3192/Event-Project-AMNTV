@@ -173,7 +173,7 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
-      "/Event/:id/Edit",
+      "/events/:id/edit",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
           return;
@@ -184,6 +184,30 @@ class ExpressApp implements IApp {
       }
         
     ));
+
+    this.app.post(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        await this.eventController.submitEventEdit(res, browserSession, Number(req.params.id),
+          {
+            title: typeof req.body.title === "string" ? req.body.title : "",
+            category: typeof req.body.category === "string" ? req.body.category : "",
+            location: typeof req.body.location === "string" ? req.body.location : "",
+            description:
+              typeof req.body.description === "string" ? req.body.description : "",
+            startTime:
+              typeof req.body.startTime === "string" ? req.body.startTime : "",
+            endTime:
+              typeof req.body.endTime === "string" ? req.body.endTime : "",
+          },
+        );
+      }),
+    );
 
     // ── Admin routes ─────────────────────────────────────────────────
 
