@@ -282,6 +282,46 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      '/events/new',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events/new for ${browserSession.browserLabel}`);
+        res.render('events/create', { session: browserSession, pageError: null });
+      }),
+    );
+
+    this.app.post(
+      '/events/new',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`POST /events for ${browserSession.browserLabel}`);
+        await this.eventController.handleCreateEvent(res, browserSession, req.body as Record<string, unknown>);
+      }),
+    );
+
+    this.app.get(
+      '/events/my',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events/my for ${browserSession.browserLabel}`);
+        await this.eventController.showUserEvents(res, browserSession);
+      }),
+    );
+
+    this.app.get(
+      '/events/:id',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events/${req.params.id} for ${browserSession.browserLabel}`);
+        await this.eventController.showEventDetail(res, browserSession, Number(req.params.id));
+      }),
+    );
+
+    this.app.get(
       "/events/search",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
