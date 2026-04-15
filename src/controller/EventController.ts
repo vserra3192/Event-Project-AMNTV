@@ -9,6 +9,7 @@ import type { EventStatus } from '../repository/EventRepository';
 
 export interface IEventController {
     showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
+    showAllEvents(res: Response, session: IAppBrowserSession): Promise<void>;
     handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>): Promise<void>;
     showEventDetail(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
@@ -44,6 +45,18 @@ class EventController implements IEventController {
         res.status(200);
         this.logger.info('Dashboard data fetched successfully');
         res.render('dashboard', { data: result.value, session }); // will update this to send the actual data once we have it defined
+    }
+
+    async showAllEvents(res: Response, session: IAppBrowserSession): Promise<void> {
+        const result = await this.service.getAllEvents();
+        if (!result.ok) {
+            this.logger.error('Error fetching all events data');
+            res.status(500).send('Error fetching all events data');
+            return;
+        }
+        res.status(200);
+        this.logger.info('All events data fetched successfully');
+        res.render('events/index', { data: result.value, session });
     }
 
     async handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>): Promise<void> {
