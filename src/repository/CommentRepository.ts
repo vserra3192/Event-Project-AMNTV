@@ -40,4 +40,10 @@ export class InMemoryCommentRepository implements ICommentRepository {
 
     return Ok(comments.map(c => ({ ...c })));
   }
+
+  async getCommentById(id: number): Promise<Result<IComment, CommentError>> {
+    const comment = this.store.find(c => c.id === id);
+    if (!comment) return Err(CommentNotFound(`Comment ${id} not found.`));
+    return Ok({ ...comment });
+  }
 }
