@@ -55,4 +55,12 @@ export class InMemoryCommentRepository implements ICommentRepository {
     this.store.push(comment);
     return Ok({ ...comment });
   }
+  
+  async deleteComment(id: number): Promise<Result<void, CommentError>> {
+    const idx = this.store.findIndex(c => c.id === id);
+    if (idx === -1) return Err(CommentNotFound(`Comment ${id} not found.`));
+
+    this.store.splice(idx, 1);
+    return Ok(undefined);
+  }
 }
