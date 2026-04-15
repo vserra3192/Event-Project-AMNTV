@@ -1,14 +1,22 @@
 import type { Response } from 'express';
-import type { IEventService } from '../service/EventService';
+import type { IEventService, CreateEventServiceInput } from '../service/EventService';
 import type { ILoggingService } from '../service/LoggingService';
 import type { IAppBrowserSession } from '../session/AppSession';
+import type { EventError } from '../repository/Errors';
+import type { EventStatus } from '../repository/EventRepository';
 
 
 
 export interface IEventController {
     showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
+    handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>): Promise<void>;
+    showEventDetail(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
+    handleUpdateEventTitle(res: Response, session: IAppBrowserSession, eventId: number, title: string): Promise<void>;
+    showUserEvents(res: Response, session: IAppBrowserSession): Promise<void>;
 }
+
+const VALID_STATUSES: EventStatus[] = ['draft', 'published', 'cancelled', 'past'];
 
 class EventController implements IEventController {
     private service: IEventService;
