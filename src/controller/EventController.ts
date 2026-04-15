@@ -5,7 +5,14 @@ import type { IAppBrowserSession } from '../session/AppSession';
 import type { EventError } from '../repository/Errors';
 import type { EventStatus } from '../repository/EventRepository';
 
-
+export interface IEditEventForm {
+  title: string;
+  category: string;
+  location: string;
+  description: string;
+  startTime: string;
+  endTime: string;
+}
 
 export interface IEventController {
     showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
@@ -13,6 +20,7 @@ export interface IEventController {
     handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>): Promise<void>;
     showEventDetail(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
+    submitEventEdit(res: Response, session: IAppBrowserSession, eventId: number, form: IEditEventForm): Promise<void>;
     showUserEvents(res: Response, session: IAppBrowserSession): Promise<void>;
 }
 
@@ -112,15 +120,49 @@ class EventController implements IEventController {
     }
     
     async showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
-        const result = await this.service.getEventByID(eventId);
-        if (!result.ok) {
-            this.logger.error('Error fetching event data');
-            res.status(500).send('Error fetching event data');
+        const currentUser = session.authenticatedUser;
+
+        if (!currentUser) {
+            this.logger.warn("user not authenticated");
+            res.status(401).send("Unauthorized");
             return;
         }
-        res.status(200);
-        this.logger.info('Event data fetched successfully');
-        res.render('event-edit', { data: result.value, session });
+
+        const result = await this.service.getEditableEvent(eventId, currentUser.userId);
+
+        if (!result.ok) {
+            this.logger.error("Error fetching event edit form");
+            res.status(500).send("Error fetching event data");
+            return;
+        }
+
+        this.logger.info("Editable event fetched successfully");
+        res.status(200).render("eventEdit", { event: result.value });
+    }
+
+    async submitEventEdit(res: Response, session: IAppBrowserSession, eventId: number, form: IEditEventForm): Promise<void> {
+        const currentUser = session.authenticatedUser;
+
+        if (!currentUser) {
+            this.logger.warn("user not authenticated");
+            res.status(401).send("Unauthorized");
+            return;
+        }
+
+        const result = await this.service.updateEvent(
+            eventId,
+            currentUser.userId,
+            form,
+        );
+
+        if (!result.ok) {
+            this.logger.error("Error updating event");
+            res.status(500).send("Error updating event");
+            return;
+        }
+
+        this.logger.info(`Event ${eventId} updated successfully`);
+        res.redirect(`/events/${result.value.id}`);
     }
 
     async showUserEvents(res: Response, session: IAppBrowserSession): Promise<void> {
