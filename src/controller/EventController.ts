@@ -23,9 +23,17 @@ class EventController implements IEventController {
     private logger: ILoggingService;
 
     constructor(service: IEventService, logger: ILoggingService) {
-            this.service = service;
-            this.logger = logger;
-        }
+        this.service = service;
+        this.logger = logger;
+    }
+
+    private mapErrorStatus(error: EventError): number {
+        if(error.name === 'ValidationError'){return 400;}
+        if(error.name === 'EventNotFound'){return 404;}
+        if(error.name === 'InvalidId'){return 400;}
+        return 500;
+    }
+        
 
     async showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
         const result = await this.service.getUserEvents(session.authenticatedUser?.userId ?? '');
