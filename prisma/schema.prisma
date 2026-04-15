@@ -18,11 +18,17 @@ datasource db {
 //   updatedAt DateTime @updatedAt
 // }
 
-Event{
-  id Int  @id @default(autoincrement())
-  title String
-  category String
-  startTime DateTime
-  endTime DateTime
-  rsvpStatus Boolean @default(false)
+export interface IEvent {
+  id: number;
+  title: string;
+  description: string;
+  location: string;
+  category: string;
+  status: "draft" | "published" | "cancelled" | "past";
+  capacity?: number | null;
+  startDatetime: Date;
+  endDatetime: Date;
+  organizerId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
