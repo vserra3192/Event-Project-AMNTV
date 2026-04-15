@@ -1,8 +1,7 @@
 <section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
-  <h1 class="text-3xl font-bold text-slate-900 mb-3">Welcome to Project Starter</h1>
+  <h1 class="text-3xl font-bold text-slate-900 mb-3">Welcome to your events!</h1>
   <p class="text-slate-500">
-    You are signed in and ready to build. This placeholder page is where your
-    project's main content will go.
+    Manage and discover events with ease.
   </p>
   <% if (session.authenticatedUser) { %>
     <p class="text-slate-500 mt-2 mb-0">
@@ -17,37 +16,55 @@
   <%- include("partials/error", { message: pageError }) %>
 <% } %>
 
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <form action="/events/search" method="get" class="flex gap-3">
+    <input
+      type="text"
+      name="q"
+      placeholder="Search events..."
+      class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+    <button
+      type="submit"
+      class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      Search
+    </button>
+  </form>
+</section>
+
 <section class="max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
   <div class="mb-4">
-    <h2 class="text-xl font-semibold mb-2">Getting Started</h2>
+    <h2 class="text-xl font-semibold mb-2">Quick Actions</h2>
     <p class="text-slate-500">
-      This starter application provides authentication and role-based authorization
-      out of the box. Here are some ideas for where to begin:
+      Get started with managing your events.
     </p>
   </div>
 
-  <ul class="list-disc pl-5 space-y-2 text-slate-700">
-    <li>Replace this page with your project's main dashboard or landing page.</li>
-    <li>Add new routes in <code class="bg-slate-100 px-1 rounded text-sm">src/app.ts</code> and protect them with
-      <code class="bg-slate-100 px-1 rounded text-sm">requireAuthenticated</code> or <code class="bg-slate-100 px-1 rounded text-sm">requireRole</code>.</li>
-    <li>Create new EJS views in <code class="bg-slate-100 px-1 rounded text-sm">src/views/</code>.</li>
-    <li>Add your own models, services, and controllers under <code class="bg-slate-100 px-1 rounded text-sm">src/</code>.</li>
-    <li>Use the Prisma schema in <code class="bg-slate-100 px-1 rounded text-sm">prisma/schema.prisma</code> to define your database tables.</li>
-  </ul>
+  <div class="grid gap-4 md:grid-cols-3">
+    <a
+      href="/events/new"
+      class="block p-4 border border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-center"
+    >
+      <h3 class="text-lg font-semibold text-slate-900 mb-2">Create Event</h3>
+      <p class="text-slate-500 text-sm">Organize a new event</p>
+    </a>
+    <a
+      href="/events"
+      class="block p-4 border border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-center"
+    >
+      <h3 class="text-lg font-semibold text-slate-900 mb-2">My Organizer Dashboard</h3>
+      <p class="text-slate-500 text-sm">Manage your events</p>
+    </a>
+    <a
+      href="/events"
+      class="block p-4 border border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-center"
+    >
+      <h3 class="text-lg font-semibold text-slate-900 mb-2">My RSVP Dashboard</h3>
+      <p class="text-slate-500 text-sm">View your RSVPs</p>
+    </a>
+  </div>
 </section>
-
-<section class="max-w-3xl mt-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg" x-data="{ open: false }">
-  <button
-    @click="open = !open"
-    class="w-full flex items-center justify-between text-left bg-transparent border-0 p-0 cursor-pointer"
-  >
-    <h2 class="text-xl font-semibold">Alpine.js Demo</h2>
-    <span class="text-slate-400 text-sm" x-text="open ? 'Hide' : 'Show'">Show</span>
-  </button>
-
-  <div x-show="open" x-transition class="mt-4">
-    <p class="text-slate-500 mb-3">
-      Alpine.js is included via CDN and ready to use. This collapsible section is
       a quick demonstration. Use <code class="bg-slate-100 px-1 rounded text-sm">x-data</code>,
       <code class="bg-slate-100 px-1 rounded text-sm">x-show</code>,
       <code class="bg-slate-100 px-1 rounded text-sm">@click</code>, and other
