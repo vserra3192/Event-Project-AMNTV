@@ -277,6 +277,19 @@ class ExpressApp implements IApp {
 
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`GET /events for ${browserSession.browserLabel}`);
+        await this.eventController.showAllEvents(res, browserSession);
+      }),
+    );
+
+    this.app.get(
+      "/dashboard",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /dashboard for ${browserSession.browserLabel}`);
         await this.eventController.showEventDashboard(res, browserSession);
       }),
     );
@@ -298,16 +311,6 @@ class ExpressApp implements IApp {
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`POST /events for ${browserSession.browserLabel}`);
         await this.eventController.handleCreateEvent(res, browserSession, req.body as Record<string, unknown>);
-      }),
-    );
-
-    this.app.get(
-      '/events/my',
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-        const browserSession = recordPageView(sessionStore(req));
-        this.logger.info(`GET /events/my for ${browserSession.browserLabel}`);
-        await this.eventController.showUserEvents(res, browserSession);
       }),
     );
 
