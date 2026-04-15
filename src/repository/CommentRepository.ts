@@ -29,6 +29,8 @@ export interface ICommentRepository {
   getCommentsByEventId(eventId: number): Promise<Result<IComment[], CommentError>>;
 }
 
+ // in-memory repo implementation
+
 export class InMemoryCommentRepository implements ICommentRepository {
   private store: IComment[] = [];
   private nextId = 1;
@@ -44,6 +46,13 @@ export class InMemoryCommentRepository implements ICommentRepository {
   async getCommentById(id: number): Promise<Result<IComment, CommentError>> {
     const comment = this.store.find(c => c.id === id);
     if (!comment) return Err(CommentNotFound(`Comment ${id} not found.`));
+    return Ok({ ...comment });
+  }
+
+  async createComment(input: Omit<IComment, "id" | "createdAt">): Promise<Result<IComment, CommentError>> {
+    const comment: IComment = {...input, id: this.nextId++, createdAt: new Date(),};
+
+    this.store.push(comment);
     return Ok({ ...comment });
   }
 }
