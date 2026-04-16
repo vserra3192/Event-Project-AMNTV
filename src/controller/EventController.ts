@@ -104,7 +104,7 @@ class EventController implements IEventController {
 
     async showAllEvents(res: Response, session: IAppBrowserSession): Promise<void> {
         await this.service.archiveExpiredEvents();
-        const result = await this.service.getAllEvents();
+        const result = await this.service.getActiveEvents();
         if (!result.ok) {
             this.logger.error('Error fetching all events data');
             res.status(500).send('Error fetching all events data');
