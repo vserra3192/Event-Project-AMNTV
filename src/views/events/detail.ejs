@@ -66,5 +66,40 @@
         Edit Event
       </a>
     </div>
+    <section
+      class="mt-6 max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg"
+    >
+      <h2 class="text-xl font-semibold mb-4">Comments</h2>
+
+      <form
+        class="mb-6 space-y-2"
+        hx-post="/events/<%= event.id %>/comments"
+        hx-target="#comments"
+        hx-swap="innerHTML"
+        hx-on::after-request="this.reset()"
+      >
+        <textarea
+          name="content"
+          class="w-full border border-slate-300 rounded-lg p-2"
+          placeholder="Write a comment..."
+          required
+        ></textarea>
+
+        <button
+          type="submit"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg"
+        >
+          Post Comment
+        </button>
+      </form>
+
+      <div
+        id="comments"
+        hx-get="/events/<%= event.id %>/comments"
+        hx-trigger="load"
+        hx-swap="innerHTML"
+      >
+      </div>
+    </section>
   </div>
 </section>
