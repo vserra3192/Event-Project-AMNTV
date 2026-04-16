@@ -1,0 +1,44 @@
+<div id="comments">
+  <% if (!comments || comments.length === 0) { %>
+    <p class="text-gray-500">No comments yet.</p>
+  <% } %>
+
+  <% comments.forEach(function(comment) { %>
+    <div class="comment border-b py-2" id="comment-<%= comment.id %>">
+      
+      <div class="flex justify-between items-center text-sm text-gray-600">
+        <div>
+          <strong>
+            <%= comment.displayName || "Unknown User" %>
+          </strong>
+          ·
+          <span>
+            <%= timeAgo(comment.createdAt) %>
+          </span>
+        </div>
+
+        <% if (
+          user &&
+          (
+            user.id === comment.userId ||
+            user.role === "admin"
+          )
+        ) { %>
+          <button
+            class="text-red-500 hover:underline text-xs"
+            hx-post="/comments/<%= comment.id %>/delete"
+            hx-target="#comment-<%= comment.id %>"
+            hx-swap="outerHTML"
+          >
+            Delete
+          </button>
+        <% } %>
+      </div>
+
+      <div class="mt-1 text-gray-800">
+        <%= comment.content %>
+      </div>
+
+    </div>
+  <% }) %>
+</div>
