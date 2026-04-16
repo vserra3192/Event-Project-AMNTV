@@ -5,10 +5,6 @@
   </p>
 </section>
 
-<% if (pageError) { %>
-  <%- include("partials/error", { message: pageError }) %>
-<% } %>
-
 <section class="max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
   <form action="/events/<%= data.id %>" method="post" class="space-y-6">
     <input type="hidden" name="_method" value="PUT" />
