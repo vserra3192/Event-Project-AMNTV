@@ -1,0 +1,132 @@
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+  <h1 class="text-3xl font-bold text-slate-900 mb-3"><%= event.title %></h1>
+  <p class="text-slate-500">
+    Event details and information.
+  </p>
+</section>
+
+<% if (pageError) { %>
+  <%- include("../partials/error", { message: pageError }) %>
+<% } %>
+
+<section class="max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <div class="space-y-6">
+    <div>
+      <h2 class="text-xl font-semibold mb-4">Event Information</h2>
+      <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <dt class="text-sm font-medium text-slate-500">Category</dt>
+          <dd class="text-slate-900"><%= event.category %></dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-slate-500">Status</dt>
+          <dd class="text-slate-900">
+            <span class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold <%= event.status === 'published' ? 'bg-green-600/12 text-green-700' : 'bg-slate-100 text-slate-700' %>">
+              <%= event.status %>
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-slate-500">Location</dt>
+          <dd class="text-slate-900"><%= event.location %></dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-slate-500">Capacity</dt>
+          <dd class="text-slate-900"><%= event.capacity ? event.capacity : 'Unlimited' %></dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-slate-500">Start Time</dt>
+          <dd class="text-slate-900"><%= new Date(event.startDatetime).toLocaleString() %></dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-slate-500">End Time</dt>
+          <dd class="text-slate-900"><%= new Date(event.endDatetime).toLocaleString() %></dd>
+        </div>
+      </dl>
+    </div>
+
+    <% if (event.description) { %>
+      <div>
+        <h3 class="text-lg font-semibold mb-2">Description</h3>
+        <p class="text-slate-700"><%= event.description %></p>
+      </div>
+    <% } %>
+
+    <div class="flex gap-4">
+      <a
+        href="/home"
+        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Return Home
+      </a>
+      <% const currentUser = session?.authenticatedUser; %>
+      <% const isAdmin = currentUser?.role === "admin"; %>
+      <% const isStaffOwner = currentUser?.role === "staff" && currentUser?.userId === event.organizerId; %>
+
+      <% if (isStaffOwner || isAdmin) { %>
+        <a
+          href="/events/<%= event.id %>/edit"
+          class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+        >
+          Edit Event
+        </a>
+      <% } %>
+
+      <% if (event.status === "draft" && isStaffOwner) { %>
+        <form method="POST" action="/events/<%= event.id %>/publish" class="inline">
+          <button
+            type="submit"
+            class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            Publish Event
+          </button>
+        </form>
+      <% } %>
+
+      <% if (event.status === "published" && (isStaffOwner || isAdmin)) { %>
+        <form method="POST" action="/events/<%= event.id %>/cancel" class="inline">
+          <button
+            type="submit"
+            class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            Cancel Event
+          </button>
+        </form>
+      <% } %>
+    </div>
+
+    <section class="mt-6 max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+      <h2 class="text-xl font-semibold mb-4">Comments</h2>
+
+      <form
+        class="mb-6 space-y-2"
+        hx-post="/events/<%= event.id %>/comments"
+        hx-target="#comments"
+        hx-swap="beforeend"
+        hx-on::after-request="this.reset()"
+      >
+        <textarea
+          name="content"
+          class="w-full border border-slate-300 rounded-lg p-2"
+          placeholder="Write a comment..."
+          required
+        ></textarea>
+
+        <button
+          type="submit"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
+        >
+          Post Comment
+        </button>
+      </form>
+
+      <div
+        id="comments"
+        hx-get="/events/<%= event.id %>/comments"
+        hx-trigger="load"
+        hx-swap="innerHTML"
+      >
+      </div>
+    </section>
+  </div>
+</section>

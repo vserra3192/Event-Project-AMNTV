@@ -17,3 +17,18 @@ datasource db {
 //   createdAt DateTime @default(now())
 //   updatedAt DateTime @updatedAt
 // }
+
+export interface IEvent {
+  id: number;
+  title: string;
+  description: string;
+  location: string;
+  category: string;
+  status: "draft" | "published" | "cancelled" | "past";
+  capacity?: number | null;
+  startDatetime: Date;
+  endDatetime: Date;
+  organizerId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}

@@ -1,0 +1,134 @@
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+  <h1 class="text-3xl font-bold text-slate-900 mb-3">Edit Event</h1>
+  <p class="text-slate-500">
+    Update the details of your event.
+  </p>
+</section>
+
+<section class="max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <form action="/events/<%= data.id %>" method="post" class="space-y-6">
+    <input type="hidden" name="_method" value="PUT" />
+
+    <div>
+      <label for="title" class="block text-sm font-medium text-slate-700 mb-2">Event Title *</label>
+      <input
+        type="text"
+        id="title"
+        name="title"
+        required
+        value="<%= data.title %>"
+        class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        placeholder="Enter event title"
+      />
+    </div>
+
+    <div>
+      <label for="description" class="block text-sm font-medium text-slate-700 mb-2">Description</label>
+      <textarea
+        id="description"
+        name="description"
+        rows="4"
+        class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        placeholder="Describe your event"
+      ><%= data.description %></textarea>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label for="location" class="block text-sm font-medium text-slate-700 mb-2">Location *</label>
+        <input
+          type="text"
+          id="location"
+          name="location"
+          required
+          value="<%= data.location %>"
+          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Event location"
+        />
+      </div>
+
+      <div>
+        <label for="category" class="block text-sm font-medium text-slate-700 mb-2">Category *</label>
+        <input
+          type="text"
+          id="category"
+          name="category"
+          required
+          value="<%= data.category %>"
+          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="e.g., Conference, Workshop, Social"
+        />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label for="startDatetime" class="block text-sm font-medium text-slate-700 mb-2">Start Date & Time *</label>
+        <input
+          type="datetime-local"
+          id="startDatetime"
+          name="startDatetime"
+          required
+          value="<%= new Date(data.startDatetime).toISOString().slice(0, 16) %>"
+          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label for="endDatetime" class="block text-sm font-medium text-slate-700 mb-2">End Date & Time *</label>
+        <input
+          type="datetime-local"
+          id="endDatetime"
+          name="endDatetime"
+          required
+          value="<%= new Date(data.endDatetime).toISOString().slice(0, 16) %>"
+          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label for="status" class="block text-sm font-medium text-slate-700 mb-2">Status</label>
+        <select
+          id="status"
+          name="status"
+          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="draft" <%= data.status === 'draft' ? 'selected' : '' %>>Draft</option>
+          <option value="published" <%= data.status === 'published' ? 'selected' : '' %>>Published</option>
+          <option value="cancelled" <%= data.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+          <option value="past" <%= data.status === 'past' ? 'selected' : '' %>>Past</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="capacity" class="block text-sm font-medium text-slate-700 mb-2">Capacity</label>
+        <input
+          type="number"
+          id="capacity"
+          name="capacity"
+          min="1"
+          value="<%= data.capacity || '' %>"
+          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Leave empty for unlimited"
+        />
+      </div>
+    </div>
+
+    <div class="flex gap-4">
+      <button
+        type="submit"
+        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Update Event
+      </button>
+      <a
+        href="/events/<%= data.id %>"
+        class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+      >
+        Cancel
+      </a>
+    </div>
+  </form>
+</section>

@@ -3,6 +3,7 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
+import { IEventController } from "./controller/EventController";
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -17,6 +18,7 @@ import {
   touchAppSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
+import { ICommentController } from "./controller/CommentController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -35,6 +37,8 @@ class ExpressApp implements IApp {
 
   constructor(
     private readonly authController: IAuthController,
+    private readonly eventController: IEventController,
+    private readonly commentController: ICommentController,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -170,6 +174,83 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.get(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        await this.eventController.showEventEdit(
+          res,
+          browserSession,
+          Number(req.params.id),
+        );
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        await this.eventController.submitEventEdit(
+          res,
+          browserSession,
+          Number(req.params.id),
+          {
+            title: typeof req.body.title === "string" ? req.body.title : "",
+            category: typeof req.body.category === "string" ? req.body.category : "",
+            location: typeof req.body.location === "string" ? req.body.location : "",
+            description:
+              typeof req.body.description === "string" ? req.body.description : "",
+            status: typeof req.body.status === "string" ? req.body.status : "draft",
+            capacity: typeof req.body.capacity === "string" ? req.body.capacity : "",
+            startDatetime:
+              typeof req.body.startDatetime === "string" ? req.body.startDatetime : "",
+            endDatetime:
+              typeof req.body.endDatetime === "string" ? req.body.endDatetime : "",
+          },
+        );
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/publish",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        await this.eventController.handlePublishEvent(
+          res,
+          browserSession,
+          Number(req.params.id),
+        );
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/cancel",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        await this.eventController.handleCancelEvent(
+          res,
+          browserSession,
+          Number(req.params.id),
+        );
+      }),
+    );
+
     // ── Admin routes ─────────────────────────────────────────────────
 
     this.app.get(
@@ -253,6 +334,134 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events for ${browserSession.browserLabel}`);
+        await this.eventController.showAllEvents(res, browserSession);
+      }),
+    );
+
+    this.app.get(
+      "/dashboard",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /dashboard for ${browserSession.browserLabel}`);
+        await this.eventController.showEventDashboard(res, browserSession);
+      }),
+    );
+
+    this.app.get(
+      '/events/new',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events/new for ${browserSession.browserLabel}`);
+        res.render('events/create', { session: browserSession, pageError: null });
+      }),
+    );
+
+    this.app.post(
+      '/events/new',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`POST /events for ${browserSession.browserLabel}`);
+        await this.eventController.handleCreateEvent(res, browserSession, req.body as Record<string, unknown>);
+      }),
+    );
+
+    this.app.get(
+      "/events/archive",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const session = recordPageView(sessionStore(req));
+        await this.eventController.showArchivedEvents(res, session);
+      }),
+    );
+
+    this.app.get(
+      "/events/search",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        const searchQuery = typeof req.query.q === "string" ? req.query.q.trim() : "";
+        this.logger.info(`GET /events/search?q=${searchQuery} for ${browserSession.browserLabel}`);
+
+        await this.eventController.searchEvents(res, browserSession, searchQuery);
+      }),
+    );
+
+    this.app.get(
+      '/events/:id',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events/${req.params.id} for ${browserSession.browserLabel}`);
+        await this.eventController.showEventDetail(res, browserSession, Number(req.params.id));
+      }),
+    );
+
+    // ── Event Comments ─────────────────────────────────────────
+
+    this.app.get(
+      "/events/:id/comments",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const eventId = Number(req.params.id);
+        const session = touchAppSession(sessionStore(req));
+
+        this.logger.info(`GET /events/${eventId}/comments`);
+
+        await this.commentController.getComments(res, eventId, session);
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/comments",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const eventId = Number(req.params.id);
+        const content =
+          typeof req.body.content === "string" ? req.body.content : "";
+
+        const session = touchAppSession(sessionStore(req));
+
+        this.logger.info(`POST /events/${eventId}/comments`);
+
+        await this.commentController.addComment(res, eventId, content, session);
+      }),
+    );
+
+    this.app.post(
+      "/comments/:id/delete",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const commentId = Number(req.params.id);
+        const session = touchAppSession(sessionStore(req));
+
+        this.logger.info(`POST /comments/${commentId}/delete`);
+
+        await this.commentController.deleteComment(res, commentId, session);
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
@@ -272,7 +481,9 @@ class ExpressApp implements IApp {
 
 export function CreateApp(
   authController: IAuthController,
+  eventController: IEventController,
+  commentController: ICommentController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, logger);
+  return new ExpressApp(authController, eventController, commentController, logger);
 }
