@@ -21,6 +21,8 @@ export interface IEventService {
   getUserEvents(userId: string): Promise<Result<IEvent[], EventError>>;
   getEditableEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
   updateEvent(eventId: number, actingUserId: string, actingUserRole: string, input: CreateEventServiceInput): Promise<Result<IEvent, EventError>>;
+  publishEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
+  cancelEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
 }
 
 class EventService implements IEventService {
@@ -204,6 +206,54 @@ class EventService implements IEventService {
       startDatetime: input.startDatetime,
       endDatetime: input.endDatetime,
     });
+  }
+  async publishEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>> {
+    if (!Number.isInteger(eventId) || eventId < 1) {
+      return Err(InvalidId("ID must be a positive integer."));
+    }
+
+    const eventResult = await this.repo.getEventById(eventId);
+    if (eventResult.ok === false) {
+      return eventResult;
+    }
+
+    const event = eventResult.value;
+    const isStaffOwner = actingUserRole === "staff" && event.organizerId === actingUserId;
+
+    if (!isStaffOwner) {
+      return Err(ValidationError("Only the event organizer can publish this event."));
+    }
+
+    if (event.status !== "draft") {
+      return Err(ValidationError("Only draft events can be published."));
+    }
+
+    return this.repo.updateEventStatus(eventId, "published");
+  }
+
+  async cancelEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>> {
+    if (!Number.isInteger(eventId) || eventId < 1) {
+      return Err(InvalidId("ID must be a positive integer."));
+    }
+
+    const eventResult = await this.repo.getEventById(eventId);
+    if (eventResult.ok === false) {
+      return eventResult;
+    }
+
+    const event = eventResult.value;
+    const isAdmin = actingUserRole === "admin";
+    const isStaffOwner = actingUserRole === "staff" && event.organizerId === actingUserId;
+
+    if (!isAdmin && !isStaffOwner) {
+      return Err(ValidationError("Invalid Permission."));
+    }
+
+    if (event.status !== "published") {
+      return Err(ValidationError("Only published events can be cancelled."));
+    }
+
+    return this.repo.updateEventStatus(eventId, "cancelled");
   }
 
 }
