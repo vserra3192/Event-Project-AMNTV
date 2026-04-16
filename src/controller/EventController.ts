@@ -27,6 +27,7 @@ export interface IEventController {
     handleCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showUserEvents(res: Response, session: IAppBrowserSession): Promise<void>;
     searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
+    showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void>;
 }
 
 const VALID_STATUSES: EventStatus[] = ['draft', 'published', 'cancelled', 'past'];
@@ -103,7 +104,8 @@ class EventController implements IEventController {
     }
 
     async showAllEvents(res: Response, session: IAppBrowserSession): Promise<void> {
-        const result = await this.service.getAllEvents();
+        await this.service.archiveExpiredEvents();
+        const result = await this.service.getActiveEvents();
         if (!result.ok) {
             this.logger.error('Error fetching all events data');
             res.status(500).send('Error fetching all events data');
@@ -111,7 +113,8 @@ class EventController implements IEventController {
         }
         res.status(200);
         this.logger.info('All events data fetched successfully');
-        res.render('events/index', { data: result.value, session });
+        res.render('events/index', { data: result.value, session, isArchive: false });
+        
     }
 
     async searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void> {
@@ -375,6 +378,18 @@ class EventController implements IEventController {
         res.redirect(`/events/${result.value.id}`);
     }
 
+    async showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void> {
+        await this.service.archiveExpiredEvents();
+        const result = await this.service.getPastEvents();
+
+        if (!result.ok) {
+            this.logger.error("Failed to load archive");
+            res.status(500).send("Failed to load archive");
+            return;
+        }
+
+        res.status(200).render("events/archive", {data: result.value, session, isArchive: true});
+    }
 }
 
 export function CreateController(service: IEventService, logger: ILoggingService): IEventController {
