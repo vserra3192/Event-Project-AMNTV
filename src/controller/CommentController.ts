@@ -25,9 +25,12 @@ export class CommentController implements ICommentController {
     const result = await this.service.getCommentsByEventId(eventId);
 
     if (!result.ok) {
-      const status = this.mapErrorToStatus(result.value.name);
-      this.logger.warn(result.value.message);
-      res.status(status).send(result.value.message);
+      const error = result.value;
+
+      const status = this.mapErrorToStatus(error.name);
+
+      this.logger.warn(error.message);
+      res.status(status).send(error.message);
       return;
     }
 
@@ -50,9 +53,12 @@ export class CommentController implements ICommentController {
     });
 
     if (!result.ok) {
-      const status = this.mapErrorToStatus(result.value.name);
-      this.logger.warn(result.value.message);
-      res.status(status).send(result.value.message);
+      const error = result.value;
+
+      const status = this.mapErrorToStatus(error.name);
+
+      this.logger.warn(error.message);
+      res.status(status).send(error.message);
       return;
     }
 
@@ -83,9 +89,12 @@ export class CommentController implements ICommentController {
     });
 
     if (!result.ok) {
-      const status = this.mapErrorToStatus(result.value.name);
-      this.logger.warn(result.value.message);
-      res.status(status).send(result.value.message);
+      const error = result.value;
+
+      const status = this.mapErrorToStatus(error.name);
+
+      this.logger.warn(error.message);
+      res.status(status).send(error.message);
       return;
     }
 
