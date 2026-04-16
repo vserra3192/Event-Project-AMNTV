@@ -1,0 +1,102 @@
+<section class="page">
+  <h1>Edit Event</h1>
+
+  <% if (typeof pageError === "string" && pageError.length > 0) { %>
+    <div class="error-banner">
+      <p><%= pageError %></p>
+    </div>
+  <% } %>
+
+  <form method="POST" action="/events/<%= eventId %>/edit" class="event-form">
+    <div class="form-row">
+      <label for="title">Title</label>
+      <input
+        id="title"
+        name="title"
+        type="text"
+        value="<%= formData.title %>"
+        required
+      />
+    </div>
+
+    <div class="form-row">
+      <label for="category">Category</label>
+      <input
+        id="category"
+        name="category"
+        type="text"
+        value="<%= formData.category %>"
+        required
+      />
+    </div>
+
+    <div class="form-row">
+      <label for="location">Location</label>
+      <input
+        id="location"
+        name="location"
+        type="text"
+        value="<%= formData.location %>"
+        required
+      />
+    </div>
+
+    <div class="form-row">
+      <label for="description">Description</label>
+      <textarea
+        id="description"
+        name="description"
+        rows="5"
+        required
+      ><%= formData.description %></textarea>
+    </div>
+
+    <div class="form-row">
+      <label for="status">Status</label>
+      <select id="status" name="status" required>
+        <option value="draft" <%= formData.status === "draft" ? "selected" : "" %>>Draft</option>
+        <option value="published" <%= formData.status === "published" ? "selected" : "" %>>Published</option>
+        <option value="cancelled" <%= formData.status === "cancelled" ? "selected" : "" %>>Cancelled</option>
+        <option value="past" <%= formData.status === "past" ? "selected" : "" %>>Past</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label for="capacity">Capacity</label>
+      <input
+        id="capacity"
+        name="capacity"
+        type="number"
+        min="1"
+        value="<%= formData.capacity %>"
+      />
+    </div>
+
+    <div class="form-row">
+      <label for="startDatetime">Start</label>
+      <input
+        id="startDatetime"
+        name="startDatetime"
+        type="datetime-local"
+        value="<%= formData.startDatetime %>"
+        required
+      />
+    </div>
+
+    <div class="form-row">
+      <label for="endDatetime">End</label>
+      <input
+        id="endDatetime"
+        name="endDatetime"
+        type="datetime-local"
+        value="<%= formData.endDatetime %>"
+        required
+      />
+    </div>
+
+    <div class="form-actions">
+      <button type="submit">Save Changes</button>
+      <a href="/events/<%= eventId %>">Cancel</a>
+    </div>
+  </form>
+</section>
