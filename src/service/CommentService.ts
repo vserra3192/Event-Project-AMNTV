@@ -50,7 +50,7 @@ export class CommentService implements ICommentService {
     }
 
     const input = {eventId, userId: actor.userId, content: content.trim(),};
-    const result = await this.repo.createComment(input as any);
+    const result = await this.repo.createComment(input);
 
     if (!result.ok) {
       return Err(result.value);
