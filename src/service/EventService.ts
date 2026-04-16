@@ -23,6 +23,9 @@ export interface IEventService {
   updateEvent(eventId: number, actingUserId: string, actingUserRole: string, input: CreateEventServiceInput): Promise<Result<IEvent, EventError>>;
   publishEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
   cancelEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
+  archiveExpiredEvents(): Promise<Result<number, EventError>>;
+  getActiveEvents(): Promise<Result<IEvent[], EventError>>;
+  getPastEvents(): Promise<Result<IEvent[], EventError>>;
 }
 
 class EventService implements IEventService {
@@ -256,6 +259,61 @@ class EventService implements IEventService {
     return this.repo.updateEventStatus(eventId, "cancelled");
   }
 
+  async archiveExpiredEvents(): Promise<Result<number, EventError>> {
+    const now = new Date();
+
+    const result = await this.repo.getAllEvents();
+    if (!result.ok) {
+      return Err(UnexpectedRepositoryError(result.value.message));
+    }
+
+    let count = 0;
+
+    for (const event of result.value) {
+      const isExpired =
+        event.status !== "past" &&
+        event.endDatetime < now;
+
+      if (!isExpired) continue;
+
+      const updateResult = await this.repo.updateEventStatus(
+        event.id,
+        "past"
+      );
+
+      if (updateResult.ok) {
+        count++;
+      }
+    }
+
+    return Ok(count);
+  }
+
+  async getActiveEvents(): Promise<Result<IEvent[], EventError>> {
+    const result = await this.repo.getAllEvents();
+    if (!result.ok) {
+      return Err(UnexpectedRepositoryError(result.value.message));
+    }
+
+    return Ok(
+      result.value.filter(e => e.status !== "past")
+    );
+  }
+
+  async getPastEvents(): Promise<Result<IEvent[], EventError>> {
+    const result = await this.repo.getAllEvents();
+    if (!result.ok) {
+      return Err(UnexpectedRepositoryError(result.value.message));
+    }
+
+    return Ok(
+      result.value
+        .filter(e => e.status === "past")
+        .sort((a, b) =>
+          b.endDatetime.getTime() - a.endDatetime.getTime()
+        )
+    );
+  }
 }
 
 export function CreateEventService(repo: IEventRepository): IEventService {
