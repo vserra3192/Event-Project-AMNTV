@@ -1,6 +1,7 @@
 import { Err, Ok, type Result } from "../lib/result";
 import { IEvent, IEventRepository, CreateEventInput, EventStatus} from "../repository/EventRepository";
-import { type EventError, UnexpectedRepositoryError, ValidationError} from "../repository/Errors";
+import { type EventError, UnexpectedRepositoryError, ValidationError, EventNotFound} from "../repository/Errors";
+import { InvalidId } from "./errors";
 
 export interface CreateEventServiceInput {
   title: string;
@@ -18,6 +19,8 @@ export interface IEventService {
   getAllEvents(): Promise<Result<IEvent[], EventError>>;
   getEventByID(id: number): Promise<Result<IEvent, EventError>>;
   getUserEvents(userId: string): Promise<Result<IEvent[], EventError>>;
+  getEditableEvent(eventId: number, actingUserId: string): Promise<Result<IEvent, EventError>>;
+  updateEvent(eventId: number, actingUserId: string, input: CreateEventServiceInput): Promise<Result<IEvent, EventError>>;
 }
 
 class EventService implements IEventService {
@@ -103,6 +106,78 @@ class EventService implements IEventService {
     }
     return Ok(result.value);
   }
+
+  private validateEventInput(input: CreateEventServiceInput): Result<void, EventError> {
+  if (input.title.trim().length === 0) {
+    return Err({ name: "ValidationError", message: "Title is required." });
+  }
+
+  if (input.description.trim().length === 0) {
+    return Err({ name: "ValidationError", message: "Description is required." });
+  }
+
+  if (input.location.trim().length === 0) {
+    return Err({ name: "ValidationError", message: "Location is required." });
+  }
+
+  if (input.category.trim().length === 0) {
+    return Err({ name: "ValidationError", message: "Category is required." });
+  }
+
+  if (Number.isNaN(input.startDatetime.getTime())) {
+    return Err({ name: "ValidationError", message: "Start date/time is invalid." });
+  }
+
+  if (Number.isNaN(input.endDatetime.getTime())) {
+    return Err({ name: "ValidationError", message: "End date/time is invalid." });
+  }
+
+  if (input.endDatetime <= input.startDatetime) {
+    return Err({
+      name: "ValidationError",
+      message: "End date/time must be after start date/time.",
+    });
+  }
+
+  if (input.capacity !== null && input.capacity < 1) {
+    return Err({
+      name: "ValidationError",
+      message: "Capacity must be positive when provided.",
+    });
+  }
+
+  return Ok(undefined);
+}
+
+  async getEditableEvent(eventId: number, actingUserId: string): Promise<Result<IEvent, EventError>> {
+    if (!Number.isInteger(eventId) || eventId <= 0) {
+      return Err(InvalidId("ID must be a positive integer."));
+    }
+
+    const eventResult = await this.repo.getEventById(eventId);
+    if (!eventResult.ok) {
+      return eventResult;
+    }
+
+    const event = eventResult.value;
+
+    return Ok(event);
+  }
+
+  async updateEvent(eventId: number, actingUserId: string, input: CreateEventServiceInput): Promise<Result<IEvent, EventError>> {
+    const editableEventResult = await this.getEditableEvent(eventId, actingUserId);
+    if (!editableEventResult.ok) {
+      return editableEventResult;
+    }
+
+    const validationResult = this.validateEventInput(input);
+    if (!validationResult.ok) {
+      return validationResult;
+    }
+
+    return await this.repo.updateEvent(eventId, input);
+  }
+
 }
 
 export function CreateEventService(repo: IEventRepository): IEventService {
