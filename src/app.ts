@@ -457,6 +457,16 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.get(
+      "/events/archive",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const session = recordPageView(sessionStore(req));
+        await this.eventController.showArchivedEvents(res, session);
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
