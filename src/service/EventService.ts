@@ -1,7 +1,6 @@
 import { Err, Ok, type Result } from "../lib/result";
 import { IEvent, IEventRepository, CreateEventInput, EventStatus} from "../repository/EventRepository";
-import { type EventError, UnexpectedRepositoryError, ValidationError, EventNotFound} from "../repository/Errors";
-import { InvalidId } from "./errors";
+import { type EventError, UnexpectedRepositoryError, ValidationError, EventNotFound, InvalidId} from "../repository/Errors";
 
 export interface CreateEventServiceInput {
   title: string;
@@ -75,33 +74,9 @@ class EventService implements IEventService {
     input: CreateEventServiceInput,
     organizerId: string,
   ): Promise<Result<IEvent, EventError>> {
-    if (!input.title.trim()) {
-      return Err(ValidationError('Title is required.'));
-    }
- 
-    // Validate category
-    if (!input.category.trim()) {
-      return Err(ValidationError('Category is required.'));
-    }
- 
-    // Validate location
-    if (!input.location.trim()) {
-      return Err(ValidationError('Location is required.'));
-    }
- 
-    // Validate times
-    if (input.endDatetime <= input.startDatetime) {
-      return Err(ValidationError('End time must be after start time.'));
-    }
- 
-    // Validate capacity if provided
-    if (input.capacity !== null && (!Number.isInteger(input.capacity) || input.capacity < 1)) {
-      return Err(ValidationError('Capacity must be a positive integer.'));
-    }
- 
-    // Validate organizerId was actually passed in (controller's responsibility, but belt-and-suspenders)
-    if (!organizerId.trim()) {
-      return Err(ValidationError('Organizer identity is required.'));
+    const validate = this.validateEventInput(input);
+    if (validate.ok === false) {
+      return Err(validate.value);
     }
  
     const repoInput: CreateEventInput = {
