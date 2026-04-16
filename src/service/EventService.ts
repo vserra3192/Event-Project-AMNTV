@@ -24,6 +24,8 @@ export interface IEventService {
   publishEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
   cancelEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
   archiveExpiredEvents(): Promise<Result<number, EventError>>;
+  getActiveEvents(): Promise<Result<IEvent[], EventError>>;
+  getPastEvents(): Promise<Result<IEvent[], EventError>>;
 }
 
 class EventService implements IEventService {
@@ -285,6 +287,32 @@ class EventService implements IEventService {
     }
 
     return Ok(count);
+  }
+
+  async getActiveEvents(): Promise<Result<IEvent[], EventError>> {
+    const result = await this.repo.getAllEvents();
+    if (!result.ok) {
+      return Err(UnexpectedRepositoryError(result.value.message));
+    }
+
+    return Ok(
+      result.value.filter(e => e.status !== "past")
+    );
+  }
+
+  async getPastEvents(): Promise<Result<IEvent[], EventError>> {
+    const result = await this.repo.getAllEvents();
+    if (!result.ok) {
+      return Err(UnexpectedRepositoryError(result.value.message));
+    }
+
+    return Ok(
+      result.value
+        .filter(e => e.status === "past")
+        .sort((a, b) =>
+          b.endDatetime.getTime() - a.endDatetime.getTime()
+        )
+    );
   }
 }
 
