@@ -46,6 +46,7 @@ export interface IEventRepository {
   getEventById(id: number): Promise<Result<IEvent, EventError>>;
   getAllEvents(): Promise<Result<IEvent[], EventError>>;
   updateEvent(id: number, input: UpdateEventInput): Promise<Result<IEvent, EventError>>;
+  updateEventStatus(id: number, status: EventStatus): Promise<Result<IEvent, EventError>>;
 }
 
 class InMemoryEventRepository implements IEventRepository {
