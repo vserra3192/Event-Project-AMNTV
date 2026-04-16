@@ -262,7 +262,7 @@ class EventService implements IEventService {
     const now = new Date();
 
     const result = await this.repo.getAllEvents();
-    if (!result.ok) {
+    if (result.ok === false) {
       return Err(UnexpectedRepositoryError(result.value.message));
     }
 
@@ -290,7 +290,7 @@ class EventService implements IEventService {
 
   async getActiveEvents(): Promise<Result<IEvent[], EventError>> {
     const result = await this.repo.getAllEvents();
-    if (!result.ok) {
+    if (result.ok === false) {
       return Err(UnexpectedRepositoryError(result.value.message));
     }
 
@@ -301,7 +301,7 @@ class EventService implements IEventService {
 
   async getPastEvents(): Promise<Result<IEvent[], EventError>> {
     const result = await this.repo.getAllEvents();
-    if (!result.ok) {
+    if (result.ok === false) {
       return Err(UnexpectedRepositoryError(result.value.message));
     }
 
