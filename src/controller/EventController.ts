@@ -26,6 +26,7 @@ export interface IEventController {
     handlePublishEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     handleCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showUserEvents(res: Response, session: IAppBrowserSession): Promise<void>;
+    searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
 }
 
 const VALID_STATUSES: EventStatus[] = ['draft', 'published', 'cancelled', 'past'];
@@ -112,6 +113,19 @@ class EventController implements IEventController {
         this.logger.info('All events data fetched successfully');
         res.render('events/index', { data: result.value, session });
     }
+
+    async searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void> {
+        const result = await this.service.getEventsBySearch(query);
+        if (!result.ok) {
+            this.logger.error(`Error searching events with query "${query}": ${result.value.message}`);
+            res.status(500).send('Error searching events');
+            return;
+        }
+        res.status(200);
+        this.logger.info(`Events found for query "${query}": ${result.value.length}`);
+        res.render('events/search', { data: result.value, session, query });
+    }
+
 
     async handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>): Promise<void> {
         const organizerId = session.authenticatedUser?.userId ?? '';
