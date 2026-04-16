@@ -49,4 +49,25 @@ export class CommentController implements ICommentController {
       user: session.authenticatedUser,
     });
   }
+
+  async deleteComment(res: Response, commentId: number, session: IAppBrowserSession): Promise<void> {
+    if (!session.authenticatedUser) {
+      res.status(401).send("Unauthorized");
+      return;
+    }
+
+    const result = await this.service.deleteComment(commentId, {userId: session.authenticatedUser.userId, displayName: session.authenticatedUser.displayName, role: session.authenticatedUser.role});
+
+    if (!result.ok) {
+      const status =
+        result.value.name === "Forbidden" ? 403 :
+        result.value.name === "CommentNotFound" ? 404 :
+        400;
+
+      this.logger.warn(result.value.message);
+      res.status(status).send(result.value.message);
+      return;
+    }
+    res.status(204).send();
+  }
 }
