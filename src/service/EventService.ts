@@ -132,12 +132,11 @@ class EventService implements IEventService {
   }
 
   async getUserEvents(userId: string): Promise<Result<IEvent[], EventError>> {
-    const allEventsResult = await this.repo.getAllEvents();
-    if (allEventsResult.ok === false) {
-      return Err(UnexpectedRepositoryError(allEventsResult.value.message));
+    const userEvents = await this.repo.getEventsByOrganizerId(userId);
+    if (userEvents.ok === false) {
+      return Err(UnexpectedRepositoryError(userEvents.value.message));
     }
-    const userEvents = allEventsResult.value.filter(event => event.organizerId === userId);
-    return Ok(userEvents);
+    return Ok(userEvents.value);
   }
 
   async getEventByID(id: number): Promise<Result<IEvent, EventError>> {
