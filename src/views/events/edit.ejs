@@ -1,102 +1,133 @@
-<section class="page">
-  <h1>Edit Event</h1>
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+  <h1 class="text-3xl font-bold text-slate-900 mb-3">
+    Edit: <%= formData.title %>
+  </h1>
+  <p class="text-slate-500">
+    Update event details and save your changes.
+  </p>
+</section>
 
-  <% if (typeof pageError === "string" && pageError.length > 0) { %>
-    <div class="error-banner">
-      <p><%= pageError %></p>
-    </div>
-  <% } %>
+<% if (pageError) { %>
+  <%- include("../partials/error", { message: pageError }) %>
+<% } %>
 
-  <form method="POST" action="/events/<%= eventId %>/edit" class="event-form">
-    <div class="form-row">
-      <label for="title">Title</label>
-      <input
-        id="title"
-        name="title"
-        type="text"
-        value="<%= formData.title %>"
-        required
-      />
-    </div>
+<section class="max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <form method="POST" action="/events/<%= eventId %>/edit">
+    <div class="space-y-6">
 
-    <div class="form-row">
-      <label for="category">Category</label>
-      <input
-        id="category"
-        name="category"
-        type="text"
-        value="<%= formData.category %>"
-        required
-      />
-    </div>
+      <div>
+        <h2 class="text-xl font-semibold mb-4">Event Information</h2>
 
-    <div class="form-row">
-      <label for="location">Location</label>
-      <input
-        id="location"
-        name="location"
-        type="text"
-        value="<%= formData.location %>"
-        required
-      />
-    </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-    <div class="form-row">
-      <label for="description">Description</label>
-      <textarea
-        id="description"
-        name="description"
-        rows="5"
-        required
-      ><%= formData.description %></textarea>
-    </div>
+          <div>
+            <label class="text-sm font-medium text-slate-500">Category</label>
+            <input
+              type="text"
+              name="category"
+              value="<%= formData.category %>"
+              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+              required
+            />
+          </div>
 
-    <div class="form-row">
-      <label for="status">Status</label>
-      <select id="status" name="status" required>
-        <option value="draft" <%= formData.status === "draft" ? "selected" : "" %>>Draft</option>
-        <option value="published" <%= formData.status === "published" ? "selected" : "" %>>Published</option>
-        <option value="cancelled" <%= formData.status === "cancelled" ? "selected" : "" %>>Cancelled</option>
-        <option value="past" <%= formData.status === "past" ? "selected" : "" %>>Past</option>
-      </select>
-    </div>
+          <div>
+            <label class="text-sm font-medium text-slate-500">Status</label>
+            <select
+              name="status"
+              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+            >
+              <option value="draft" <%= formData.status === "draft" ? "selected" : "" %>>Draft</option>
+              <option value="published" <%= formData.status === "published" ? "selected" : "" %>>Published</option>
+              <option value="cancelled" <%= formData.status === "cancelled" ? "selected" : "" %>>Cancelled</option>
+              <option value="past" <%= formData.status === "past" ? "selected" : "" %>>Past</option>
+            </select>
+          </div>
 
-    <div class="form-row">
-      <label for="capacity">Capacity</label>
-      <input
-        id="capacity"
-        name="capacity"
-        type="number"
-        min="1"
-        value="<%= formData.capacity %>"
-      />
-    </div>
+          <div>
+            <label class="text-sm font-medium text-slate-500">Location</label>
+            <input
+              type="text"
+              name="location"
+              value="<%= formData.location %>"
+              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+              required
+            />
+          </div>
 
-    <div class="form-row">
-      <label for="startDatetime">Start</label>
-      <input
-        id="startDatetime"
-        name="startDatetime"
-        type="datetime-local"
-        value="<%= formData.startDatetime %>"
-        required
-      />
-    </div>
+          <div>
+            <label class="text-sm font-medium text-slate-500">Capacity</label>
+            <input
+              type="number"
+              name="capacity"
+              min="1"
+              value="<%= formData.capacity %>"
+              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+            />
+          </div>
 
-    <div class="form-row">
-      <label for="endDatetime">End</label>
-      <input
-        id="endDatetime"
-        name="endDatetime"
-        type="datetime-local"
-        value="<%= formData.endDatetime %>"
-        required
-      />
-    </div>
+          <div>
+            <label class="text-sm font-medium text-slate-500">Start Time</label>
+            <input
+              type="datetime-local"
+              name="startDatetime"
+              value="<%= formData.startDatetime %>"
+              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+              required
+            />
+          </div>
 
-    <div class="form-actions">
-      <button type="submit">Save Changes</button>
-      <a href="/events/<%= eventId %>">Cancel</a>
+          <div>
+            <label class="text-sm font-medium text-slate-500">End Time</label>
+            <input
+              type="datetime-local"
+              name="endDatetime"
+              value="<%= formData.endDatetime %>"
+              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+              required
+            />
+          </div>
+
+        </div>
+      </div>
+
+      <div>
+        <label class="text-sm font-medium text-slate-500">Title</label>
+        <input
+          type="text"
+          name="title"
+          value="<%= formData.title %>"
+          class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+          required
+        />
+      </div>
+
+      <div>
+        <label class="text-sm font-medium text-slate-500">Description</label>
+        <textarea
+          name="description"
+          rows="4"
+          class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+          required
+        ><%= formData.description %></textarea>
+      </div>
+
+      <div class="flex gap-4">
+        <button
+          type="submit"
+          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Save Changes
+        </button>
+
+        <a
+          href="/events/<%= eventId %>"
+          class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+        >
+          Cancel
+        </a>
+      </div>
+
     </div>
   </form>
 </section>

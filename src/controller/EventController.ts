@@ -181,35 +181,35 @@ class EventController implements IEventController {
         String(currentUser.role ?? ""),
         );
 
-        if (!result.ok) {
-        const status = this.mapErrorStatus(result.value);
-        const log = status >= 500 ? this.logger.error : this.logger.warn;
-        log.call(this.logger, `Show edit form failed for event ${eventId}: ${result.value.message}`);
+        if (result.ok === false) {
+            const status = this.mapErrorStatus(result.value);
+            const log = status >= 500 ? this.logger.error : this.logger.warn;
+            log.call(this.logger, `Show edit form failed for event ${eventId}: ${result.value.message}`);
 
-        if (status === 404) {
-            res.status(status).render("partials/error", {
-            message: result.value.message,
-            layout: false,
+            if (status === 404) {
+                res.status(status).render("partials/error", {
+                message: result.value.message,
+                layout: false,
+                });
+                return;
+            }
+
+            res.status(status).render("events/edit", {
+                session,
+                eventId,
+                pageError: result.value.message,
+                formData: {
+                title: "",
+                category: "",
+                location: "",
+                description: "",
+                status: "draft",
+                capacity: "",
+                startDatetime: "",
+                endDatetime: "",
+                },
             });
             return;
-        }
-
-        res.status(status).render("events/edit", {
-            session,
-            eventId,
-            pageError: result.value.message,
-            formData: {
-            title: "",
-            category: "",
-            location: "",
-            description: "",
-            status: "draft",
-            capacity: "",
-            startDatetime: "",
-            endDatetime: "",
-            },
-        });
-        return;
         }
 
         this.logger.info(`Editable event ${eventId} loaded successfully`);
@@ -242,26 +242,26 @@ class EventController implements IEventController {
         input,
         );
 
-        if (!result.ok) {
-        const status = this.mapErrorStatus(result.value);
-        const log = status >= 500 ? this.logger.error : this.logger.warn;
-        log.call(this.logger, `Update event failed for id ${eventId}: ${result.value.message}`);
+        if (result.ok === false) {
+            const status = this.mapErrorStatus(result.value);
+            const log = status >= 500 ? this.logger.error : this.logger.warn;
+            log.call(this.logger, `Update event failed for id ${eventId}: ${result.value.message}`);
 
-        if (status === 404) {
-            res.status(status).render("partials/error", {
-            message: result.value.message,
-            layout: false,
+            if (status === 404) {
+                res.status(status).render("partials/error", {
+                message: result.value.message,
+                layout: false,
+                });
+                return;
+            }
+
+            res.status(status).render("events/edit", {
+                session,
+                eventId,
+                pageError: result.value.message,
+                formData: form,
             });
             return;
-        }
-
-        res.status(status).render("events/edit", {
-            session,
-            eventId,
-            pageError: result.value.message,
-            formData: form,
-        });
-        return;
         }
 
         this.logger.info(`Event ${eventId} updated successfully`);
