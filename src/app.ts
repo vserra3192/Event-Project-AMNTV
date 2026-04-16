@@ -391,6 +391,21 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/events/search",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        const searchQuery = typeof req.query.q === "string" ? req.query.q.trim() : "";
+        this.logger.info(`GET /events/search?q=${searchQuery} for ${browserSession.browserLabel}`);
+
+        await this.eventController.searchEvents(res, browserSession, searchQuery);
+      }),
+    );
+
+    this.app.get(
       '/events/:id',
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
@@ -444,21 +459,6 @@ class ExpressApp implements IApp {
         this.logger.info(`POST /comments/${commentId}/delete`);
 
         await this.commentController.deleteComment(res, commentId, session);
-      }),
-    );
-
-    this.app.get(
-      "/events/search",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
-
-        const browserSession = recordPageView(sessionStore(req));
-        const searchQuery = typeof req.query.q === "string" ? req.query.q.trim() : "";
-        this.logger.info(`GET /events/search?q=${searchQuery} for ${browserSession.browserLabel}`);
-
-        await this.eventController.searchEvents(res, browserSession, searchQuery);
       }),
     );
 
