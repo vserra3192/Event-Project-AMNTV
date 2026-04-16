@@ -130,6 +130,30 @@ class InMemoryEventRepository implements IEventRepository {
       return Err(UnexpectedRepositoryError('Failed to update event.'));
     }
   }
+
+  async updateEventStatus(id: number, status: EventStatus): Promise<Result<IEvent, EventError>> {
+    try {
+      if (!Number.isInteger(id) || id < 1) {
+        return Err(InvalidId(`${id} is not a valid event id.`));
+      }
+
+      const existing = this.events.get(id) ?? null;
+      if (existing === null) {
+        return Err(EventNotFound(`Event with id ${id} was not found.`));
+      }
+
+      const updated: IEvent = {
+        ...existing,
+        status,
+        updatedAt: new Date(),
+      };
+
+      this.events.set(id, updated);
+      return Ok(updated);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to update event status.'));
+    }
+  }
 }
 
 export function CreateInMemoryEventRepository(): IEventRepository {
