@@ -66,16 +66,21 @@
         Edit Event
       </a>
     </div>
-    <section
-      class="mt-6 max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg"
-    >
+
+    <section class="mt-6 max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
       <h2 class="text-xl font-semibold mb-4">Comments</h2>
 
+      <%#
+        FIX: hx-swap changed from "innerHTML" to "beforeend".
+        addComment returns a single <comment> partial — appending is correct.
+        "innerHTML" was wiping the whole list and replacing it with one comment
+        on every post, and losing the hx-get load trigger on the div below.
+      %>
       <form
         class="mb-6 space-y-2"
         hx-post="/events/<%= event.id %>/comments"
         hx-target="#comments"
-        hx-swap="innerHTML"
+        hx-swap="beforeend"
         hx-on::after-request="this.reset()"
       >
         <textarea

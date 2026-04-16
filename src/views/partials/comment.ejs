@@ -3,7 +3,7 @@
   <div class="flex justify-between items-center text-sm text-gray-600">
     <div>
       <strong>
-        <%= comment.displayName || "Unknown User" %>
+        <%= (user && user.displayName) ? user.displayName : "User" %>
       </strong>
       ·
       <span>
