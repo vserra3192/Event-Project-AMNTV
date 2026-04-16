@@ -119,7 +119,7 @@ class EventController implements IEventController {
 
     async searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void> {
         const result = await this.service.getEventsBySearch(query);
-        if (!result.ok) {
+        if (result.ok === false) {
             this.logger.error(`Error searching events with query "${query}": ${result.value.message}`);
             res.status(500).send('Error searching events');
             return;
