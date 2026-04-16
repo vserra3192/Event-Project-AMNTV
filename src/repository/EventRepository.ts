@@ -47,6 +47,7 @@ export interface IEventRepository {
   getAllEvents(): Promise<Result<IEvent[], EventError>>;
   updateEvent(id: number, input: UpdateEventInput): Promise<Result<IEvent, EventError>>;
   updateEventStatus(id: number, status: EventStatus): Promise<Result<IEvent, EventError>>;
+  getEventBySearch(query: string): Promise<Result<IEvent[], EventError>>;
 }
 
 class InMemoryEventRepository implements IEventRepository {
@@ -155,6 +156,20 @@ class InMemoryEventRepository implements IEventRepository {
       return Err(UnexpectedRepositoryError('Failed to update event status.'));
     }
   }
+
+  async getEventBySearch(query: string): Promise<Result<IEvent[], EventError>> {
+    try {
+      const results = [...this.events.values()].filter(event => 
+        event.title.toLowerCase().includes(query.toLowerCase()) ||
+        event.description.toLowerCase().includes(query.toLowerCase()) ||
+        event.location.toLowerCase().includes(query.toLowerCase())
+      );
+      return Ok(results);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to search events.'));
+    }
+  }
+
 }
 
 export function CreateInMemoryEventRepository(): IEventRepository {
