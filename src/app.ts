@@ -173,17 +173,49 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
-      "/Event/:id/Edit",
+      "/events/:id/edit",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
           return;
         }
 
         const browserSession = recordPageView(sessionStore(req));
-        await this.eventController.showEventEdit(res, browserSession, Number(req.params.id));
-      }
-        
-    ));
+        await this.eventController.showEventEdit(
+          res,
+          browserSession,
+          Number(req.params.id),
+        );
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        await this.eventController.submitEventEdit(
+          res,
+          browserSession,
+          Number(req.params.id),
+          {
+            title: typeof req.body.title === "string" ? req.body.title : "",
+            category: typeof req.body.category === "string" ? req.body.category : "",
+            location: typeof req.body.location === "string" ? req.body.location : "",
+            description:
+              typeof req.body.description === "string" ? req.body.description : "",
+            status: typeof req.body.status === "string" ? req.body.status : "draft",
+            capacity: typeof req.body.capacity === "string" ? req.body.capacity : "",
+            startDatetime:
+              typeof req.body.startDatetime === "string" ? req.body.startDatetime : "",
+            endDatetime:
+              typeof req.body.endDatetime === "string" ? req.body.endDatetime : "",
+          },
+        );
+      }),
+    );
 
     // ── Admin routes ─────────────────────────────────────────────────
 
