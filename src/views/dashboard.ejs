@@ -56,6 +56,20 @@
               </p>
             </div>
           </div>
+          <div class="flex gap-2 mt-2">
+            <a
+              href="/events/<%= event.id %>"
+              class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+            >
+              View Details
+            </a>
+            <a
+              href="/events/<%= event.id %>/edit"
+              class="px-3 py-1 bg-slate-600 text-white text-sm rounded hover:bg-slate-700"
+            >
+              Edit Event
+            </a>
+          </div>
         </li>
       <% }) %>
     </ul>

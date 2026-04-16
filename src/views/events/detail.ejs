@@ -59,16 +59,18 @@
       >
         Return Home
       </a>
-      <a
-        href="/events/<%= event.id %>/edit"
-        class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
-      >
-        Edit Event
-      </a>
-
       <% const currentUser = session?.authenticatedUser; %>
       <% const isAdmin = currentUser?.role === "admin"; %>
       <% const isStaffOwner = currentUser?.role === "staff" && currentUser?.userId === event.organizerId; %>
+
+      <% if (isStaffOwner || isAdmin) { %>
+        <a
+          href="/events/<%= event.id %>/edit"
+          class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+        >
+          Edit Event
+        </a>
+      <% } %>
 
       <% if (event.status === "draft" && isStaffOwner) { %>
         <form method="POST" action="/events/<%= event.id %>/publish" class="inline">
