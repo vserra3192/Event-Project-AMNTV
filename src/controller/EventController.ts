@@ -23,6 +23,8 @@ export interface IEventController {
     showEventDetail(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     submitEventEdit(res: Response, session: IAppBrowserSession, eventId: number, form: IEditEventForm): Promise<void>;
+    handlePublishEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
+    handleCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showUserEvents(res: Response, session: IAppBrowserSession): Promise<void>;
 }
 
@@ -279,6 +281,86 @@ class EventController implements IEventController {
         this.logger.info(`Fetched ${result.value.length} events for user ${userId}`);
         res.status(200).render('events/my-events', { data: result.value, session, pageError: null });
     }
+    
+    async handlePublishEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+        const currentUser = session.authenticatedUser;
+        if (!currentUser) {
+          this.logger.warn("Blocked publish for unauthenticated user");
+          res.status(401).render("partials/error", {
+            message: "Please log in to continue.",
+            layout: false,
+          });
+          return;
+        }
+    
+        const result = await this.service.publishEvent(eventId, currentUser.userId, String(currentUser.role ?? ""));
+        if (result.ok === false) {
+          const status = this.mapErrorStatus(result.value);
+          this.logger.warn(`Publish failed for event ${eventId}: ${result.value.message}`);
+    
+          const eventResult = await this.service.getEventByID(eventId);
+          if (eventResult.ok === false) {
+            res.status(status).render("partials/error", {
+              message: result.value.message,
+              layout: false,
+            });
+            return;
+          }
+    
+          res.status(status).render("events/detail", {
+            event: eventResult.value,
+            session,
+            pageError: result.value.message,
+          });
+          return;
+        }
+    
+        this.logger.info(`Event ${eventId} published successfully`);
+        res.redirect(`/events/${result.value.id}`);
+    }
+    
+    async handleCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+        const currentUser = session.authenticatedUser;
+        if (!currentUser) {
+          this.logger.warn("Blocked cancel for unauthenticated user");
+          res.status(401).render("partials/error", {
+            message: "Please log in to continue.",
+            layout: false,
+          });
+          return;
+        }
+    
+        const result = await this.service.cancelEvent(
+          eventId,
+          currentUser.userId,
+          String(currentUser.role ?? ""),
+        );
+    
+        if (result.ok === false) {
+          const status = this.mapErrorStatus(result.value);
+          this.logger.warn(`Cancel failed for event ${eventId}: ${result.value.message}`);
+    
+          const eventResult = await this.service.getEventByID(eventId);
+          if (eventResult.ok === false) {
+            res.status(status).render("partials/error", {
+              message: result.value.message,
+              layout: false,
+            });
+            return;
+          }
+    
+          res.status(status).render("events/detail", {
+            event: eventResult.value,
+            session,
+            pageError: result.value.message,
+          });
+          return;
+        }
+    
+        this.logger.info(`Event ${eventId} cancelled successfully`);
+        res.redirect(`/events/${result.value.id}`);
+    }
+
 }
 
 export function CreateController(service: IEventService, logger: ILoggingService): IEventController {
