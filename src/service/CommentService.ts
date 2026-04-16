@@ -57,4 +57,34 @@ export class CommentService implements ICommentService {
 
     return Ok(result.value);
   }
+
+  async deleteComment(commentId: number, actor: User): Promise<Result<void, CommentServiceError>> {
+    if (!Number.isInteger(commentId) || commentId <= 0) {
+      return Err(CommentNotFound("Invalid Id"));
+    }
+
+    const commentResult = await this.repo.getCommentById(commentId);
+
+    if (!commentResult.ok) {
+      return Err(commentResult.value);
+    }
+
+    const comment = commentResult.value;
+    const isAuthor = comment.userId === actor.userId;
+    const isAdmin = actor.role === 'admin';
+
+    if (!isAuthor && !isAdmin) {
+      return Err(
+        Forbidden('You are not allowed to delete this comment')
+      );
+    }
+
+    const deleteResult = await this.repo.deleteComment(commentId);
+
+    if (!deleteResult.ok) {
+      return Err(deleteResult.value);
+    }
+
+    return Ok(undefined);
+  }
 }
