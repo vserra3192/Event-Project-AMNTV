@@ -16,9 +16,16 @@ export class CommentController implements ICommentController {
   ) {}
 
   private mapErrorToStatus(name: string): number {
-    if (name === "Forbidden") return 403;
-    if (name === "CommentNotFound") return 404;
-    return 400;
+    switch (name) {
+      case "Forbidden":
+        return 403;
+      case "CommentNotFound":
+        return 404;
+      case "InvalidContent":
+        return 400;
+      default:
+        return 500;
+    }
   }
 
   async getComments(res: Response, eventId: number, session: IAppBrowserSession): Promise<void> {
