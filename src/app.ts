@@ -381,6 +381,16 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/events/archive",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const session = recordPageView(sessionStore(req));
+        await this.eventController.showArchivedEvents(res, session);
+      }),
+    );
+
+    this.app.get(
       '/events/:id',
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
@@ -454,16 +464,6 @@ class ExpressApp implements IApp {
             ? `Search for "${searchQuery}" is not yet implemented. Add a search handler in the event dashboard feature.`
             : "Please provide a search query using ?q=your+search+terms.",
         });
-      }),
-    );
-
-    this.app.get(
-      "/events/archive",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-
-        const session = recordPageView(sessionStore(req));
-        await this.eventController.showArchivedEvents(res, session);
       }),
     );
 
