@@ -29,6 +29,7 @@ export interface IEventController {
     handleCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showUserEvents(res: Response, session: IAppBrowserSession): Promise<void>;
     searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
+    searchEventsPartial(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
     showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void>;
 }
 
@@ -161,6 +162,18 @@ class EventController implements IEventController {
         res.status(200);
         this.logger.info(`Events found for query "${query}": ${result.value.length}`);
         res.render('events/search', { data: result.value, session, query });
+    }
+
+    async searchEventsPartial(res: Response, session: IAppBrowserSession, query: string): Promise<void> {
+        const result = await this.service.getEventsBySearch(query);
+        if (result.ok === false) {
+            this.logger.error(`Error searching events with query "${query}": ${result.value.message}`);
+            res.status(500).send('Error searching events partial');
+            return;
+        }
+        res.status(200);
+        this.logger.info(`Events found for query "${query}": ${result.value.length}`);
+        res.render('events/partials/search-results-page', { data: result.value, session, query, layout: false });
     }
 
 
