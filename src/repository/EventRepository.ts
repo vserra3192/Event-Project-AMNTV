@@ -36,6 +36,7 @@ export interface IEventRepository {
   getAllEvents(): Promise<Result<IEvent[], EventError>>;
   updateEventTitle(id: number, title: string): Promise<Result<IEvent, EventError>>;
   getEventBySearch(query: string): Promise<Result<IEvent[], EventError>>;
+  getEventsByOrganizerId(organizerId: string): Promise<Result<IEvent[], EventError>>;
 }
 
 class InMemoryEventRepository implements IEventRepository {
@@ -88,7 +89,16 @@ class InMemoryEventRepository implements IEventRepository {
       return Err(UnexpectedRepositoryError('Failed to list events.'));
     }
   }
- 
+
+  async getEventsByOrganizerId(organizerId: string): Promise<Result<IEvent[], EventError>> {
+    try {
+      const events = [...this.events.values()].filter(event => event.organizerId === organizerId);
+      return Ok(events);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to fetch events by organizer id.'));
+    }
+  }
+
   async updateEventTitle(id: number, title: string): Promise<Result<IEvent, EventError>> {
     try {
       const existing = this.events.get(id) ?? null;
