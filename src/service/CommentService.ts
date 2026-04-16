@@ -25,9 +25,7 @@ export interface ICommentService {
 export class CommentService implements ICommentService {
   constructor(private readonly repo: ICommentRepository) {}
 
-  async getCommentsByEventId(
-    eventId: number
-  ): Promise<Result<IComment[], CommentServiceError>> {
+  async getCommentsByEventId(eventId: number): Promise<Result<IComment[], CommentServiceError>> {
     if (!Number.isInteger(eventId) || eventId <= 0) {
       return Err(CommentNotFound("Invalid Id"));
     }
@@ -41,5 +39,22 @@ export class CommentService implements ICommentService {
     return Ok(result.value);
   }
 
+  async addComment(eventId: number, content: string, actor: User): Promise<Result<IComment, CommentServiceError>> {
+    if (!Number.isInteger(eventId) || eventId <= 0) {
+      return Err(CommentNotFound("Invalid Id"));
+    }
 
+    if (!content || content.trim().length === 0) {
+      return Err(InvalidContent("Content cannot be empty."));
+    }
+
+    const input = {eventId, userId: actor.userId, content: content.trim(),};
+    const result = await this.repo.createComment(input as any);
+
+    if (!result.ok) {
+      return Err(result.value);
+    }
+
+    return Ok(result.value);
+  }
 }
