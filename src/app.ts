@@ -18,6 +18,7 @@ import {
   touchAppSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
+import { ICommentController } from "./controller/CommentController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -37,6 +38,7 @@ class ExpressApp implements IApp {
   constructor(
     private readonly authController: IAuthController,
     private readonly eventController: IEventController,
+    private readonly commentController: ICommentController,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -356,6 +358,53 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Event Comments ─────────────────────────────────────────
+
+    this.app.get(
+      "/events/:id/comments",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const eventId = Number(req.params.id);
+        const session = touchAppSession(sessionStore(req));
+
+        this.logger.info(`GET /events/${eventId}/comments`);
+
+        await this.commentController.getComments(res, eventId, session);
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/comments",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const eventId = Number(req.params.id);
+        const content =
+          typeof req.body.content === "string" ? req.body.content : "";
+
+        const session = touchAppSession(sessionStore(req));
+
+        this.logger.info(`POST /events/${eventId}/comments`);
+
+        await this.commentController.addComment(res, eventId, content, session);
+      }),
+    );
+
+    this.app.post(
+      "/comments/:id/delete",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const commentId = Number(req.params.id);
+        const session = touchAppSession(sessionStore(req));
+
+        this.logger.info(`POST /comments/${commentId}/delete`);
+
+        await this.commentController.deleteComment(res, commentId, session);
+      }),
+    );
+
     this.app.get(
       "/events/search",
       asyncHandler(async (req, res) => {
@@ -396,7 +445,8 @@ class ExpressApp implements IApp {
 export function CreateApp(
   authController: IAuthController,
   eventController: IEventController,
+  commentController: ICommentController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, eventController, logger);
+  return new ExpressApp(authController, eventController, commentController, logger);
 }
