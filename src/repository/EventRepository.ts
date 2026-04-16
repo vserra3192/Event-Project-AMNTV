@@ -102,6 +102,15 @@ class InMemoryEventRepository implements IEventRepository {
     }
   }
 
+  async getEventsByOrganizerId(organizerId: string): Promise<Result<IEvent[], EventError>> {
+    try {
+      const events = [...this.events.values()].filter(event => event.organizerId === organizerId);
+      return Ok(events);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to fetch events by organizer id.'));
+    }
+  }
+
   async updateEvent(id: number, input: UpdateEventInput): Promise<Result<IEvent, EventError>> {
     try {
       if (!Number.isInteger(id) || id < 1) {
