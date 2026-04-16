@@ -19,6 +19,7 @@ export interface IEditEventForm {
 
 export interface IEventController {
     showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
+    showDashboardEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void>;
     showAllEvents(res: Response, session: IAppBrowserSession): Promise<void>;
     showEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void>;
     handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>): Promise<void>;
@@ -94,7 +95,8 @@ class EventController implements IEventController {
     }
 
     async showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
-        const result = await this.service.getUserEvents(session.authenticatedUser?.userId ?? '');
+        await this.service.archiveExpiredEvents();
+        const result = await this.service.getActiveUserEvents(session.authenticatedUser?.userId ?? '');
         if (!result.ok) {
             this.logger.error('Error fetching dashboard data');
             res.status(500).send('Error fetching dashboard data');
@@ -102,7 +104,28 @@ class EventController implements IEventController {
         }
         res.status(200);
         this.logger.info('Dashboard data fetched successfully');
-        res.render('dashboard', { data: result.value, session }); // will update this to send the actual data once we have it defined
+        res.render('dashboard', { data: result.value, session, isArchive: false });
+    }
+
+    async showDashboardEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void> {
+        await this.service.archiveExpiredEvents();
+        const currentUserId = session.authenticatedUser?.userId ?? '';
+        const result = isArchive
+            ? await this.service.getPastUserEvents(currentUserId)
+            : await this.service.getActiveUserEvents(currentUserId);
+
+        if (!result.ok) {
+            this.logger.error('Error fetching dashboard event list');
+            res.status(500).send('Error fetching dashboard event list');
+            return;
+        }
+
+        res.status(200).render('dashboard/partials/dashboard-events-list-page', {
+            data: result.value,
+            session,
+            isArchive,
+            layout: false,
+        });
     }
 
     private async renderEventsSection(

@@ -19,6 +19,8 @@ export interface IEventService {
   getAllEvents(): Promise<Result<IEvent[], EventError>>;
   getEventByID(id: number): Promise<Result<IEvent, EventError>>;
   getUserEvents(userId: string): Promise<Result<IEvent[], EventError>>;
+  getActiveUserEvents(userId: string): Promise<Result<IEvent[], EventError>>;
+  getPastUserEvents(userId: string): Promise<Result<IEvent[], EventError>>;
   getEditableEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
   updateEvent(eventId: number, actingUserId: string, actingUserRole: string, input: CreateEventServiceInput): Promise<Result<IEvent, EventError>>;
   publishEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
@@ -134,6 +136,22 @@ class EventService implements IEventService {
 
   async getUserEvents(userId: string): Promise<Result<IEvent[], EventError>> {
     const userEvents = await this.repo.getEventsByOrganizerId(userId);
+    if (userEvents.ok === false) {
+      return Err(UnexpectedRepositoryError(userEvents.value.message));
+    }
+    return Ok(userEvents.value);
+  }
+
+  async getActiveUserEvents(userId: string): Promise<Result<IEvent[], EventError>> {
+    const userEvents = await this.repo.getActiveUserEvents(userId);
+    if (userEvents.ok === false) {
+      return Err(UnexpectedRepositoryError(userEvents.value.message));
+    }
+    return Ok(userEvents.value);
+  }
+
+  async getPastUserEvents(userId: string): Promise<Result<IEvent[], EventError>> {
+    const userEvents = await this.repo.getPastUserEvents(userId);
     if (userEvents.ok === false) {
       return Err(UnexpectedRepositoryError(userEvents.value.message));
     }
