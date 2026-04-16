@@ -65,6 +65,32 @@
       >
         Edit Event
       </a>
+
+      <% const currentUser = session?.authenticatedUser; %>
+      <% const isAdmin = currentUser?.role === "admin"; %>
+      <% const isStaffOwner = currentUser?.role === "staff" && currentUser?.userId === event.organizerId; %>
+
+      <% if (event.status === "draft" && isStaffOwner) { %>
+        <form method="POST" action="/events/<%= event.id %>/publish" class="inline">
+          <button
+            type="submit"
+            class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            Publish Event
+          </button>
+        </form>
+      <% } %>
+
+      <% if (event.status === "published" && (isStaffOwner || isAdmin)) { %>
+        <form method="POST" action="/events/<%= event.id %>/cancel" class="inline">
+          <button
+            type="submit"
+            class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            Cancel Event
+          </button>
+        </form>
+      <% } %>
     </div>
   </div>
 </section>
