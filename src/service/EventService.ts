@@ -190,8 +190,8 @@ class EventService implements IEventService {
     }
 
     const validationResult = this.validateEventInput(input);
-    if (!validationResult.ok) {
-      return validationResult;
+    if (validationResult.ok === false) {
+      return Err(validationResult.value);
     }
 
     return this.repo.updateEvent(eventId, {
