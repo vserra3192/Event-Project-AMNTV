@@ -103,6 +103,7 @@ class EventController implements IEventController {
     }
 
     async showAllEvents(res: Response, session: IAppBrowserSession): Promise<void> {
+        await this.service.archiveExpiredEvents();
         const result = await this.service.getAllEvents();
         if (!result.ok) {
             this.logger.error('Error fetching all events data');
@@ -111,7 +112,8 @@ class EventController implements IEventController {
         }
         res.status(200);
         this.logger.info('All events data fetched successfully');
-        res.render('events/index', { data: result.value, session });
+        res.render('events/index', { data: result.value, session, isArchive: false });
+        
     }
 
     async handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>): Promise<void> {
@@ -363,6 +365,7 @@ class EventController implements IEventController {
     }
 
     async showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void> {
+        await this.service.archiveExpiredEvents();
         const result = await this.service.getPastEvents();
 
         if (!result.ok) {
@@ -371,10 +374,7 @@ class EventController implements IEventController {
             return;
         }
 
-        res.status(200).render("events/archive", {
-            data: result.value,
-            session,
-        });
+        res.status(200).render("events/archive", {data: result.value, session, isArchive: true});
     }
 }
 
