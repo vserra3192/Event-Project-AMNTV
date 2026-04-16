@@ -66,6 +66,17 @@
         Edit Event
       </a>
 
+      <% if (event.status === "published") { %>
+        <form method="POST" action="/events/<%= event.id %>/rsvp" class="inline">
+          <button
+            type="submit"
+            class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            RSVP
+          </button>
+        </form>
+      <% } %>
+      
       <% const currentUser = session?.authenticatedUser; %>
       <% const isAdmin = currentUser?.role === "admin"; %>
       <% const isStaffOwner = currentUser?.role === "staff" && currentUser?.userId === event.organizerId; %>
