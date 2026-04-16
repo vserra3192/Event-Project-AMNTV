@@ -108,46 +108,46 @@ class EventService implements IEventService {
   }
 
   private validateEventInput(input: CreateEventServiceInput): Result<void, EventError> {
-  if (input.title.trim().length === 0) {
-    return Err({ name: "ValidationError", message: "Title is required." });
-  }
+    if (input.title.trim().length === 0) {
+      return Err(ValidationError("Title is required."));
+    }
 
-  if (input.description.trim().length === 0) {
-    return Err({ name: "ValidationError", message: "Description is required." });
-  }
+    if (input.description.trim().length === 0) {
+      return Err(ValidationError("Description is required."));
+    }
 
-  if (input.location.trim().length === 0) {
-    return Err({ name: "ValidationError", message: "Location is required." });
-  }
+    if (input.location.trim().length === 0) {
+      return Err(ValidationError("Location is required."));
+    }
 
-  if (input.category.trim().length === 0) {
-    return Err({ name: "ValidationError", message: "Category is required." });
-  }
+    if (input.category.trim().length === 0) {
+      return Err(ValidationError("Category is required."));
+    }
 
-  if (Number.isNaN(input.startDatetime.getTime())) {
-    return Err({ name: "ValidationError", message: "Start date/time is invalid." });
-  }
+    if (Number.isNaN(input.startDatetime.getTime())) {
+      return Err(ValidationError("Start date/time is invalid."));
+    }
 
-  if (Number.isNaN(input.endDatetime.getTime())) {
-    return Err({ name: "ValidationError", message: "End date/time is invalid." });
-  }
+    if (Number.isNaN(input.endDatetime.getTime())) {
+      return Err(ValidationError("End date/time is invalid."));
+    }
 
-  if (input.endDatetime <= input.startDatetime) {
-    return Err({
-      name: "ValidationError",
-      message: "End date/time must be after start date/time.",
-    });
-  }
+    if (input.endDatetime <= input.startDatetime) {
+      return Err({
+        name: "ValidationError",
+        message: "End date/time must be after start date/time.",
+      });
+    }
 
-  if (input.capacity !== null && input.capacity < 1) {
-    return Err({
-      name: "ValidationError",
-      message: "Capacity must be positive when provided.",
-    });
-  }
+    if (input.capacity !== null && input.capacity < 1) {
+      return Err({
+        name: "ValidationError",
+        message: "Capacity must be positive when provided.",
+      });
+    }
 
-  return Ok(undefined);
-}
+    return Ok(undefined);
+  }
 
   async getEditableEvent(eventId: number, actingUserId: string): Promise<Result<IEvent, EventError>> {
     if (!Number.isInteger(eventId) || eventId <= 0) {
