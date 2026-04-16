@@ -23,6 +23,7 @@ export interface IEventService {
   updateEvent(eventId: number, actingUserId: string, actingUserRole: string, input: CreateEventServiceInput): Promise<Result<IEvent, EventError>>;
   publishEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
   cancelEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
+  archiveExpiredEvents(): Promise<Result<number, EventError>>;
 }
 
 class EventService implements IEventService {
@@ -256,6 +257,35 @@ class EventService implements IEventService {
     return this.repo.updateEventStatus(eventId, "cancelled");
   }
 
+  async archiveExpiredEvents(): Promise<Result<number, EventError>> {
+    const now = new Date();
+
+    const result = await this.repo.getAllEvents();
+    if (!result.ok) {
+      return Err(UnexpectedRepositoryError(result.value.message));
+    }
+
+    let count = 0;
+
+    for (const event of result.value) {
+      const isExpired =
+        event.status !== "past" &&
+        event.endDatetime < now;
+
+      if (!isExpired) continue;
+
+      const updateResult = await this.repo.updateEventStatus(
+        event.id,
+        "past"
+      );
+
+      if (updateResult.ok) {
+        count++;
+      }
+    }
+
+    return Ok(count);
+  }
 }
 
 export function CreateEventService(repo: IEventRepository): IEventService {
