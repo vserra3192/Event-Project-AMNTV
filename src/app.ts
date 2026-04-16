@@ -458,12 +458,7 @@ class ExpressApp implements IApp {
         const searchQuery = typeof req.query.q === "string" ? req.query.q.trim() : "";
         this.logger.info(`GET /events/search?q=${searchQuery} for ${browserSession.browserLabel}`);
 
-        res.render("home", {
-          session: browserSession,
-          pageError: searchQuery
-            ? `Search for "${searchQuery}" is not yet implemented. Add a search handler in the event dashboard feature.`
-            : "Please provide a search query using ?q=your+search+terms.",
-        });
+        await this.eventController.searchEvents(res, browserSession, searchQuery);
       }),
     );
 
