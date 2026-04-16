@@ -19,8 +19,8 @@ export interface IEventService {
   getAllEvents(): Promise<Result<IEvent[], EventError>>;
   getEventByID(id: number): Promise<Result<IEvent, EventError>>;
   getUserEvents(userId: string): Promise<Result<IEvent[], EventError>>;
-  getEditableEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>
-  updateEvent(eventId: number, actingUserId: string, actingUserRole: string, input: CreateEventServiceInput): Promise<Result<IEvent, EventError>> {
+  getEditableEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
+  updateEvent(eventId: number, actingUserId: string, actingUserRole: string, input: CreateEventServiceInput): Promise<Result<IEvent, EventError>>;
 }
 
 class EventService implements IEventService {
@@ -147,11 +147,7 @@ class EventService implements IEventService {
   }
 
 
-  async getEditableEvent(
-    eventId: number,
-    actingUserId: string,
-    actingUserRole: string,
-  ): Promise<Result<IEvent, EventError>> {
+  async getEditableEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>> {
     if (!Number.isInteger(eventId) || eventId < 1) {
       return Err(InvalidId("ID must be a positive integer."));
     }
@@ -183,12 +179,7 @@ class EventService implements IEventService {
     return Ok(event);
   }
 
-  async updateEvent(
-    eventId: number,
-    actingUserId: string,
-    actingUserRole: string,
-    input: CreateEventServiceInput,
-  ): Promise<Result<IEvent, EventError>> {
+  async updateEvent(eventId: number, actingUserId: string, actingUserRole: string, input: CreateEventServiceInput): Promise<Result<IEvent, EventError>> {
     const editableEventResult = await this.getEditableEvent(
       eventId,
       actingUserId,
