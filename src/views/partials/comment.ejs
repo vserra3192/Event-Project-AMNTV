@@ -19,7 +19,7 @@
       )
     ) { %>
       <button
-        class="text-red-500 hover:underline text-xs"
+        class="text-red-500 hover:underline text-xs cursor-pointer"
         hx-post="/comments/<%= comment.id %>/delete"
         hx-target="#comment-<%= comment.id %>"
         hx-swap="outerHTML"
