@@ -391,6 +391,18 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/events/list",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const browserSession = recordPageView(sessionStore(req));
+        const isArchive = typeof req.query.type === "string" && req.query.type === "archive";
+        this.logger.info(`GET /events/list?type=${isArchive ? "archive" : "active"} for ${browserSession.browserLabel}`);
+        await this.eventController.showEventsList(res, browserSession, isArchive);
+      }),
+    );
+
+    this.app.get(
       "/events/search",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
