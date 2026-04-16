@@ -15,12 +15,19 @@ export class CommentController implements ICommentController {
     private readonly logger: ILoggingService,
   ) {}
 
+  private mapErrorToStatus(name: string): number {
+    if (name === "Forbidden") return 403;
+    if (name === "CommentNotFound") return 404;
+    return 400;
+  }
+
   async getComments(res: Response, eventId: number, session: IAppBrowserSession): Promise<void> {
     const result = await this.service.getCommentsByEventId(eventId);
 
     if (!result.ok) {
+      const status = this.mapErrorToStatus(result.value.name);
       this.logger.warn(result.value.message);
-      res.status(400).send(result.value.message);
+      res.status(status).send(result.value.message);
       return;
     }
 
@@ -36,11 +43,16 @@ export class CommentController implements ICommentController {
       return;
     }
 
-    const result = await this.service.addComment(eventId, content, {userId: session.authenticatedUser.userId, displayName: session.authenticatedUser.displayName, role: session.authenticatedUser.role});
+    const result = await this.service.addComment(eventId, content, {
+      userId: session.authenticatedUser.userId,
+      displayName: session.authenticatedUser.displayName,
+      role: session.authenticatedUser.role,
+    });
 
     if (!result.ok) {
+      const status = this.mapErrorToStatus(result.value.name);
       this.logger.warn(result.value.message);
-      res.status(400).send(result.value.message);
+      res.status(status).send(result.value.message);
       return;
     }
 
@@ -56,18 +68,19 @@ export class CommentController implements ICommentController {
       return;
     }
 
-    const result = await this.service.deleteComment(commentId, {userId: session.authenticatedUser.userId, displayName: session.authenticatedUser.displayName, role: session.authenticatedUser.role});
+    const result = await this.service.deleteComment(commentId, {
+      userId: session.authenticatedUser.userId,
+      displayName: session.authenticatedUser.displayName,
+      role: session.authenticatedUser.role,
+    });
 
     if (!result.ok) {
-      const status =
-        result.value.name === "Forbidden" ? 403 :
-        result.value.name === "CommentNotFound" ? 404 :
-        400;
-
+      const status = this.mapErrorToStatus(result.value.name);
       this.logger.warn(result.value.message);
       res.status(status).send(result.value.message);
       return;
     }
+
     res.status(204).send();
   }
 }
