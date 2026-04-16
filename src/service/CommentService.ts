@@ -17,6 +17,11 @@ export const Forbidden = (message: string): CommentServiceError => ({
   message,
 });
 
+export const InvalidId = (message: string) => ({
+  name: "InvalidId",
+  message,
+});
+
 export interface ICommentService {
   getCommentsByEventId(eventId: number): Promise<Result<IComment[], CommentServiceError>>;
   addComment(eventId: number, content: string, actor: User): Promise<Result<IComment, CommentServiceError>>;
@@ -34,7 +39,7 @@ export class CommentService implements ICommentService {
     const result = await this.repo.getCommentsByEventId(eventId);
 
     if (!result.ok) {
-      return Err(result.value);
+      return Err<CommentServiceError>(result.value);
     }
 
     return Ok(result.value);
@@ -52,7 +57,7 @@ export class CommentService implements ICommentService {
     const result = await this.repo.createComment({eventId, userId: actor.userId, content: content.trim()});
 
     if (!result.ok) {
-      return Err(result.value);
+      return Err<CommentServiceError>(result.value);
     }
 
     return Ok(result.value);
@@ -66,7 +71,7 @@ export class CommentService implements ICommentService {
     const commentResult = await this.repo.getCommentById(commentId);
 
     if (!commentResult.ok) {
-      return Err(commentResult.value);
+      return Err<CommentServiceError>(commentResult.value);
     }
 
     const comment = commentResult.value;
@@ -81,7 +86,7 @@ export class CommentService implements ICommentService {
     const deleteResult = await this.repo.deleteComment(commentId);
 
     if (!deleteResult.ok) {
-      return Err(deleteResult.value);
+      return Err<CommentServiceError>(deleteResult.value);
     }
 
     return Ok(undefined);
