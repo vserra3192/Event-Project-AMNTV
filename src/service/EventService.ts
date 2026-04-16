@@ -26,6 +26,7 @@ export interface IEventService {
   archiveExpiredEvents(): Promise<Result<number, EventError>>;
   getActiveEvents(): Promise<Result<IEvent[], EventError>>;
   getPastEvents(): Promise<Result<IEvent[], EventError>>;
+  getEventsBySearch(query: string): Promise<Result<IEvent[], EventError>>;
 }
 
 class EventService implements IEventService {
@@ -231,6 +232,14 @@ class EventService implements IEventService {
     }
 
     return this.repo.updateEventStatus(eventId, "published");
+  }
+
+  async getEventsBySearch(query: string): Promise<Result<IEvent[], EventError>> {
+    if (query.trim().length === 0) {
+      return Err(ValidationError("Search query cannot be empty."));
+    }
+
+    return this.repo.getEventBySearch(query);
   }
 
   async cancelEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>> {
