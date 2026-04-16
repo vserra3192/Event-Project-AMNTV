@@ -29,4 +29,24 @@ export class CommentController implements ICommentController {
       user: session.authenticatedUser,
     });
   }
+
+  async addComment(res: Response, eventId: number, content: string, session: IAppBrowserSession): Promise<void> {
+    if (!session.authenticatedUser) {
+      res.status(401).send("Unauthorized");
+      return;
+    }
+
+    const result = await this.service.addComment(eventId, content, {userId: session.authenticatedUser.userId, displayName: session.authenticatedUser.displayName, role: session.authenticatedUser.role});
+
+    if (!result.ok) {
+      this.logger.warn(result.value.message);
+      res.status(400).send(result.value.message);
+      return;
+    }
+
+    res.status(201).render("partials/comment", {
+      comment: result.value,
+      user: session.authenticatedUser,
+    });
+  }
 }
