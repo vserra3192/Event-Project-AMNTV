@@ -26,6 +26,7 @@ export interface IEventController {
     handlePublishEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     handleCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showUserEvents(res: Response, session: IAppBrowserSession): Promise<void>;
+    showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void>;
 }
 
 const VALID_STATUSES: EventStatus[] = ['draft', 'published', 'cancelled', 'past'];
@@ -361,6 +362,20 @@ class EventController implements IEventController {
         res.redirect(`/events/${result.value.id}`);
     }
 
+    async showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void> {
+        const result = await this.service.getPastEvents();
+
+        if (!result.ok) {
+            this.logger.error("Failed to load archive");
+            res.status(500).send("Failed to load archive");
+            return;
+        }
+
+        res.status(200).render("events/archive", {
+            data: result.value,
+            session,
+        });
+    }
 }
 
 export function CreateController(service: IEventService, logger: ILoggingService): IEventController {
