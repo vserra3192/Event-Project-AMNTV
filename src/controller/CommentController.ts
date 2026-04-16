@@ -34,8 +34,10 @@ export class CommentController implements ICommentController {
     if (!result.ok) {
       const error = result.value;
 
-      this.logger.warn(error.message);
-      res.status(this.mapErrorToStatus(error.name)).send(error.message);
+      const err = error as { name: string; message: string };
+
+      this.logger.warn(err.message);
+      res.status(this.mapErrorToStatus(err.name)).send(err.message);
       return;
     }
 
@@ -58,10 +60,10 @@ export class CommentController implements ICommentController {
     });
 
     if (!result.ok) {
-      const error = result.value;
+      const err = result.value as { name: string; message: string };
 
-      this.logger.warn(error.message);
-      res.status(this.mapErrorToStatus(error.name)).send(error.message);
+      this.logger.warn(err.message);
+      res.status(this.mapErrorToStatus(err.name)).send(err.message);
       return;
     }
 
@@ -92,10 +94,10 @@ export class CommentController implements ICommentController {
     });
 
     if (!result.ok) {
-      const error = result.value;
+      const err = result.value as { name: string; message: string };
 
-      this.logger.warn(error.message);
-      res.status(this.mapErrorToStatus(error.name)).send(error.message);
+      this.logger.warn(err.message);
+      res.status(this.mapErrorToStatus(err.name)).send(err.message);
       return;
     }
 

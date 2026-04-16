@@ -22,10 +22,15 @@ export const InvalidId = (message: string) => ({
   message,
 });
 
+
 export interface ICommentService {
   getCommentsByEventId(eventId: number): Promise<Result<IComment[], CommentServiceError>>;
   addComment(eventId: number, content: string, actor: User): Promise<Result<IComment, CommentServiceError>>;
   deleteComment(commentId: number, actor: User): Promise<Result<void, CommentServiceError>>;
+}
+
+function isCommentError(x: unknown): x is CommentError {
+  return typeof x === "object" && x !== null && "name" in x && "message" in x;
 }
 
 export class CommentService implements ICommentService {
@@ -39,7 +44,10 @@ export class CommentService implements ICommentService {
     const result = await this.repo.getCommentsByEventId(eventId);
 
     if (!result.ok) {
-      return Err<CommentServiceError>(result.value);
+      if (isCommentError(result.value)) {
+        return Err(result.value);
+      }
+      return Err(InvalidContent("Unknown repository error"));
     }
 
     return Ok(result.value);
@@ -57,7 +65,10 @@ export class CommentService implements ICommentService {
     const result = await this.repo.createComment({eventId, userId: actor.userId, content: content.trim()});
 
     if (!result.ok) {
-      return Err<CommentServiceError>(result.value);
+      if (isCommentError(result.value)) {
+        return Err(result.value);
+      }
+      return Err(InvalidContent("Unknown repository error"));
     }
 
     return Ok(result.value);
@@ -71,7 +82,10 @@ export class CommentService implements ICommentService {
     const commentResult = await this.repo.getCommentById(commentId);
 
     if (!commentResult.ok) {
-      return Err<CommentServiceError>(commentResult.value);
+      if (!isCommentError(commentResult.value)) {
+        return Err(InvalidContent("Unknown repository error"));
+      }
+      return Err(commentResult.value);
     }
 
     const comment = commentResult.value;
@@ -86,7 +100,10 @@ export class CommentService implements ICommentService {
     const deleteResult = await this.repo.deleteComment(commentId);
 
     if (!deleteResult.ok) {
-      return Err<CommentServiceError>(deleteResult.value);
+      if (!isCommentError(deleteResult.value)) {
+        return Err(InvalidContent("Unknown repository error"));
+      }
+      return Err(deleteResult.value);
     }
 
     return Ok(undefined);
