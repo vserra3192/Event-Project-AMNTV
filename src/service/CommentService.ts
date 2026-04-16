@@ -4,6 +4,7 @@ import {CommentError, IComment, ICommentRepository, CommentNotFound, InvalidCont
 
 export type User = {
   userId: string;
+  displayName: string;
   role: UserRole;
 };
 
