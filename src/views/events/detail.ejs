@@ -102,7 +102,7 @@
         class="mb-6 space-y-2"
         hx-post="/events/<%= event.id %>/comments"
         hx-target="#comments"
-        hx-swap="beforeend"
+        hx-swap="innerHTML"
         hx-on::after-request="this.reset()"
       >
         <textarea
@@ -125,8 +125,7 @@
         hx-get="/events/<%= event.id %>/comments"
         hx-trigger="load"
         hx-swap="innerHTML"
-      >
-      </div>
+      ></div>
     </section>
   </div>
 </section>

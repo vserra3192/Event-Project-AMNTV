@@ -493,11 +493,17 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) return;
 
         const commentId = Number(req.params.id);
+        const eventId = Number(req.query.eventId);
         const session = touchAppSession(sessionStore(req));
 
         this.logger.info(`POST /comments/${commentId}/delete`);
 
-        await this.commentController.deleteComment(res, commentId, session);
+        await this.commentController.deleteComment(
+          res,
+          eventId,
+          commentId,
+          session,
+        );
       }),
     );
 
