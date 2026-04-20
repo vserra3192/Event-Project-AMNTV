@@ -2,24 +2,14 @@
 
   <div class="flex justify-between items-center text-sm text-gray-600">
     <div>
-      <strong>
-        <%= (user && user.displayName) ? user.displayName : "User" %>
-      </strong>
+      <strong><%= comment.displayName %></strong>
       ·
-      <span>
-        <%= timeAgo(comment.createdAt) %>
-      </span>
+      <span><%= timeAgo(comment.createdAt) %></span>
     </div>
 
-    <% if (
-      user &&
-      (
-        user.userId === comment.userId ||
-        user.role === "admin"
-      )
-    ) { %>
+    <% if (user && (user.userId === comment.userId || user.role === "admin")) { %>
       <button
-        class="text-red-500 hover:underline text-xs"
+        class="text-red-500 hover:underline text-xs cursor-pointer"
         hx-post="/comments/<%= comment.id %>/delete"
         hx-target="#comment-<%= comment.id %>"
         hx-swap="outerHTML"
