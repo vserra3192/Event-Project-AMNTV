@@ -2,6 +2,7 @@ import type { Response } from "express";
 import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
 import type { ICommentService } from "../service/CommentService";
+import type { IAdminUserService } from "../auth/AdminUserService";
 
 export interface ICommentController {
   getComments(res: Response, eventId: number, session: IAppBrowserSession): Promise<void>;
@@ -19,10 +20,14 @@ function timeAgo(date: Date): string {
 
 function mapErrorToStatus(name: string): number {
   switch (name) {
-    case "Forbidden":       return 403;
-    case "CommentNotFound": return 404;
-    case "InvalidContent":  return 400;
-    default:                return 500;
+    case "Forbidden":
+      return 403;
+    case "CommentNotFound":
+      return 404;
+    case "InvalidContent":
+      return 400;
+    default:
+      return 500;
   }
 }
 
@@ -30,6 +35,7 @@ export class CommentController implements ICommentController {
   constructor(
     private readonly service: ICommentService,
     private readonly logger: ILoggingService,
+    private readonly users: IAdminUserService,
   ) {}
 
   async getComments(
@@ -46,8 +52,23 @@ export class CommentController implements ICommentController {
       return;
     }
 
+    const usersResult = await this.users.listUsers();
+
+    const usersMap = new Map(
+      usersResult.ok ? usersResult.value.map(u => [u.id, u]) : [],
+    );
+
+    const enrichedComments = result.value.map(comment => {
+      const user = usersMap.get(comment.userId);
+
+      return {
+        ...comment,
+        displayName: user?.displayName ?? "Unknown user",
+      };
+    });
+
     res.status(200).render("partials/comments", {
-      comments: result.value,
+      comments: enrichedComments,
       user: session.authenticatedUser,
       layout: false,
     });
