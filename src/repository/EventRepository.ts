@@ -45,8 +45,12 @@ export interface IEventRepository {
   createEvent(input: CreateEventInput): Promise<Result<IEvent, EventError>>;
   getEventById(id: number): Promise<Result<IEvent, EventError>>;
   getAllEvents(): Promise<Result<IEvent[], EventError>>;
+  getActiveUserEvents(organizerId: string): Promise<Result<IEvent[], EventError>>;
+  getPastUserEvents(organizerId: string): Promise<Result<IEvent[], EventError>>;
   updateEvent(id: number, input: UpdateEventInput): Promise<Result<IEvent, EventError>>;
   updateEventStatus(id: number, status: EventStatus): Promise<Result<IEvent, EventError>>;
+  getEventBySearch(query: string): Promise<Result<IEvent[], EventError>>;
+  getEventsByOrganizerId(organizerId: string): Promise<Result<IEvent[], EventError>>;
 }
 
 class InMemoryEventRepository implements IEventRepository {
@@ -97,6 +101,45 @@ class InMemoryEventRepository implements IEventRepository {
       return Ok([...this.events.values()]);
     } catch {
       return Err(UnexpectedRepositoryError('Failed to list events.'));
+    }
+  }
+
+  async getActiveUserEvents(organizerId: string): Promise<Result<IEvent[], EventError>> {
+    try {
+      const now = new Date();
+      const events = [...this.events.values()].filter(event => {
+        if (event.organizerId !== organizerId) return false;
+        const isPast = event.status === 'past' || event.endDatetime < now;
+        return !isPast;
+      });
+      return Ok(events);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to fetch active events for organizer.'));
+    }
+  }
+
+  async getPastUserEvents(organizerId: string): Promise<Result<IEvent[], EventError>> {
+    try {
+      const now = new Date();
+      const events = [...this.events.values()]
+        .filter(event => {
+          if (event.organizerId !== organizerId) return false;
+          const isPast = event.status === 'past' || event.endDatetime < now;
+          return isPast;
+        })
+        .sort((a, b) => b.endDatetime.getTime() - a.endDatetime.getTime());
+      return Ok(events);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to fetch past events for organizer.'));
+    }
+  }
+
+  async getEventsByOrganizerId(organizerId: string): Promise<Result<IEvent[], EventError>> {
+    try {
+      const events = [...this.events.values()].filter(event => event.organizerId === organizerId);
+      return Ok(events);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to fetch events by organizer id.'));
     }
   }
 
@@ -155,6 +198,20 @@ class InMemoryEventRepository implements IEventRepository {
       return Err(UnexpectedRepositoryError('Failed to update event status.'));
     }
   }
+
+  async getEventBySearch(query: string): Promise<Result<IEvent[], EventError>> {
+    try {
+      const results = [...this.events.values()].filter(event => 
+        event.title.toLowerCase().includes(query.toLowerCase()) ||
+        event.description.toLowerCase().includes(query.toLowerCase()) ||
+        event.location.toLowerCase().includes(query.toLowerCase())
+      );
+      return Ok(results);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to search events.'));
+    }
+  }
+
 }
 
 export function CreateInMemoryEventRepository(): IEventRepository {

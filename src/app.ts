@@ -361,6 +361,18 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/dashboard/list",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const browserSession = recordPageView(sessionStore(req));
+        const isArchive = typeof req.query.type === "string" && req.query.type === "archive";
+        this.logger.info(`GET /dashboard/list?type=${isArchive ? "archive" : "active"} for ${browserSession.browserLabel}`);
+        await this.eventController.showDashboardEventsList(res, browserSession, isArchive);
+      }),
+    );
+
+    this.app.get(
       '/events/new',
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
@@ -377,6 +389,58 @@ class ExpressApp implements IApp {
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`POST /events for ${browserSession.browserLabel}`);
         await this.eventController.handleCreateEvent(res, browserSession, req.body as Record<string, unknown>);
+      }),
+    );
+
+    this.app.get(
+      "/events/archive",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const session = recordPageView(sessionStore(req));
+        await this.eventController.showArchivedEvents(res, session);
+      }),
+    );
+
+    this.app.get(
+      "/events/list",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const browserSession = recordPageView(sessionStore(req));
+        const isArchive = typeof req.query.type === "string" && req.query.type === "archive";
+        this.logger.info(`GET /events/list?type=${isArchive ? "archive" : "active"} for ${browserSession.browserLabel}`);
+        await this.eventController.showEventsList(res, browserSession, isArchive);
+      }),
+    );
+
+    this.app.get(
+      "/events/search",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        const searchQuery = typeof req.query.q === "string" ? req.query.q.trim() : "";
+        this.logger.info(`GET /events/search?q=${searchQuery} for ${browserSession.browserLabel}`);
+
+        await this.eventController.searchEvents(res, browserSession, searchQuery);
+      }),
+    );
+
+    this.app.get(
+      "/events/search/results",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        const searchQuery = typeof req.query.q === "string" ? req.query.q.trim() : "";
+        this.logger.info(`GET /events/search/results?q=${searchQuery} for ${browserSession.browserLabel}`);
+
+        await this.eventController.searchEventsPartial(res, browserSession, searchQuery);
       }),
     );
 
@@ -434,26 +498,6 @@ class ExpressApp implements IApp {
         this.logger.info(`POST /comments/${commentId}/delete`);
 
         await this.commentController.deleteComment(res, commentId, session);
-      }),
-    );
-
-    this.app.get(
-      "/events/search",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) {
-          return;
-        }
-
-        const browserSession = recordPageView(sessionStore(req));
-        const searchQuery = typeof req.query.q === "string" ? req.query.q.trim() : "";
-        this.logger.info(`GET /events/search?q=${searchQuery} for ${browserSession.browserLabel}`);
-
-        res.render("home", {
-          session: browserSession,
-          pageError: searchQuery
-            ? `Search for "${searchQuery}" is not yet implemented. Add a search handler in the event dashboard feature.`
-            : "Please provide a search query using ?q=your+search+terms.",
-        });
       }),
     );
 

@@ -1,7 +1,6 @@
 import { Err, Ok, type Result } from "../lib/result";
 import { IEvent, IEventRepository, CreateEventInput, EventStatus} from "../repository/EventRepository";
-import { type EventError, UnexpectedRepositoryError, ValidationError, EventNotFound} from "../repository/Errors";
-import { InvalidId } from "./errors";
+import { type EventError, UnexpectedRepositoryError, ValidationError, EventNotFound, InvalidId} from "../repository/Errors";
 
 export interface CreateEventServiceInput {
   title: string;
@@ -19,10 +18,16 @@ export interface IEventService {
   getAllEvents(): Promise<Result<IEvent[], EventError>>;
   getEventByID(id: number): Promise<Result<IEvent, EventError>>;
   getUserEvents(userId: string): Promise<Result<IEvent[], EventError>>;
+  getActiveUserEvents(userId: string): Promise<Result<IEvent[], EventError>>;
+  getPastUserEvents(userId: string): Promise<Result<IEvent[], EventError>>;
   getEditableEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
   updateEvent(eventId: number, actingUserId: string, actingUserRole: string, input: CreateEventServiceInput): Promise<Result<IEvent, EventError>>;
   publishEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
   cancelEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
+  archiveExpiredEvents(): Promise<Result<number, EventError>>;
+  getActiveEvents(): Promise<Result<IEvent[], EventError>>;
+  getPastEvents(): Promise<Result<IEvent[], EventError>>;
+  getEventsBySearch(query: string): Promise<Result<IEvent[], EventError>>;
 }
 
 class EventService implements IEventService {
@@ -71,33 +76,9 @@ class EventService implements IEventService {
     input: CreateEventServiceInput,
     organizerId: string,
   ): Promise<Result<IEvent, EventError>> {
-    if (!input.title.trim()) {
-      return Err(ValidationError('Title is required.'));
-    }
- 
-    // Validate category
-    if (!input.category.trim()) {
-      return Err(ValidationError('Category is required.'));
-    }
- 
-    // Validate location
-    if (!input.location.trim()) {
-      return Err(ValidationError('Location is required.'));
-    }
- 
-    // Validate times
-    if (input.endDatetime <= input.startDatetime) {
-      return Err(ValidationError('End time must be after start time.'));
-    }
- 
-    // Validate capacity if provided
-    if (input.capacity !== null && (!Number.isInteger(input.capacity) || input.capacity < 1)) {
-      return Err(ValidationError('Capacity must be a positive integer.'));
-    }
- 
-    // Validate organizerId was actually passed in (controller's responsibility, but belt-and-suspenders)
-    if (!organizerId.trim()) {
-      return Err(ValidationError('Organizer identity is required.'));
+    const validate = this.validateEventInput(input);
+    if (validate.ok === false) {
+      return Err(validate.value);
     }
  
     const repoInput: CreateEventInput = {
@@ -129,12 +110,27 @@ class EventService implements IEventService {
   }
 
   async getUserEvents(userId: string): Promise<Result<IEvent[], EventError>> {
-    const allEventsResult = await this.repo.getAllEvents();
-    if (allEventsResult.ok === false) {
-      return Err(UnexpectedRepositoryError(allEventsResult.value.message));
+    const userEvents = await this.repo.getEventsByOrganizerId(userId);
+    if (userEvents.ok === false) {
+      return Err(UnexpectedRepositoryError(userEvents.value.message));
     }
-    const userEvents = allEventsResult.value.filter(event => event.organizerId === userId);
-    return Ok(userEvents);
+    return Ok(userEvents.value);
+  }
+
+  async getActiveUserEvents(userId: string): Promise<Result<IEvent[], EventError>> {
+    const userEvents = await this.repo.getActiveUserEvents(userId);
+    if (userEvents.ok === false) {
+      return Err(UnexpectedRepositoryError(userEvents.value.message));
+    }
+    return Ok(userEvents.value);
+  }
+
+  async getPastUserEvents(userId: string): Promise<Result<IEvent[], EventError>> {
+    const userEvents = await this.repo.getPastUserEvents(userId);
+    if (userEvents.ok === false) {
+      return Err(UnexpectedRepositoryError(userEvents.value.message));
+    }
+    return Ok(userEvents.value);
   }
 
   async getEventByID(id: number): Promise<Result<IEvent, EventError>> {
@@ -231,6 +227,14 @@ class EventService implements IEventService {
     return this.repo.updateEventStatus(eventId, "published");
   }
 
+  async getEventsBySearch(query: string): Promise<Result<IEvent[], EventError>> {
+    if (query.trim().length === 0) {
+      return Err(ValidationError("Search query cannot be empty."));
+    }
+
+    return this.repo.getEventBySearch(query);
+  }
+
   async cancelEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>> {
     if (!Number.isInteger(eventId) || eventId < 1) {
       return Err(InvalidId("ID must be a positive integer."));
@@ -256,6 +260,61 @@ class EventService implements IEventService {
     return this.repo.updateEventStatus(eventId, "cancelled");
   }
 
+  async archiveExpiredEvents(): Promise<Result<number, EventError>> {
+    const now = new Date();
+
+    const result = await this.repo.getAllEvents();
+    if (result.ok === false) {
+      return Err(UnexpectedRepositoryError(result.value.message));
+    }
+
+    let count = 0;
+
+    for (const event of result.value) {
+      const isExpired =
+        event.status !== "past" &&
+        event.endDatetime < now;
+
+      if (!isExpired) continue;
+
+      const updateResult = await this.repo.updateEventStatus(
+        event.id,
+        "past"
+      );
+
+      if (updateResult.ok) {
+        count++;
+      }
+    }
+
+    return Ok(count);
+  }
+
+  async getActiveEvents(): Promise<Result<IEvent[], EventError>> {
+    const result = await this.repo.getAllEvents();
+    if (result.ok === false) {
+      return Err(UnexpectedRepositoryError(result.value.message));
+    }
+
+    return Ok(
+      result.value.filter(e => e.status !== "past")
+    );
+  }
+
+  async getPastEvents(): Promise<Result<IEvent[], EventError>> {
+    const result = await this.repo.getAllEvents();
+    if (result.ok === false) {
+      return Err(UnexpectedRepositoryError(result.value.message));
+    }
+
+    return Ok(
+      result.value
+        .filter(e => e.status === "past")
+        .sort((a, b) =>
+          b.endDatetime.getTime() - a.endDatetime.getTime()
+        )
+    );
+  }
 }
 
 export function CreateEventService(repo: IEventRepository): IEventService {

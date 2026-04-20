@@ -2,6 +2,7 @@ import type { Response } from 'express';
 import type { IEventService, CreateEventServiceInput } from '../service/EventService';
 import type { ILoggingService } from '../service/LoggingService';
 import type { IAppBrowserSession } from '../session/AppSession';
+import type { Result } from '../lib/result';
 import type { EventError } from '../repository/Errors';
 import type { EventStatus, IEvent} from '../repository/EventRepository';
 
@@ -18,7 +19,9 @@ export interface IEditEventForm {
 
 export interface IEventController {
     showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
+    showDashboardEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void>;
     showAllEvents(res: Response, session: IAppBrowserSession): Promise<void>;
+    showEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void>;
     handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>): Promise<void>;
     showEventDetail(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
@@ -26,6 +29,9 @@ export interface IEventController {
     handlePublishEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     handleCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showUserEvents(res: Response, session: IAppBrowserSession): Promise<void>;
+    searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
+    searchEventsPartial(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
+    showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void>;
 }
 
 const VALID_STATUSES: EventStatus[] = ['draft', 'published', 'cancelled', 'past'];
@@ -90,7 +96,8 @@ class EventController implements IEventController {
     }
 
     async showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
-        const result = await this.service.getUserEvents(session.authenticatedUser?.userId ?? '');
+        await this.service.archiveExpiredEvents();
+        const result = await this.service.getActiveUserEvents(session.authenticatedUser?.userId ?? '');
         if (!result.ok) {
             this.logger.error('Error fetching dashboard data');
             res.status(500).send('Error fetching dashboard data');
@@ -98,20 +105,100 @@ class EventController implements IEventController {
         }
         res.status(200);
         this.logger.info('Dashboard data fetched successfully');
-        res.render('dashboard', { data: result.value, session }); // will update this to send the actual data once we have it defined
+        res.render('dashboard', { data: result.value, session, isArchive: false });
+    }
+
+    async showDashboardEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void> {
+        await this.service.archiveExpiredEvents();
+        const currentUserId = session.authenticatedUser?.userId ?? '';
+        const result = isArchive
+            ? await this.service.getPastUserEvents(currentUserId)
+            : await this.service.getActiveUserEvents(currentUserId);
+
+        if (!result.ok) {
+            this.logger.error('Error fetching dashboard event list');
+            res.status(500).send('Error fetching dashboard event list');
+            return;
+        }
+
+        res.status(200).render('dashboard/partials/dashboard-events-list-page', {
+            data: result.value,
+            session,
+            isArchive,
+            layout: false,
+        });
+    }
+
+    private async renderEventsSection(
+        res: Response,
+        session: IAppBrowserSession,
+        eventsResult: Result<IEvent[], EventError>,
+        isArchive: boolean,
+        partialOnly: boolean,
+    ): Promise<void> {
+        if (!eventsResult.ok) {
+            this.logger.error('Error fetching event list data');
+            res.status(500).send('Error fetching event list data');
+            return;
+        }
+
+        if (partialOnly) {
+            res.status(200).render('events/partials/events-list-page', {
+                data: eventsResult.value,
+                session,
+                isArchive,
+                layout: false,
+            });
+            return;
+        }
+
+        res.status(200);
+        this.logger.info('All events data fetched successfully');
+        res.render('events/index', {
+            data: eventsResult.value,
+            session,
+            isArchive,
+        });
     }
 
     async showAllEvents(res: Response, session: IAppBrowserSession): Promise<void> {
-        const result = await this.service.getAllEvents();
-        if (!result.ok) {
-            this.logger.error('Error fetching all events data');
-            res.status(500).send('Error fetching all events data');
+        await this.service.archiveExpiredEvents();
+        const result = await this.service.getActiveEvents();
+        await this.renderEventsSection(res, session, result, false, false);
+    }
+
+    async showEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void> {
+        await this.service.archiveExpiredEvents();
+        const result = isArchive
+            ? await this.service.getPastEvents()
+            : await this.service.getActiveEvents();
+        await this.renderEventsSection(res, session, result, isArchive, true);
+    }
+
+    async searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void> {
+        const result = await this.service.getEventsBySearch(query);
+        if (result.ok === false) {
+            this.logger.error(`Error searching events with query "${query}": ${result.value.message}`);
+            res.status(500).send('Error searching events');
             return;
         }
         res.status(200);
-        this.logger.info('All events data fetched successfully');
-        res.render('events/index', { data: result.value, session });
+        this.logger.info(`Events found for query "${query}": ${result.value.length}`);
+        res.render('events/search', { data: result.value, session, query });
     }
+
+    async searchEventsPartial(res: Response, session: IAppBrowserSession, query: string): Promise<void> {
+        const result = await this.service.getEventsBySearch(query);
+        if (result.ok === false) {
+            this.logger.error(`Error searching events with query "${query}": ${result.value.message}`);
+            res.status(500).send('Error searching events partial');
+            return;
+        }
+        res.status(200);
+        this.logger.info(`Events found for query "${query}": ${result.value.length}`);
+        res.render('events/partials/search-results-page', { data: result.value, session, query, layout: false });
+    }
+
 
     async handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>): Promise<void> {
         const organizerId = session.authenticatedUser?.userId ?? '';
@@ -361,6 +448,18 @@ class EventController implements IEventController {
         res.redirect(`/events/${result.value.id}`);
     }
 
+    async showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void> {
+        await this.service.archiveExpiredEvents();
+        const result = await this.service.getPastEvents();
+
+        if (!result.ok) {
+            this.logger.error("Failed to load archive");
+            res.status(500).send("Failed to load archive");
+            return;
+        }
+
+        res.status(200).render("events/archive", {data: result.value, session, isArchive: true});
+    }
 }
 
 export function CreateController(service: IEventService, logger: ILoggingService): IEventController {
