@@ -5,12 +5,14 @@
   </p>
 </section>
 
-<% if (pageError) { %>
-  <%- include("../partials/error", { message: pageError }) %>
-<% } %>
+<div id="form-feedback">
+  <% if (pageError) { %>
+    <%- include("../partials/error", { message: pageError }) %>
+  <% } %>
+</div>
 
 <section class="max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
-  <form action="/events/new" method="post" class="space-y-6">
+  <form hx-post="/events/new" hx-target="#form-feedback" hx-swap="innerHTML" class="space-y-6">
     <div>
       <label for="title" class="block text-sm font-medium text-slate-700 mb-2">Event Title *</label>
       <input

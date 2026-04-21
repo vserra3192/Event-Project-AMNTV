@@ -2,7 +2,8 @@ export type EventError =
   | { name: 'EventNotFound'; message: string }
   | { name: 'InvalidId'; message: string }
   | { name: 'UnexpectedRepositoryError'; message: string }
-  | { name: 'ValidationError'; message: string};
+  | { name: 'ValidationError'; message: string}
+  | { name: 'UnautherizedError'; message: string};
  
 export const EventNotFound = (message: string): EventError => ({
   name: 'EventNotFound',
@@ -23,3 +24,8 @@ export const UnexpectedRepositoryError = (message: string): EventError => ({
   name: 'UnexpectedRepositoryError',
   message,
 });
+
+export const UnautherizedError = (message: string): EventError => ({
+  name: 'UnautherizedError',
+  message,
+})

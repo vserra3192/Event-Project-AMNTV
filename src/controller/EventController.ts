@@ -22,7 +22,7 @@ export interface IEventController {
     showDashboardEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void>;
     showAllEvents(res: Response, session: IAppBrowserSession): Promise<void>;
     showEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void>;
-    handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>): Promise<void>;
+    handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>, isHtmx: boolean): Promise<void>;
     showEventDetail(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     submitEventEdit(res: Response, session: IAppBrowserSession, eventId: number, form: IEditEventForm): Promise<void>;
@@ -51,6 +51,7 @@ class EventController implements IEventController {
         if(error.name === 'ValidationError'){return 400;}
         if(error.name === 'EventNotFound'){return 404;}
         if(error.name === 'InvalidId'){return 400;}
+        if(error.name === 'UnautherizedError'){return 403;}
         return 500;
     }
         
@@ -233,7 +234,7 @@ class EventController implements IEventController {
     }
 
 
-    async handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>): Promise<void> {
+    async handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>, isHtmx: boolean): Promise<void> {
         const organizerId = session.authenticatedUser?.userId ?? '';
         const title = typeof body.title === 'string' ? body.title : '';
         const description = typeof body.description === 'string' ? body.description : '';
@@ -264,12 +265,24 @@ class EventController implements IEventController {
             const httpStatus = this.mapErrorStatus(result.value);
             const log = httpStatus >= 500 ? this.logger.error : this.logger.warn;
             log.call(this.logger, `Create event failed: ${result.value.message}`);
-            res.status(httpStatus).render('events/create', { session, pageError: result.value.message });
+            if(isHtmx){
+                res.render('events/partials/create-form-response', {
+                    pageError: result.value.message,
+                    layout: false,
+                });
+            }else{
+                res.status(httpStatus).render('events/create', { session, pageError: result.value.message });
+            }
             return;
         }
 
         this.logger.info('Created event ${result.value.id}: "${result.value.title}"');
-        res.redirect(`/events/${result.value.id}`);
+        if(isHtmx){
+            res.setHeader('HX-Redirect', `/events/${result.value.id}`);
+            res.status(200).send('');
+        }else{
+            res.redirect(`/events/${result.value.id}`);
+        }
     }
 
     async showEventDetail(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
@@ -279,6 +292,17 @@ class EventController implements IEventController {
             this.logger.warn(`Event detail fetch failed for id ${eventId}: ${result.value.message}`);
             res.status(status).render('partials/error', { message: result.value.message, layout: false });
             return;
+        }
+        const event = result.value;
+        if (event.status === 'draft') {
+            const currentUser = session.authenticatedUser;
+            const isAdmin = currentUser?.role === 'admin';
+            const isOwner = currentUser?.userId === event.organizerId;
+            if (!isAdmin && !isOwner) {
+                this.logger.warn(`Blocked draft event ${eventId} from user ${currentUser?.userId ?? 'unauthenticated'}`);
+                res.status(404).render('partials/error', { message: 'Event not found.', layout: false });
+                return;
+            }
         }
         this.logger.info(`Fetched event detail for id ${eventId}`);
         res.status(200);

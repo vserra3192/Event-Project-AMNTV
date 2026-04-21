@@ -390,7 +390,7 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) return;
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`POST /events for ${browserSession.browserLabel}`);
-        await this.eventController.handleCreateEvent(res, browserSession, req.body as Record<string, unknown>);
+        await this.eventController.handleCreateEvent(res, browserSession, req.body as Record<string, unknown>, this.isHtmxRequest(req));
       }),
     );
 
