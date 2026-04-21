@@ -3,7 +3,7 @@ import { createComposedApp } from '../../src/composition';
 
 describe('Event Search Routes', () => {
   let app: any;
-  let agent: request.SuperAgentTest;
+  let agent: any;
 
   beforeEach(() => {
     process.env.SESSION_SECRET = 'test-secret';
