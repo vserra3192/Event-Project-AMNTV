@@ -226,9 +226,10 @@ class EventService implements IEventService {
     }
 
     const event = eventResult.value;
-    const isStaffOwner = actingUserRole === "staff" && event.organizerId === actingUserId;
+    const isAdmin = actingUserRole === "admin";
+    const isOwner = event.organizerId === actingUserId;
 
-    if (!isStaffOwner) {
+    if (!isAdmin && !isOwner) {
       return Err(ValidationError("Only the event organizer can publish this event."));
     }
 
@@ -259,9 +260,9 @@ class EventService implements IEventService {
 
     const event = eventResult.value;
     const isAdmin = actingUserRole === "admin";
-    const isStaffOwner = actingUserRole === "staff" && event.organizerId === actingUserId;
+    const isOwner = event.organizerId === actingUserId;
 
-    if (!isAdmin && !isStaffOwner) {
+    if (!isAdmin && !isOwner) {
       return Err(ValidationError("Invalid Permission."));
     }
 
