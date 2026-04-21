@@ -36,3 +36,15 @@ test("should reject empty comment content", async () => {
 
   expect(result.value.name).toBe("InvalidContent");
 });
+
+test("should delete a comment successfully", async () => {
+  const repo = new InMemoryCommentRepository();
+  const service = new CommentService(repo);
+
+  const user = createUser("user1");
+  const comment = service.addComment(1, "Hello world", user)
+
+  const result = await service.deleteComment(1, user)
+
+  expect(result.ok).toBe(true);
+});
