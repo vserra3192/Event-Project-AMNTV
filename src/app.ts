@@ -228,6 +228,7 @@ class ExpressApp implements IApp {
 
         const browserSession = touchAppSession(sessionStore(req));
         await this.eventController.handlePublishEvent(
+          req,
           res,
           browserSession,
           Number(req.params.id),
@@ -244,6 +245,7 @@ class ExpressApp implements IApp {
 
         const browserSession = touchAppSession(sessionStore(req));
         await this.eventController.handleCancelEvent(
+          req,
           res,
           browserSession,
           Number(req.params.id),
@@ -451,6 +453,26 @@ class ExpressApp implements IApp {
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`GET /events/${req.params.id} for ${browserSession.browserLabel}`);
         await this.eventController.showEventDetail(res, browserSession, Number(req.params.id));
+      }),
+    );
+
+    this.app.post(
+      '/events/:id/rsvp',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = touchAppSession(sessionStore(req));
+        this.logger.info(`POST /events/${req.params.id}/rsvp for ${browserSession.browserLabel}`);
+        await this.eventController.handleRsvpEvent(res, browserSession, Number(req.params.id));
+      }),
+    );
+
+    this.app.post(
+      '/events/:id/rsvp/cancel',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = touchAppSession(sessionStore(req));
+        this.logger.info(`POST /events/${req.params.id}/rsvp/cancel for ${browserSession.browserLabel}`);
+        await this.eventController.handleRsvpCancelEvent(res, browserSession, Number(req.params.id));
       }),
     );
 
