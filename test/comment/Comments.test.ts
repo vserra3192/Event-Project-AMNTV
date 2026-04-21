@@ -22,3 +22,17 @@ test("should create a comment successfully", async () => {
   expect(result.value.userId).toBe("user1");
   expect(result.value.eventId).toBe(1);
 });
+
+test("should reject empty comment content", async () => {
+  const repo = new InMemoryCommentRepository();
+  const service = new CommentService(repo);
+
+  const user = createUser("user1");
+
+  const result = await service.addComment(1, "   ", user);
+
+  expect(result.ok).toBe(false);
+  if (result.ok) return;
+
+  expect(result.value.name).toBe("InvalidContent");
+});
