@@ -130,7 +130,10 @@ class EventController implements IEventController {
 
     async showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
         await this.service.archiveExpiredEvents();
-        const result = await this.service.getActiveUserEvents(session.authenticatedUser?.userId ?? '');
+        const currentUserId = session.authenticatedUser?.userId ?? '';
+        const isAdmin = session.authenticatedUser?.role === 'admin';
+        const result = await (isAdmin ? this.service.getActiveEvents() : this.service.getActiveUserEvents(currentUserId));
+        
         if (!result.ok) {
             this.logger.error('Error fetching dashboard data');
             res.status(500).send('Error fetching dashboard data');
@@ -144,9 +147,11 @@ class EventController implements IEventController {
     async showDashboardEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void> {
         await this.service.archiveExpiredEvents();
         const currentUserId = session.authenticatedUser?.userId ?? '';
+        const isAdmin = session.authenticatedUser?.role === 'admin';
+        
         const result = isArchive
-            ? await this.service.getPastUserEvents(currentUserId)
-            : await this.service.getActiveUserEvents(currentUserId);
+            ? (isAdmin ? await this.service.getPastEvents() : await this.service.getPastUserEvents(currentUserId))
+            : (isAdmin ? await this.service.getActiveEvents() : await this.service.getActiveUserEvents(currentUserId));
 
         if (!result.ok) {
             this.logger.error('Error fetching dashboard event list');
