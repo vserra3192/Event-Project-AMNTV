@@ -1,4 +1,6 @@
 <%
+const list = comments || [];
+
 function timeAgo(date) {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
   if (seconds < 60)   return seconds + 's ago';
@@ -8,10 +10,12 @@ function timeAgo(date) {
 }
 %>
 
-<% if (!comments || comments.length === 0) { %>
-  <p class="text-gray-500">No comments yet.</p>
-<% } %>
+<div id="comments-list">
+  <% if (list.length === 0) { %>
+    <p class="text-gray-500">No comments yet.</p>
+  <% } %>
 
-<% comments.forEach(function(comment) { %>
-  <%- include("comment", { comment, user, timeAgo }) %>
-<% }) %>
+  <% list.forEach(comment => { %>
+    <%- include('comment', { comment, user, timeAgo }) %>
+  <% }) %>
+</div>
