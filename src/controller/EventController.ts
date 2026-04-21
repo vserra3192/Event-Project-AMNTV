@@ -32,6 +32,8 @@ export interface IEventController {
     searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
     searchEventsPartial(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
     showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void>;
+    handleRsvpEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
+    handleRsvpCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
 }
 
 const VALID_STATUSES: EventStatus[] = ['draft', 'published', 'cancelled', 'past'];
@@ -94,6 +96,37 @@ class EventController implements IEventController {
             endDatetime: new Date(form.endDatetime),
         };
     }
+
+    async handleRsvpEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+        const result = await this.service.rsvpEvent(eventId, session.authenticatedUser?.userId ?? '');
+        if (!result.ok) {
+            this.logger.error('Error RSVPing for event');
+            const error = result.value as EventError;
+            res.status(this.mapErrorStatus(error)).send(error.message);
+            return;
+        }
+        res.status(200).render("events/partials/event-item", {
+            event: result.value,
+            session,
+            layout: false,
+        });
+    }
+
+    async handleRsvpCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+        const result = await this.service.rsvpCancelEvent(eventId, session.authenticatedUser?.userId ?? '');
+        if (!result.ok) {
+            this.logger.error('Error cancelling RSVP for event');
+            const error = result.value as EventError;
+            res.status(this.mapErrorStatus(error)).send(error.message);
+            return;
+        }
+        res.status(200).render("events/partials/event-item", {
+            event: result.value,
+            session,
+            layout: false,
+        });
+    }
+
 
     async showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
         await this.service.archiveExpiredEvents();

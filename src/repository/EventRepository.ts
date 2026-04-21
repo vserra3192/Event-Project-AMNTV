@@ -16,6 +16,7 @@ export interface IEvent {
   organizerId: string;
   createdAt: Date;
   updatedAt: Date;
+  rsvps: string[];
 }
 
 export type CreateEventInput = {
@@ -51,6 +52,8 @@ export interface IEventRepository {
   updateEventStatus(id: number, status: EventStatus): Promise<Result<IEvent, EventError>>;
   getEventBySearch(query: string): Promise<Result<IEvent[], EventError>>;
   getEventsByOrganizerId(organizerId: string): Promise<Result<IEvent[], EventError>>;
+  rsvpEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>>;
+  rsvpCancelEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>>;
 }
 
 class InMemoryEventRepository implements IEventRepository {
@@ -73,6 +76,7 @@ class InMemoryEventRepository implements IEventRepository {
         organizerId: input.organizerId,
         createdAt: now,
         updatedAt: now,
+        rsvps: [],
       };
       this.events.set(event.id, event);
       return Ok(event);
@@ -174,6 +178,49 @@ class InMemoryEventRepository implements IEventRepository {
       return Err(UnexpectedRepositoryError('Failed to update event.'));
     }
   }
+
+  async rsvpEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>> {
+    try {
+      if (!Number.isInteger(eventId) || eventId < 1) {
+        return Err(InvalidId(`${eventId} is not a valid event id.`));
+      }
+
+      const event = this.events.get(eventId) ?? null;
+      if (event === null) {
+        return Err(EventNotFound(`Event with id ${eventId} was not found.`));
+      }
+
+      if (!event.rsvps.includes(userId)) {
+        if (event.capacity !== null && event.rsvps.length >= event.capacity) {
+          return Err(UnexpectedRepositoryError('Event capacity has been reached.'));
+        }
+        event.rsvps.push(userId);
+      }
+
+      this.events.set(eventId, event);
+      return Ok(event);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to rsvp for event.'));
+    }
+  }
+
+  async rsvpCancelEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>> {
+    try {
+      if (!Number.isInteger(eventId) || eventId < 1) {
+        return Err(InvalidId(`${eventId} is not a valid event id.`));
+      }
+      const event = this.events.get(eventId) ?? null;
+      if (event === null) {
+        return Err(EventNotFound(`Event with id ${eventId} was not found.`));
+      }
+      event.rsvps = event.rsvps.filter(id => id !== userId);
+      this.events.set(eventId, event);
+      return Ok(event);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to cancel rsvp for event.'));
+    }
+  }
+    
 
   async updateEventStatus(id: number, status: EventStatus): Promise<Result<IEvent, EventError>> {
     try {

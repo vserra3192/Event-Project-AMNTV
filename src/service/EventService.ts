@@ -28,6 +28,9 @@ export interface IEventService {
   getActiveEvents(): Promise<Result<IEvent[], EventError>>;
   getPastEvents(): Promise<Result<IEvent[], EventError>>;
   getEventsBySearch(query: string): Promise<Result<IEvent[], EventError>>;
+  rsvpEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>>;
+  rsvpCancelEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>>;
+
 }
 
 class EventService implements IEventService {
@@ -108,6 +111,15 @@ class EventService implements IEventService {
     }
     return Ok(result.value);
   }
+
+  async rsvpEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>> {
+    return this.repo.rsvpEvent(eventId, userId);
+  }
+
+  async rsvpCancelEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>> {
+    return this.repo.rsvpCancelEvent(eventId, userId);
+  }
+
 
   async getUserEvents(userId: string): Promise<Result<IEvent[], EventError>> {
     const userEvents = await this.repo.getEventsByOrganizerId(userId);
