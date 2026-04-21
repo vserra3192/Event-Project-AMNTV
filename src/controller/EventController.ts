@@ -1,4 +1,4 @@
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
 import type { IEventService, CreateEventServiceInput } from '../service/EventService';
 import type { ILoggingService } from '../service/LoggingService';
 import type { IAppBrowserSession } from '../session/AppSession';
@@ -26,8 +26,8 @@ export interface IEventController {
     showEventDetail(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     submitEventEdit(res: Response, session: IAppBrowserSession, eventId: number, form: IEditEventForm): Promise<void>;
-    handlePublishEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
-    handleCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
+    handlePublishEvent(req: Request, res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
+    handleCancelEvent(req: Request, res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showUserEvents(res: Response, session: IAppBrowserSession): Promise<void>;
     searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
     searchEventsPartial(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
@@ -402,7 +402,7 @@ class EventController implements IEventController {
         res.status(200).render('events/my-events', { data: result.value, session, pageError: null });
     }
     
-    async handlePublishEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+    async handlePublishEvent(req: Request, res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
         const currentUser = session.authenticatedUser;
         if (!currentUser) {
           this.logger.warn("Blocked publish for unauthenticated user");
@@ -436,10 +436,20 @@ class EventController implements IEventController {
         }
     
         this.logger.info(`Event ${eventId} published successfully`);
-        res.redirect(`/events/${result.value.id}`);
+        
+        // Check if this is an HTMX request (from dashboard)
+        if (req.get("HX-Request") === "true") {
+          res.status(200).render("dashboard/partials/dashboard-event-item", {
+            event: result.value,
+            session,
+            layout: false,
+          });
+        } else {
+          res.redirect(`/events/${result.value.id}`);
+        }
     }
     
-    async handleCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+    async handleCancelEvent(req: Request, res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
         const currentUser = session.authenticatedUser;
         if (!currentUser) {
           this.logger.warn("Blocked cancel for unauthenticated user");
@@ -478,7 +488,17 @@ class EventController implements IEventController {
         }
     
         this.logger.info(`Event ${eventId} cancelled successfully`);
-        res.redirect(`/events/${result.value.id}`);
+        
+        // Check if this is an HTMX request (from dashboard)
+        if (req.get("HX-Request") === "true") {
+          res.status(200).render("dashboard/partials/dashboard-event-item", {
+            event: result.value,
+            session,
+            layout: false,
+          });
+        } else {
+          res.redirect(`/events/${result.value.id}`);
+        }
     }
 
     async showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void> {

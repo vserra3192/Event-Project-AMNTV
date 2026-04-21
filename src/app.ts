@@ -228,6 +228,7 @@ class ExpressApp implements IApp {
 
         const browserSession = touchAppSession(sessionStore(req));
         await this.eventController.handlePublishEvent(
+          req,
           res,
           browserSession,
           Number(req.params.id),
@@ -244,6 +245,7 @@ class ExpressApp implements IApp {
 
         const browserSession = touchAppSession(sessionStore(req));
         await this.eventController.handleCancelEvent(
+          req,
           res,
           browserSession,
           Number(req.params.id),

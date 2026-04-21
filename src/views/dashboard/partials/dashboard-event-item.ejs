@@ -61,5 +61,24 @@
     >
       Edit Event
     </a>
+    <% if (event.status === 'draft') { %>
+      <button
+        hx-post="/events/<%= event.id %>/publish"
+        hx-target="closest li"
+        hx-swap="outerHTML"
+        class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+      >
+        Publish
+      </button>
+    <% } else if (event.status === 'published') { %>
+      <button
+        hx-post="/events/<%= event.id %>/cancel"
+        hx-target="closest li"
+        hx-swap="outerHTML"
+        class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+      >
+        Cancel
+      </button>
+    <% } %>
   </div>
 </li>
