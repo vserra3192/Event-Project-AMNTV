@@ -139,7 +139,7 @@ class EventService implements IEventService {
     }
     const result = await this.repo.getEventById(id);
     if (result.ok === false) {
-      return Err(UnexpectedRepositoryError(result.value.message));
+      return Err(result.value);
     }
     return Ok(result.value);
   }
