@@ -49,6 +49,7 @@ class EventController implements IEventController {
 
     private mapErrorStatus(error: EventError): number {
         if(error.name === 'ValidationError'){return 400;}
+        if(error.name === 'InvalidSearchInput'){return 400;}
         if(error.name === 'EventNotFound'){return 404;}
         if(error.name === 'InvalidId'){return 400;}
         return 500;
@@ -211,8 +212,14 @@ class EventController implements IEventController {
     async searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void> {
         const result = await this.service.getEventsBySearch(query);
         if (result.ok === false) {
-            this.logger.error(`Error searching events with query "${query}": ${result.value.message}`);
-            res.status(500).send('Error searching events');
+            const statusCode = this.mapErrorStatus(result.value);
+            this.logger.warn(`Invalid search request with query "${query}": ${result.value.message}`);
+            res.status(statusCode).render('events/search', { 
+                data: [], 
+                session, 
+                query,
+                error: result.value.message 
+            });
             return;
         }
         res.status(200);
@@ -223,8 +230,15 @@ class EventController implements IEventController {
     async searchEventsPartial(res: Response, session: IAppBrowserSession, query: string): Promise<void> {
         const result = await this.service.getEventsBySearch(query);
         if (result.ok === false) {
-            this.logger.error(`Error searching events with query "${query}": ${result.value.message}`);
-            res.status(500).send('Error searching events partial');
+            const statusCode = this.mapErrorStatus(result.value);
+            this.logger.warn(`Invalid search request with query "${query}": ${result.value.message}`);
+            res.status(statusCode).render('events/partials/search-results-page', { 
+                data: [], 
+                session, 
+                query,
+                error: result.value.message,
+                layout: false 
+            });
             return;
         }
         res.status(200);
