@@ -39,28 +39,28 @@ async function createEvent(eventService: any, organizerId: string) {
 }
 
 test("should create a comment successfully", async () => {
-  const repo = new InMemoryCommentRepository();
-  const service = new CommentService(repo);
+  const { eventService, commentService } = setup();
 
   const user = createUser("user1");
+  const event = await createEvent(eventService, "org1");
 
-  const result = await service.addComment(1, "Hello world", user);
+  const result = await commentService.addComment(event.id, "Hello world", user);
 
   expect(result.ok).toBe(true);
   if (!result.ok) return;
 
   expect(result.value.content).toBe("Hello world");
   expect(result.value.userId).toBe("user1");
-  expect(result.value.eventId).toBe(1);
+  expect(result.value.eventId).toBe(event.id);
 });
 
 test("should reject empty comment content", async () => {
-  const repo = new InMemoryCommentRepository();
-  const service = new CommentService(repo);
+  const { eventService, commentService } = setup();
 
   const user = createUser("user1");
+  const event = await createEvent(eventService, "org1");
 
-  const result = await service.addComment(1, "   ", user);
+  const result = await commentService.addComment(event.id, "   ", user);
 
   expect(result.ok).toBe(false);
   if (result.ok) return;
@@ -68,61 +68,69 @@ test("should reject empty comment content", async () => {
   expect(result.value.name).toBe("InvalidContent");
 });
 
-test("should delete a comment successfully", async () => {
-  const repo = new InMemoryCommentRepository();
-  const service = new CommentService(repo);
-
-  const user = createUser("user1");
-  const comment = await service.addComment(1, "Hello world", user)
-
-  const result = await service.deleteComment(1, user)
-
-  expect(result.ok).toBe(true);
-});
-
 test("author should be able to delete their own comment", async () => {
-  const repo = new InMemoryCommentRepository();
-  const service = new CommentService(repo);
+  const { eventService, commentService } = setup();
 
   const user = createUser("user1");
+  const event = await createEvent(eventService, "org1");
 
-  const created = await service.addComment(1, "Hello world", user);
+  const created = await commentService.addComment(event.id, "Hello world", user);
   expect(created.ok).toBe(true);
   if (!created.ok) return;
 
-  const result = await service.deleteComment(created.value.id, user);
+  const result = await commentService.deleteComment(created.value.id, user);
 
   expect(result.ok).toBe(true);
 });
 
-test("organizer should be able to delete a comment on their event", async () => {
-  const repo = new InMemoryCommentRepository();
-  const service = new CommentService(repo);
+test("should delete a comment successfully", async () => {
+  const { eventService, commentService } = setup();
 
-  const author = createUser("user1");
-  const organizer = createUser("organizer1");
+  const user = createUser("user1");
+  const event = await createEvent(eventService, "org1");
 
-  const created = await service.addComment(1, "Hello world", author);
+  const created = await commentService.addComment(event.id, "Hello world", user);
   expect(created.ok).toBe(true);
   if (!created.ok) return;
 
-  const result = await service.deleteComment(created.value.id, organizer);
+  const result = await commentService.deleteComment(created.value.id, user);
 
   expect(result.ok).toBe(true);
 });
 
-test("should reject deletion from unauthorized user", async () => {
-  const repo = new InMemoryCommentRepository();
-  const service = new CommentService(repo);
+test("organizer can delete comments on their event", async () => {
+  const { eventService, commentService } = setup();
 
-  const author = createUser("user1");
-  const attacker = createUser("user2");
+  const organizer = createUser("org1");
+  const user = createUser("user1");
 
-  const created = await service.addComment(1, "Hello world", author);
-  expect(created.ok).toBe(true);
-  if (!created.ok) return;
+  const event = await createEvent(eventService, organizer.userId);
 
-  const result = await service.deleteComment(created.value.id, attacker);
+  const comment = await commentService.addComment(event.id, "Hello", user);
+
+  expect(comment.ok).toBe(true);
+  if (!comment.ok) return;
+
+  const result = await commentService.deleteComment(comment.value.id, organizer);
+
+  expect(result.ok).toBe(true);
+});
+
+test("non-author and non-organizer cannot delete comment", async () => {
+  const { eventService, commentService } = setup();
+
+  const organizer = createUser("org1");
+  const unauthorized = createUser("unauthorizedUser");
+  const user = createUser("user1");
+
+  const event = await createEvent(eventService, organizer.userId);
+
+  const comment = await commentService.addComment(event.id, "Hello", user);
+
+  expect(comment.ok).toBe(true);
+  if (!comment.ok) return;
+
+  const result = await commentService.deleteComment(comment.value.id, unauthorized);
 
   expect(result.ok).toBe(false);
   if (result.ok) return;
