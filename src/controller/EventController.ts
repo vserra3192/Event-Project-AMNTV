@@ -5,6 +5,7 @@ import type { IAppBrowserSession } from '../session/AppSession';
 import type { Result } from '../lib/result';
 import type { EventError } from '../repository/Errors';
 import type { EventStatus, IEvent} from '../repository/EventRepository';
+import type { IAdminUserService } from '../auth/AdminUserService';
 
 export interface IEditEventForm {
   title: string;
@@ -41,10 +42,12 @@ const VALID_STATUSES: EventStatus[] = ['draft', 'published', 'cancelled', 'past'
 class EventController implements IEventController {
     private service: IEventService;
     private logger: ILoggingService;
+    private adminUserService: IAdminUserService;
 
-    constructor(service: IEventService, logger: ILoggingService) {
+    constructor(service: IEventService, logger: ILoggingService, adminUserService: IAdminUserService) {
         this.service = service;
         this.logger = logger;
+        this.adminUserService = adminUserService;
     }
 
     private mapErrorStatus(error: EventError): number {
@@ -281,7 +284,7 @@ class EventController implements IEventController {
             return;
         }
 
-        this.logger.info('Created event ${result.value.id}: "${result.value.title}"');
+        this.logger.info(`Created event ${result.value.id}: "${result.value.title}"`);
         if(isHtmx){
             res.setHeader('HX-Redirect', `/events/${result.value.id}`);
             res.status(200).send('');
@@ -309,9 +312,11 @@ class EventController implements IEventController {
                 return;
             }
         }
+        const organizerRes = await this.adminUserService.findUserById(event.organizerId);
+        const organizerName = organizerRes.ok && organizerRes.value ? organizerRes.value.displayName : 'Unkown Organizer';
         this.logger.info(`Fetched event detail for id ${eventId}`);
         res.status(200);
-        res.render('events/detail', { event: result.value, session, pageError: null });
+        res.render('events/detail', { event, organizerName, session, pageError: null });
     }
     
     async showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
@@ -544,6 +549,6 @@ class EventController implements IEventController {
     }
 }
 
-export function CreateController(service: IEventService, logger: ILoggingService): IEventController {
-    return new EventController(service, logger);
+export function CreateController(service: IEventService, logger: ILoggingService, adminUserService: IAdminUserService): IEventController {
+    return new EventController(service, logger, adminUserService);
 }
