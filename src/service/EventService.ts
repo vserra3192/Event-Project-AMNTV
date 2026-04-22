@@ -1,6 +1,6 @@
 import { Err, Ok, type Result } from "../lib/result";
 import { IEvent, IEventRepository, CreateEventInput, EventStatus} from "../repository/EventRepository";
-import { type EventError, UnexpectedRepositoryError, ValidationError, EventNotFound, InvalidId} from "../repository/Errors";
+import { type EventError, UnexpectedRepositoryError, ValidationError, EventNotFound, InvalidId, InvalidSearchInput} from "../repository/Errors";
 
 export interface CreateEventServiceInput {
   title: string;
@@ -241,11 +241,21 @@ class EventService implements IEventService {
   }
 
   async getEventsBySearch(query: string): Promise<Result<IEvent[], EventError>> {
-    if (query.trim().length === 0) {
-      return Err(ValidationError("Search query cannot be empty."));
+    const trimmedQuery = query.trim();
+    
+    if (trimmedQuery.length === 0) {
+      return Err(InvalidSearchInput("Search query cannot be empty."));
+    }
+    
+    if (trimmedQuery.length < 2) {
+      return Err(InvalidSearchInput("Search query must be at least 2 characters long."));
+    }
+    
+    if (trimmedQuery.length > 100) {
+      return Err(InvalidSearchInput("Search query must not exceed 100 characters."));
     }
 
-    return this.repo.getEventBySearch(query);
+    return this.repo.getEventBySearch(trimmedQuery);
   }
 
   async cancelEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>> {
