@@ -69,3 +69,45 @@ test("archiveExpiredEvents does not modify non-expired events", async () => {
   expect(active.value.length).toBe(1);
   expect(active.value[0].status).toBe("published");
 });
+
+test("getPastEvents returns only past events sorted by end date", async () => {
+  const repo = CreateInMemoryEventRepository();
+  const service = CreateEventService(repo);
+
+  const now = new Date();
+
+  const oldEvent: CreateEventServiceInput = {
+    title: "Old Event",
+    description: "desc",
+    location: "loc",
+    category: "cat",
+    status: "past",
+    capacity: null,
+    startDatetime: new Date(now.getTime() - 24 * 60 * 60 * 1000 * 10),
+    endDatetime: new Date(now.getTime() - 24 * 60 * 60 * 1000 * 5),
+  };
+
+  const olderEvent: CreateEventServiceInput = {
+    title: "Older Event",
+    description: "desc",
+    location: "loc",
+    category: "cat",
+    status: "past",
+    capacity: null,
+    startDatetime: new Date(now.getTime() - 24 * 60 * 60 * 1000 * 20),
+    endDatetime: new Date(now.getTime() - 24 * 60 * 60 * 1000 * 15),
+  };
+
+  await service.createEvent(oldEvent, "user1");
+  await service.createEvent(olderEvent, "user1");
+
+  const result = await service.getPastEvents();
+
+  expect(result.ok).toBe(true);
+  if (!result.ok) return;
+
+  expect(result.value.length).toBe(2);
+
+  expect(result.value[0].title).toBe("Old Event");
+  expect(result.value[1].title).toBe("Older Event");
+});
