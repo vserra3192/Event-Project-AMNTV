@@ -34,4 +34,11 @@
   </form>
 </section>
 
-<%- include('./partials/search-results-page', { data, session, query }) %>
+<% if (typeof error !== 'undefined' && error) { %>
+  <section class="mb-4 p-4 rounded-xl border border-red-200 bg-red-50 text-red-800" aria-live="polite">
+    <h3 class="text-base font-semibold mb-1">Search Error</h3>
+    <p class="mb-0 text-sm"><%= error %></p>
+  </section>
+<% } %>
+
+<%- include('./partials/search-results-page', { data, session, query, error: typeof error !== 'undefined' ? error : undefined }) %>
