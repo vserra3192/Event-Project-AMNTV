@@ -19,6 +19,10 @@
           <dd class="text-slate-900"><%= event.category %></dd>
         </div>
         <div>
+          <dt class="text-sm font-medium text-slate-500">Organizer</dt>
+          <dd class="text-slate-900"><%= organizerName %></dd>
+        </div>
+        <div>
           <dt class="text-sm font-medium text-slate-500">Status</dt>
           <dd class="text-slate-900">
             <span class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold <%= event.status === 'published' ? 'bg-green-600/12 text-green-700' : 'bg-slate-100 text-slate-700' %>">
@@ -32,7 +36,13 @@
         </div>
         <div>
           <dt class="text-sm font-medium text-slate-500">Capacity</dt>
-          <dd class="text-slate-900"><%= event.capacity ? event.capacity : 'Unlimited' %></dd>
+          <dd class="text-slate-900">
+            <% if (event.capacity) { %>
+              <%= event.rsvpCount ?? 0 %> / <%= event.capacity %>
+            <% } else { %>
+              Unlimited
+            <% } %>
+          </dd>
         </div>
         <div>
           <dt class="text-sm font-medium text-slate-500">Start Time</dt>

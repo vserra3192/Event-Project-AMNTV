@@ -23,6 +23,7 @@ export interface IAdminUserService {
   listUsers(): Promise<Result<IUserSummary[], AuthError>>;
   createUser(input: CreateUserInput): Promise<Result<IUserSummary, AuthError>>;
   deleteUser(id: string, actingUserId: string): Promise<Result<void, AuthError>>;
+  findUserById(id: string): Promise<Result<IUserSummary | null, AuthError>>;
 }
 
 class AdminUserService implements IAdminUserService {
@@ -113,6 +114,14 @@ class AdminUserService implements IAdminUserService {
     }
 
     return Ok(undefined);
+  }
+
+  async findUserById(id: string): Promise<Result<IUserSummary | null, AuthError>> {
+    const result = await this.users.findById(id);
+    if (result.ok === false) {
+      return Err(UnexpectedDependencyError(result.value.message));
+    }
+    return Ok(result.value ? toUserSummary(result.value) : null);
   }
 }
 
