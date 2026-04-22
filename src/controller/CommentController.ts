@@ -3,6 +3,7 @@ import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
 import type { ICommentService, CommentServiceError } from "../service/CommentService";
 import type { IAdminUserService } from "../auth/AdminUserService";
+import type { IEventService } from "../service/EventService";
 import type { Result } from "../lib/result";
 import type { IComment } from "../repository/CommentRepository";
 
@@ -30,35 +31,42 @@ export class CommentController implements ICommentController {
     private readonly service: ICommentService,
     private readonly logger: ILoggingService,
     private readonly users: IAdminUserService,
+    private readonly events: IEventService,
   ) {}
 
-  private async loadComments(eventId: number): Promise<Result<IComment[], CommentServiceError>> {
-    const result = await this.service.getCommentsByEventId(eventId);
+  private async loadComments(eventId: number): Promise<Result<{ comments: (IComment & { displayName?: string })[]; organizerId: string }, CommentServiceError>> {
+    const commentsResult = await this.service.getCommentsByEventId(eventId);
+    if (commentsResult.ok === false) {
+      return commentsResult;
+    }
 
-    if (result.ok === false) {
-      return result;
+    const eventResult = await this.events.getEventByID(eventId);
+    if (eventResult.ok === false) {
+      return {
+        ok: false,
+        value: eventResult.value,
+      } as any;
     }
 
     const usersResult = await this.users.listUsers();
 
-    if (usersResult.ok === false) {
-      this.logger.warn(usersResult.value.message);
-      return {
-        ok: true,
-        value: result.value,
-      };
-    }
+    const usersMap = new Map(
+      usersResult.ok
+        ? usersResult.value.map(u => [u.id, u])
+        : [],
+    );
 
-    const usersMap = new Map(usersResult.value.map(u => [u.id, u]));
-
-    const enriched: IComment[] = result.value.map(comment => ({
+    const enriched = commentsResult.value.map(comment => ({
       ...comment,
-      displayName: usersMap.get(comment.userId)?.displayName
+      displayName: usersMap.get(comment.userId)?.displayName,
     }));
 
     return {
       ok: true,
-      value: enriched,
+      value: {
+        comments: enriched,
+        organizerId: eventResult.value.organizerId,
+      },
     };
   }
 
@@ -73,7 +81,8 @@ export class CommentController implements ICommentController {
     }
 
     res.status(200).render("partials/comments", {
-      comments: result.value,
+      comments: result.value.comments,
+      organizerId: result.value.organizerId,
       user: session.authenticatedUser,
       layout: false,
     });
@@ -108,7 +117,8 @@ export class CommentController implements ICommentController {
     }
 
     res.status(200).render("partials/comments", {
-      comments: updated.value,
+      comments: updated.value.comments,
+      organizerId: updated.value.organizerId,
       user: session.authenticatedUser,
       layout: false,
     });
@@ -143,7 +153,8 @@ export class CommentController implements ICommentController {
     }
 
     res.status(200).render("partials/comments", {
-      comments: updated.value,
+      comments: updated.value.comments,
+      organizerId: updated.value.organizerId,
       user: session.authenticatedUser,
       layout: false,
     });

@@ -1,6 +1,7 @@
 import { Ok, Err, type Result } from '../lib/result';
 import type { UserRole } from '../auth/User';
 import {CommentError, IComment, ICommentRepository, CommentNotFound, InvalidContent} from '../repository/CommentRepository';
+import type { IEventRepository } from "../repository/EventRepository";
 
 export type User = {
   userId: string;
@@ -34,7 +35,10 @@ function isCommentError(x: unknown): x is CommentError {
 }
 
 export class CommentService implements ICommentService {
-  constructor(private readonly repo: ICommentRepository) {}
+  constructor(
+    private readonly repo: ICommentRepository,
+    private readonly eventRepo: IEventRepository,
+  ) {}
 
   async getCommentsByEventId(eventId: number): Promise<Result<IComment[], CommentServiceError>> {
     if (!Number.isInteger(eventId) || eventId <= 0) {
@@ -80,7 +84,6 @@ export class CommentService implements ICommentService {
     }
 
     const commentResult = await this.repo.getCommentById(commentId);
-
     if (!commentResult.ok) {
       if (!isCommentError(commentResult.value)) {
         return Err(InvalidContent("Unknown repository error"));
@@ -90,10 +93,21 @@ export class CommentService implements ICommentService {
 
     const comment = commentResult.value;
 
+    const eventResult = await this.eventRepo.getEventById(comment.eventId);
+    if (!eventResult.ok) {
+      if (!isCommentError(eventResult.value)) {
+        return Err(InvalidContent("Unknown repository error"));
+      }
+      return Err(eventResult.value);
+    }
+
+    const event = eventResult.value;
+
     const isAuthor = comment.userId === actor.userId;
     const isAdmin = actor.role === "admin";
+    const isOrganizer = event.organizerId === actor.userId;
 
-    if (!isAuthor && !isAdmin) {
+    if (!isAuthor && !isAdmin && !isOrganizer) {
       return Err(Forbidden("You are not allowed to delete this comment."));
     }
 
