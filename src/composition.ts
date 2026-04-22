@@ -30,7 +30,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
 
   const commentRepo = new InMemoryCommentRepository();
   const commentService = new CommentService(commentRepo, eventRepo);
-  const commentController = new CommentController(commentService, resolvedLogger, adminUserService);
+  const commentController = new CommentController(commentService, resolvedLogger, adminUserService, eventService);
 
   return CreateApp(authController, eventController, commentController, resolvedLogger);
 }
