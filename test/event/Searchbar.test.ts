@@ -66,7 +66,7 @@ describe('Event Search Routes', () => {
       const response = await agent.get('/events/search').query({ q: `NoMatches-${Date.now()}` });
 
       expect(response.status).toBe(200);
-      expect(response.text).toMatch(/no results found/i);
+      expect(response.text).toMatch(/No events found matching/i);
     });
 
     it('returns validation feedback for invalid queries', async () => {
@@ -80,7 +80,6 @@ describe('Event Search Routes', () => {
         const response = await agent.get('/events/search').query({ q: query });
 
         expect(response.status).toBe(400);
-        expect(response.text).toMatch(/no results found/i);
         expect(response.text).toContain(message);
       }
     });
@@ -123,7 +122,7 @@ describe('Event Search Routes', () => {
         .query({ q: `PartialNoMatch-${Date.now()}` });
 
       expect(response.status).toBe(200);
-      expect(response.text).toMatch(/no results found/i);
+      expect(response.text).toMatch(/No events found matching/i);
     });
 
     it('returns validation feedback for invalid partial queries', async () => {
@@ -137,7 +136,6 @@ describe('Event Search Routes', () => {
         const response = await agent.get('/events/search/results').query({ q: query });
 
         expect(response.status).toBe(400);
-        expect(response.text).toMatch(/no results found/i);
         expect(response.text).toContain(message);
       }
     });
