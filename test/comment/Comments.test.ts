@@ -1,11 +1,42 @@
 import { CommentService } from "../../src/service/CommentService";
+import { CreateEventService } from "../../src/service/EventService";
 import { InMemoryCommentRepository } from "../../src/repository/CommentRepository";
+import { CreateInMemoryEventRepository } from "../../src/repository/EventRepository";
 
 const createUser = (id: string, role: "user" | "admin" = "user") => ({
   userId: id,
   displayName: id,
   role,
 });
+
+function setup() {
+  const commentRepo = new InMemoryCommentRepository();
+  const eventRepo = CreateInMemoryEventRepository();
+
+  const eventService = CreateEventService(eventRepo);
+  const commentService = new CommentService(commentRepo, eventRepo);
+
+  return { eventService, commentService };
+}
+
+async function createEvent(eventService: any, organizerId: string) {
+  const result = await eventService.createEvent(
+    {
+      title: "Test Event",
+      description: "Test",
+      location: "Test",
+      category: "Test",
+      status: "published",
+      capacity: null,
+      startDatetime: new Date(Date.now() + 10000),
+      endDatetime: new Date(Date.now() + 20000),
+    },
+    organizerId
+  );
+
+  if (!result.ok) throw new Error("Failed to create event");
+  return result.value;
+}
 
 test("should create a comment successfully", async () => {
   const repo = new InMemoryCommentRepository();
