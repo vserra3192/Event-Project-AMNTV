@@ -12,33 +12,33 @@
 </section>
 
 <section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
-  <form
-    hx-get="/events/search/results"
-    hx-target="#search-results-container"
-    hx-swap="outerHTML"
-    class="flex gap-3"
-  >
+  <form class="flex gap-3">
     <input
       type="text"
       name="q"
       placeholder="Search events..."
       value="<%= query %>"
+      hx-get="/events/search/results"
+      hx-trigger="input"
+      hx-debounce="500ms"
+      hx-target="#search-results-container"
+      hx-swap="outerHTML"
+      hx-on="htmx:beforeRequest: document.getElementById('search-error').style.display='none'"
       class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
     />
     <button
-      type="submit"
+      type="button"
+      onclick="location.href='/events/search'; return false;"
       class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
-      Search
+      Clear
     </button>
   </form>
 </section>
 
-<% if (typeof error !== 'undefined' && error) { %>
-  <section class="mb-4 p-4 rounded-xl border border-red-200 bg-red-50 text-red-800" aria-live="polite">
-    <h3 class="text-base font-semibold mb-1">Search Error</h3>
-    <p class="mb-0 text-sm"><%= error %></p>
-  </section>
-<% } %>
+<section id="search-error" class="mb-4 p-4 rounded-xl border border-red-200 bg-red-50 text-red-800 <%= typeof error === 'undefined' || !error ? 'hidden' : '' %>" aria-live="polite">
+  <h3 class="text-base font-semibold mb-1">Search Error</h3>
+  <p class="mb-0 text-sm"><%= typeof error !== 'undefined' ? error : '' %></p>
+</section>
 
 <%- include('./partials/search-results-page', { data, session, query, error: typeof error !== 'undefined' ? error : undefined }) %>
