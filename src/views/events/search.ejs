@@ -12,24 +12,25 @@
 </section>
 
 <section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
-  <form
-    hx-get="/events/search/results"
-    hx-target="#search-results-container"
-    hx-swap="outerHTML"
-    class="flex gap-3"
-  >
+  <form class="flex gap-3">
     <input
       type="text"
       name="q"
       placeholder="Search events..."
       value="<%= query %>"
+      hx-get="/events/search/results"
+      hx-trigger="input"
+      hx-debounce="500ms"
+      hx-target="#search-results-container"
+      hx-swap="outerHTML"
       class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
     />
     <button
-      type="submit"
+      type="button"
+      onclick="location.href='/events/search'; return false;"
       class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
-      Search
+      Clear
     </button>
   </form>
 </section>
