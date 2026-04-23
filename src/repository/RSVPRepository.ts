@@ -20,6 +20,8 @@ export interface IRSVPRepository {
   findByUserAndEvent(userId: string, eventId: number): Promise<IRSVP | null>;
   findByUser(userId: string): Promise<IRSVP[]>;
   save(rsvp: IRSVP): Promise<Result<IRSVP, RSVPError>>;
+  countGoingByEvent(eventId: number): Promise<number>;
+  createNew(userId: string, eventId: number): IRSVP;
 }
 
 class InMemoryRSVPRepository implements IRSVPRepository {
@@ -41,6 +43,12 @@ class InMemoryRSVPRepository implements IRSVPRepository {
   async save(rsvp: IRSVP): Promise<Result<IRSVP, RSVPError>> {
     this.rsvps.set(rsvp.id, rsvp);
     return Ok(rsvp);
+  }
+
+  async countGoingByEvent(eventId: number): Promise<number> {
+    return [...this.rsvps.values()].filter(
+      r => r.eventId === eventId && r.status === 'going'
+    ).length;
   }
 
   createNew(userId: string, eventId: number): IRSVP {

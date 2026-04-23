@@ -393,6 +393,15 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+    "/my-rsvps",
+    asyncHandler(async (req, res) => {
+      if (!this.requireAuthenticated(req, res)) return;
+
+      await this.rsvpController.dashboard(req, res);
+    })
+  );
+
+    this.app.get(
       '/events/new',
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
@@ -524,15 +533,6 @@ class ExpressApp implements IApp {
         this.logger.info(`POST /events/${eventId}/comments`);
 
         await this.commentController.addComment(res, eventId, content, session);
-      }),
-    );
-
-    this.app.post(
-      "/events/:eventId/rsvp",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-
-        await this.rsvpController.toggle(req, res);
       }),
     );
     
