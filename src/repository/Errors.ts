@@ -4,7 +4,9 @@ export type EventError =
   | { name: 'InvalidSearchInput'; message: string }
   | { name: 'UnexpectedRepositoryError'; message: string }
   | { name: 'ValidationError'; message: string}
-  | { name: 'UnautherizedError'; message: string};
+  | { name: 'UnautherizedError'; message: string}
+  | { name: 'InvalidEventState'; message: string }
+  | { name: 'InvalidInput'; message: string };
  
 export const EventNotFound = (message: string): EventError => ({
   name: 'EventNotFound',
@@ -33,5 +35,15 @@ export const UnexpectedRepositoryError = (message: string): EventError => ({
 
 export const UnautherizedError = (message: string): EventError => ({
   name: 'UnautherizedError',
+  message,
+})
+
+export const InvalidInputError = (message: string): EventError => ({
+  name: 'InvalidInput',
+  message,
+})
+
+export const InvalidEventState = (message: string): EventError => ({
+  name: 'InvalidEventState',
   message,
 })
