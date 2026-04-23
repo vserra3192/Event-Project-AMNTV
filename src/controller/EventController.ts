@@ -56,6 +56,8 @@ class EventController implements IEventController {
         if(error.name === 'EventNotFound'){return 404;}
         if(error.name === 'InvalidId'){return 400;}
         if(error.name === 'UnautherizedError'){return 403;}
+        if(error.name === 'InvalidEventState') {return 409;}
+        if(error.name === 'InvalidInput') {return 400;}
         return 500;
     }
         
