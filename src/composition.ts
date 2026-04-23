@@ -7,10 +7,10 @@ import { CreateApp } from "./app";
 import type { IApp } from "./contracts";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
-import { CreateInMemoryEventRepository } from "./repository/EventRepository";
+import { CreateInMemoryEventRepository } from "./repository/InMemoryEventRepository";
 import { CreateEventService } from "./service/EventService";
 import { CreateController } from "./controller/EventController";
-import { InMemoryCommentRepository } from "./repository/CommentRepository";
+import { InMemoryCommentRepository } from "./repository/InMemoryCommentRepository";
 import { CommentService } from "./service/CommentService";
 import { CommentController } from "./controller/CommentController";
 

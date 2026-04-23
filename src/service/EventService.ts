@@ -1,5 +1,5 @@
 import { Err, Ok, type Result } from "../lib/result";
-import { IEvent, IEventRepository, CreateEventInput, EventStatus} from "../repository/EventRepository";
+import { IEvent, IEventRepository, CreateEventInput, EventStatus} from "../repository/InMemoryEventRepository";
 import { type EventError, UnexpectedRepositoryError, ValidationError, InvalidEventState, EventNotFound, InvalidId, InvalidSearchInput, UnautherizedError} from "../repository/Errors";
 
 export interface CreateEventServiceInput {

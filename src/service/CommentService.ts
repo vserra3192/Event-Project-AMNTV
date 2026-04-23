@@ -1,7 +1,7 @@
 import { Ok, Err, type Result } from '../lib/result';
 import type { UserRole } from '../auth/User';
-import {CommentError, IComment, ICommentRepository, CommentNotFound, InvalidContent} from '../repository/CommentRepository';
-import type { IEventRepository } from "../repository/EventRepository";
+import {CommentError, IComment, ICommentRepository, CommentNotFound, InvalidContent} from '../repository/InMemoryCommentRepository';
+import type { IEventRepository } from "../repository/InMemoryEventRepository";
 
 export type User = {
   userId: string;

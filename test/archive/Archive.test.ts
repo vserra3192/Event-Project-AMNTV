@@ -1,5 +1,5 @@
 import { CreateEventService } from "../../src/service/EventService";
-import { CreateInMemoryEventRepository } from "../../src/repository/EventRepository";
+import { CreateInMemoryEventRepository } from "../../src/repository/InMemoryEventRepository";
 import type { CreateEventServiceInput } from "../../src/service/EventService";
 
 test("archiveExpiredEvents transitions expired events to past", async () => {
