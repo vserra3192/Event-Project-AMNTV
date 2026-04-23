@@ -18,19 +18,12 @@ datasource db {
 //   updatedAt DateTime @updatedAt
 // }
 
-export interface IEvent {
-  id: number;
-  title: string;
-  description: string;
-  location: string;
-  category: string;
-  status: "draft" | "published" | "cancelled" | "past";
-  capacity?: number | null;
-  startDatetime: Date;
-  endDatetime: Date;
-  organizerId: string;
-  createdAt: Date;
-  updatedAt: Date;
+
+enum Status {
+  draft
+  publish
+  cancelled
+  past
 }
 
 model Event {
@@ -39,7 +32,7 @@ model Event {
   description   String
   location      String
   category      String
-  status        "draft" | "publish" | "cancelled" | "past";
+  status        Status
   capacity      Int?
   startDatetime DateTime
   endDatetime   DateTime
