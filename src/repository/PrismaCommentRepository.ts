@@ -33,4 +33,22 @@ export class PrismaCommentRepository implements ICommentRepository {
       return Err(CommentNotFound("Failed to fetch comment."));
     }
   }
+
+  async createComment(
+    input: Omit<IComment, "id" | "createdAt">
+  ): Promise<Result<IComment, CommentError>> {
+    try {
+      const comment = await this.prisma.comment.create({
+        data: {
+          eventId: input.eventId,
+          userId: input.userId,
+          content: input.content,
+        },
+      });
+
+      return Ok(comment);
+    } catch {
+      return Err(CommentNotFound("Failed to create comment."));
+    }
+  }
 }
