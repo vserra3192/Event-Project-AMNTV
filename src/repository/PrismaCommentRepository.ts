@@ -34,9 +34,7 @@ export class PrismaCommentRepository implements ICommentRepository {
     }
   }
 
-  async createComment(
-    input: Omit<IComment, "id" | "createdAt">
-  ): Promise<Result<IComment, CommentError>> {
+  async createComment(input: Omit<IComment, "id" | "createdAt">): Promise<Result<IComment, CommentError>> {
     try {
       const comment = await this.prisma.comment.create({
         data: {
@@ -49,6 +47,26 @@ export class PrismaCommentRepository implements ICommentRepository {
       return Ok(comment);
     } catch {
       return Err(CommentNotFound("Failed to create comment."));
+    }
+  }
+  
+  async deleteComment(id: number): Promise<Result<void, CommentError>> {
+    try {
+      const existing = await this.prisma.comment.findUnique({
+        where: { id },
+      });
+
+      if (!existing) {
+        return Err(CommentNotFound(`Comment ${id} not found.`));
+      }
+
+      await this.prisma.comment.delete({
+        where: { id },
+      });
+
+      return Ok(undefined);
+    } catch {
+      return Err(CommentNotFound("Failed to delete comment."));
     }
   }
 }
