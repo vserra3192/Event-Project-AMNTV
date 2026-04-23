@@ -19,7 +19,6 @@ import {
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
 import { ICommentController } from "./controller/CommentController";
-import { RSVPController } from "./controller/RSVPController";
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -40,7 +39,6 @@ class ExpressApp implements IApp {
     private readonly authController: IAuthController,
     private readonly eventController: IEventController,
     private readonly commentController: ICommentController,
-    private readonly rsvpController: RSVPController,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -255,22 +253,6 @@ class ExpressApp implements IApp {
       }),
     );
 
-    this.app.post(
-      "/events/:id/rsvp",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
-
-        const browserSession = touchAppSession(sessionStore(req));
-
-        this.logger.info(`POST /events/${req.params.id}/rsvp`);
-
-        await this.rsvpController.toggle(
-          req,
-          res
-        );
-      }),
-    );
-
     // ── Admin routes ─────────────────────────────────────────────────
 
     this.app.get(
@@ -391,15 +373,6 @@ class ExpressApp implements IApp {
         await this.eventController.showDashboardEventsList(res, browserSession, isArchive);
       }),
     );
-
-    this.app.get(
-    "/my-rsvps",
-    asyncHandler(async (req, res) => {
-      if (!this.requireAuthenticated(req, res)) return;
-
-      await this.rsvpController.dashboard(req, res);
-    })
-  );
 
     this.app.get(
       '/events/new',
@@ -535,16 +508,7 @@ class ExpressApp implements IApp {
         await this.commentController.addComment(res, eventId, content, session);
       }),
     );
-    
-    this.app.post(
-      "/events/:eventId/rsvp",
-      asyncHandler(async (req, res) => {
-        if (!this.requireAuthenticated(req, res)) return;
 
-        await this.rsvpController.toggle(req, res);
-      }),
-    );
-    
     this.app.post(
       "/comments/:id/delete",
       asyncHandler(async (req, res) => {
@@ -586,14 +550,7 @@ export function CreateApp(
   authController: IAuthController,
   eventController: IEventController,
   commentController: ICommentController,
-  rsvpController: RSVPController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(
-  authController,
-  eventController,
-  commentController,
-  rsvpController,
-  logger
-);
+  return new ExpressApp(authController, eventController, commentController, logger);
 }

@@ -6,7 +6,6 @@ import type { Result } from '../lib/result';
 import type { EventError } from '../repository/Errors';
 import type { EventStatus, IEvent} from '../repository/EventRepository';
 import type { IAdminUserService } from '../auth/AdminUserService';
-import { RSVPService } from '../service/RSVPService';
 
 export interface IEditEventForm {
   title: string;
@@ -42,21 +41,14 @@ const VALID_STATUSES: EventStatus[] = ['draft', 'published', 'cancelled', 'past'
 
 class EventController implements IEventController {
     private service: IEventService;
-    private rsvpService: RSVPService;
     private logger: ILoggingService;
     private adminUserService: IAdminUserService;
 
-    constructor(
-    service: IEventService,
-    rsvpService: RSVPService,
-    logger: ILoggingService,
-    adminUserService: IAdminUserService
-  ) {
-    this.service = service;
-    this.rsvpService = rsvpService;
-    this.logger = logger;
-    this.adminUserService = adminUserService;
-  }
+    constructor(service: IEventService, logger: ILoggingService, adminUserService: IAdminUserService) {
+        this.service = service;
+        this.logger = logger;
+        this.adminUserService = adminUserService;
+    }
 
     private mapErrorStatus(error: EventError): number {
         if(error.name === 'ValidationError'){return 400;}
@@ -337,20 +329,6 @@ class EventController implements IEventController {
         const organizerRes = await this.adminUserService.findUserById(event.organizerId);
         const organizerName = organizerRes.ok && organizerRes.value ? organizerRes.value.displayName : 'Unkown Organizer';
         this.logger.info(`Fetched event detail for id ${eventId}`);
-        const user = session.authenticatedUser;
-
-        let rsvp = null;
-
-        if (user) {
-        const rsvpResult = await this.rsvpService.getUserRSVP(
-            user.userId,
-            eventId
-        );
-
-        if (rsvpResult.ok) {
-            rsvp = rsvpResult.value;
-        }
-        }
         res.status(200);
         res.render('events/detail', { event, organizerName, session, pageError: null });
     }
@@ -585,11 +563,6 @@ class EventController implements IEventController {
     }
 }
 
-export function CreateController(
-  service: IEventService,
-  rsvpService: RSVPService,
-  logger: ILoggingService,
-  adminUserService: IAdminUserService
-): IEventController {
-  return new EventController(service, rsvpService, logger, adminUserService);
+export function CreateController(service: IEventService, logger: ILoggingService, adminUserService: IAdminUserService): IEventController {
+    return new EventController(service, logger, adminUserService);
 }
