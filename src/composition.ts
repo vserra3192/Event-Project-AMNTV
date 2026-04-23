@@ -13,6 +13,9 @@ import { CreateController } from "./controller/EventController";
 import { InMemoryCommentRepository } from "./repository/CommentRepository";
 import { CommentService } from "./service/CommentService";
 import { CommentController } from "./controller/CommentController";
+import { CreateInMemoryRSVPRepository } from './repository/RSVPRepository';
+import { RSVPService } from './service/RSVPService';
+import { RSVPController } from './controller/RSVPController';
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -26,11 +29,29 @@ export function createComposedApp(logger?: ILoggingService): IApp {
 
   const eventRepo = CreateInMemoryEventRepository();
   const eventService = CreateEventService(eventRepo);
-  const eventController = CreateController(eventService, resolvedLogger, adminUserService);
 
   const commentRepo = new InMemoryCommentRepository();
   const commentService = new CommentService(commentRepo, eventRepo);
   const commentController = new CommentController(commentService, resolvedLogger, adminUserService, eventService);
 
-  return CreateApp(authController, eventController, commentController, resolvedLogger);
+  const rsvpRepository = CreateInMemoryRSVPRepository();
+  const rsvpService = new RSVPService(rsvpRepository, eventRepo);
+  const rsvpController = new RSVPController(rsvpService, resolvedLogger);
+
+<<<<<<< HEAD
+  const eventController = CreateController(
+  eventService,
+  rsvpService,
+  resolvedLogger,
+  adminUserService
+);
+=======
+>>>>>>> 644493cdb2358db66cc51d4357149e5aed802ce4
+return CreateApp(
+  authController,
+  eventController,
+  commentController,
+  rsvpController,
+  resolvedLogger
+);
 }

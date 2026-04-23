@@ -1,0 +1,24 @@
+<form
+  hx-post="/events/<%= eventId %>/rsvp"
+  hx-target="#rsvp-button"
+  hx-swap="outerHTML"
+>
+  <button class="
+    px-4 py-2 rounded
+    <% if (!rsvp || rsvp.status === 'cancelled') { %>
+      bg-indigo-600 text-white
+    <% } else if (rsvp.status === 'going') { %>
+      bg-green-600 text-white
+    <% } else if (rsvp.status === 'waitlisted') { %>
+      bg-yellow-600 text-white
+    <% } %>
+  ">
+    <% if (!rsvp || rsvp.status === 'cancelled') { %>
+      RSVP
+    <% } else if (rsvp.status === 'going') { %>
+      Cancel RSVP
+    <% } else if (rsvp.status === 'waitlisted') { %>
+      Leave Waitlist
+    <% } %>
+  </button>
+</form>
