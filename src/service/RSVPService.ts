@@ -17,9 +17,8 @@ export class RSVPService {
     eventId: number
   ): Promise<Result<IRSVP, RSVPError>> {
 
-    // 1. Get event
+    //get event
     const eventResult = await this.eventRepo.getEventById(eventId);
-
     if (!eventResult.ok) {
       return Err({
         type: 'NOT_FOUND',
