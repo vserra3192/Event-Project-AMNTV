@@ -4,7 +4,7 @@ import type { ILoggingService } from '../service/LoggingService';
 import type { IAppBrowserSession } from '../session/AppSession';
 import type { Result } from '../lib/result';
 import type { EventError } from '../repository/Errors';
-import type { EventStatus, IEvent} from '../repository/EventRepository';
+import type { EventStatus, IEvent} from '../repository/InMemoryEventRepository';
 import type { IAdminUserService } from '../auth/AdminUserService';
 
 export interface IEditEventForm {

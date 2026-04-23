@@ -1,7 +1,7 @@
 import { CommentService } from "../../src/service/CommentService";
 import { CreateEventService } from "../../src/service/EventService";
-import { InMemoryCommentRepository } from "../../src/repository/CommentRepository";
-import { CreateInMemoryEventRepository } from "../../src/repository/EventRepository";
+import { InMemoryCommentRepository } from "../../src/repository/InMemoryCommentRepository";
+import { CreateInMemoryEventRepository } from "../../src/repository/InMemoryEventRepository";
 
 const createUser = (id: string, role: "user" | "admin" = "user") => ({
   userId: id,
