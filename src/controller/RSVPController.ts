@@ -11,6 +11,7 @@ export class RSVPController {
 ) {}
 
   async toggle(req: Request, res: Response) {
+<<<<<<< HEAD
     const user = getAuthenticatedUser(req.session as any);
 
     if (!user) {
@@ -64,4 +65,27 @@ export class RSVPController {
       session: { authenticatedUser: user }
     });
   }
+=======
+  const user = getAuthenticatedUser(req.session as any);
+
+  if (!user) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  const userId = user.userId;
+  const eventId = Number(req.params.id);
+
+  if (!eventId || isNaN(eventId)) {
+    return res.status(400).send("Invalid event ID");
+  }
+
+  const result = await this.service.toggleRSVP(userId, eventId);
+
+  if (result.ok === false) {
+    return res.status(400).send(result.value.message);
+  }
+
+  return res.redirect(`/events/${eventId}`);
+}
+>>>>>>> 644493cdb2358db66cc51d4357149e5aed802ce4
 }
