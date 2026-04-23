@@ -71,9 +71,9 @@
       </a>
       <% const currentUser = session?.authenticatedUser; %>
       <% const isAdmin = currentUser?.role === "admin"; %>
-      <% const isStaffOwner = currentUser?.role === "staff" && currentUser?.userId === event.organizerId; %>
+      <% const isOwner = currentUser?.userId === event.organizerId; %>
 
-      <% if (isStaffOwner || isAdmin) { %>
+      <% if (isOwner || isAdmin) { %>
         <a
           href="/events/<%= event.id %>/edit"
           class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
@@ -82,7 +82,7 @@
         </a>
       <% } %>
 
-      <% if (event.status === "draft" && isStaffOwner) { %>
+      <% if (event.status === "draft" && (isOwner || isAdmin)) { %>
         <form method="POST" action="/events/<%= event.id %>/publish" class="inline">
           <button
             type="submit"
@@ -93,7 +93,7 @@
         </form>
       <% } %>
 
-      <% if (event.status === "published" && (isStaffOwner || isAdmin)) { %>
+      <% if (event.status === "published" && (isOwner || isAdmin)) { %>
         <form method="POST" action="/events/<%= event.id %>/cancel" class="inline">
           <button
             type="submit"
