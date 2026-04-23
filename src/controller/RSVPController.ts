@@ -24,11 +24,7 @@ export class RSVPController {
       return res.status(400).send("Invalid event ID");
     }
 
-    const result = await this.service.toggleRSVP(
-      user.userId,
-      user.role,
-      eventId
-    );
+    const result = await this.service.toggleRSVP(userId, user.role, eventId);
 
     if (result.ok === false) {
       return res.status(400).send(result.value.message);

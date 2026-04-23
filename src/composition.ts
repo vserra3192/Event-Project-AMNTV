@@ -39,16 +39,17 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const rsvpController = new RSVPController(rsvpService, resolvedLogger);
 
   const eventController = CreateController(
-  eventService,
-  rsvpService,
-  resolvedLogger,
-  adminUserService
-);
+    eventService,
+    rsvpService,
+    resolvedLogger,
+    adminUserService
+  );
+
   return CreateApp(
-  authController,
-  eventController,
-  commentController,
-  rsvpController,
-  resolvedLogger
-);
+    authController,
+    eventController,
+    commentController,
+    rsvpController,
+    resolvedLogger
+  );
 }
