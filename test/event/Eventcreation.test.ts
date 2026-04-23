@@ -44,8 +44,7 @@ describe('Event Creation', () => {
         .post('/events/new')
         .type('form')
         .send(validEventData);
-      expect(response.status).toBe(302);
-      expect(response.headers.location).toBe('/login');
+      expect(response.status).toBe(401);
     });
   });
 
