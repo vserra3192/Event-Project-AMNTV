@@ -451,9 +451,11 @@ class EventController implements IEventController {
         this.logger.info(`Fetched ${result.value.length} events for user ${userId}`);
         res.status(200).render('events/my-events', { data: result.value, session, pageError: null });
     }
-    
+
     async handlePublishEvent(req: Request, res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
         const currentUser = session.authenticatedUser;
+        const isHtmx = req.get("HX-Request") === "true";
+
         if (!currentUser) {
           this.logger.warn("Blocked publish for unauthenticated user");
           res.status(401).render("partials/error", {
@@ -462,12 +464,12 @@ class EventController implements IEventController {
           });
           return;
         }
-    
+
         const result = await this.service.publishEvent(eventId, currentUser.userId, String(currentUser.role ?? ""));
         if (result.ok === false) {
           const status = this.mapErrorStatus(result.value);
           this.logger.warn(`Publish failed for event ${eventId}: ${result.value.message}`);
-    
+
           const eventResult = await this.service.getEventByID(eventId);
           if (eventResult.ok === false) {
             res.status(status).render("partials/error", {
@@ -476,7 +478,17 @@ class EventController implements IEventController {
             });
             return;
           }
-    
+
+          if (isHtmx) {
+            res.status(status).render("dashboard/partials/dashboard-event-item", {
+              event: eventResult.value,
+              session,
+              pageError: result.value.message,
+              layout: false,
+            });
+            return;
+          }
+
           res.status(status).render("events/detail", {
             event: eventResult.value,
             session,
@@ -484,23 +496,25 @@ class EventController implements IEventController {
           });
           return;
         }
-    
+
         this.logger.info(`Event ${eventId} published successfully`);
-        
-        // Check if this is an HTMX request (from dashboard)
-        if (req.get("HX-Request") === "true") {
+
+        if (isHtmx) {
           res.status(200).render("dashboard/partials/dashboard-event-item", {
             event: result.value,
             session,
+            pageError: null,
             layout: false,
           });
         } else {
           res.redirect(`/events/${result.value.id}`);
         }
     }
-    
+
     async handleCancelEvent(req: Request, res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
         const currentUser = session.authenticatedUser;
+        const isHtmx = req.get("HX-Request") === "true";
+
         if (!currentUser) {
           this.logger.warn("Blocked cancel for unauthenticated user");
           res.status(401).render("partials/error", {
@@ -509,17 +523,17 @@ class EventController implements IEventController {
           });
           return;
         }
-    
+
         const result = await this.service.cancelEvent(
           eventId,
           currentUser.userId,
           String(currentUser.role ?? ""),
         );
-    
+
         if (result.ok === false) {
           const status = this.mapErrorStatus(result.value);
           this.logger.warn(`Cancel failed for event ${eventId}: ${result.value.message}`);
-    
+
           const eventResult = await this.service.getEventByID(eventId);
           if (eventResult.ok === false) {
             res.status(status).render("partials/error", {
@@ -528,7 +542,17 @@ class EventController implements IEventController {
             });
             return;
           }
-    
+
+          if (isHtmx) {
+            res.status(status).render("dashboard/partials/dashboard-event-item", {
+              event: eventResult.value,
+              session,
+              pageError: result.value.message,
+              layout: false,
+            });
+            return;
+          }
+
           res.status(status).render("events/detail", {
             event: eventResult.value,
             session,
@@ -536,14 +560,14 @@ class EventController implements IEventController {
           });
           return;
         }
-    
+
         this.logger.info(`Event ${eventId} cancelled successfully`);
-        
-        // Check if this is an HTMX request (from dashboard)
-        if (req.get("HX-Request") === "true") {
+
+        if (isHtmx) {
           res.status(200).render("dashboard/partials/dashboard-event-item", {
             event: result.value,
             session,
+            pageError: null,
             layout: false,
           });
         } else {
