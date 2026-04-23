@@ -1,5 +1,5 @@
 <li class="flex flex-col gap-3 p-4 border border-slate-200 rounded-xl bg-slate-50">
-  <% if (pageError) { %>
+  <% if (typeof pageError !== 'undefined' && pageError) { %>
     <div class="mb-2 px-3 py-2 text-sm text-red-700 bg-red-100 rounded">
       <%= pageError %>
     </div>
