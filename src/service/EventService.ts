@@ -1,6 +1,6 @@
 import { Err, Ok, type Result } from "../lib/result";
 import { IEvent, IEventRepository, CreateEventInput, EventStatus} from "../repository/EventRepository";
-import { type EventError, UnexpectedRepositoryError, ValidationError, EventNotFound, InvalidId, InvalidSearchInput} from "../repository/Errors";
+import { type EventError, UnexpectedRepositoryError, ValidationError, InvalidEventState, EventNotFound, InvalidId, InvalidSearchInput, UnautherizedError} from "../repository/Errors";
 
 export interface CreateEventServiceInput {
   title: string;
@@ -176,13 +176,13 @@ class EventService implements IEventService {
     const isOwner = event.organizerId === actingUserId;
 
     if (!isAdmin && !isOwner) {
-      return Err(ValidationError("You do not have permission to edit this event."));
+      return Err(UnautherizedError("You do not have permission to edit this event."));
     }
 
     const hasConcluded = event.status === "past" || event.endDatetime <= new Date();
     if (event.status === "cancelled" || hasConcluded) {
       return Err(
-        ValidationError("Cancelled or concluded events cannot be edited."),
+        InvalidEventState("Cancelled or concluded events cannot be edited."),
       );
     }
 
@@ -230,11 +230,11 @@ class EventService implements IEventService {
     const isOwner = event.organizerId === actingUserId;
 
     if (!isAdmin && !isOwner) {
-      return Err(ValidationError("Only the event organizer can publish this event."));
+      return Err(UnautherizedError("Only the event organizer can publish this event."));
     }
 
     if (event.status !== "draft") {
-      return Err(ValidationError("Only draft events can be published."));
+      return Err(InvalidEventState("Only draft events can be published."));
     }
 
     return this.repo.updateEventStatus(eventId, "published");
@@ -273,11 +273,11 @@ class EventService implements IEventService {
     const isOwner = event.organizerId === actingUserId;
 
     if (!isAdmin && !isOwner) {
-      return Err(ValidationError("Invalid Permission."));
+      return Err(UnautherizedError("Invalid Permission."));
     }
 
     if (event.status !== "published") {
-      return Err(ValidationError("Only published events can be cancelled."));
+      return Err(InvalidEventState("Only published events can be cancelled."));
     }
 
     return this.repo.updateEventStatus(eventId, "cancelled");
