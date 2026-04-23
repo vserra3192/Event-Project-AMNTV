@@ -16,6 +16,7 @@ export interface IEvent {
   organizerId: string;
   createdAt: Date;
   updatedAt: Date;
+  rsvps: string[];
 }
 
 export type CreateEventInput = {
@@ -45,10 +46,14 @@ export interface IEventRepository {
   createEvent(input: CreateEventInput): Promise<Result<IEvent, EventError>>;
   getEventById(id: number): Promise<Result<IEvent, EventError>>;
   getAllEvents(): Promise<Result<IEvent[], EventError>>;
+  getActiveUserEvents(organizerId: string): Promise<Result<IEvent[], EventError>>;
+  getPastUserEvents(organizerId: string): Promise<Result<IEvent[], EventError>>;
   updateEvent(id: number, input: UpdateEventInput): Promise<Result<IEvent, EventError>>;
   updateEventStatus(id: number, status: EventStatus): Promise<Result<IEvent, EventError>>;
   getEventBySearch(query: string): Promise<Result<IEvent[], EventError>>;
   getEventsByOrganizerId(organizerId: string): Promise<Result<IEvent[], EventError>>;
+  rsvpEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>>;
+  rsvpCancelEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>>;
 }
 
 class InMemoryEventRepository implements IEventRepository {
@@ -71,6 +76,7 @@ class InMemoryEventRepository implements IEventRepository {
         organizerId: input.organizerId,
         createdAt: now,
         updatedAt: now,
+        rsvps: [],
       };
       this.events.set(event.id, event);
       return Ok(event);
@@ -99,6 +105,36 @@ class InMemoryEventRepository implements IEventRepository {
       return Ok([...this.events.values()]);
     } catch {
       return Err(UnexpectedRepositoryError('Failed to list events.'));
+    }
+  }
+
+  async getActiveUserEvents(organizerId: string): Promise<Result<IEvent[], EventError>> {
+    try {
+      const now = new Date();
+      const events = [...this.events.values()].filter(event => {
+        if (event.organizerId !== organizerId) return false;
+        const isPast = event.status === 'past' || event.endDatetime < now;
+        return !isPast;
+      });
+      return Ok(events);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to fetch active events for organizer.'));
+    }
+  }
+
+  async getPastUserEvents(organizerId: string): Promise<Result<IEvent[], EventError>> {
+    try {
+      const now = new Date();
+      const events = [...this.events.values()]
+        .filter(event => {
+          if (event.organizerId !== organizerId) return false;
+          const isPast = event.status === 'past' || event.endDatetime < now;
+          return isPast;
+        })
+        .sort((a, b) => b.endDatetime.getTime() - a.endDatetime.getTime());
+      return Ok(events);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to fetch past events for organizer.'));
     }
   }
 
@@ -142,6 +178,49 @@ class InMemoryEventRepository implements IEventRepository {
       return Err(UnexpectedRepositoryError('Failed to update event.'));
     }
   }
+
+  async rsvpEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>> {
+    try {
+      if (!Number.isInteger(eventId) || eventId < 1) {
+        return Err(InvalidId(`${eventId} is not a valid event id.`));
+      }
+
+      const event = this.events.get(eventId) ?? null;
+      if (event === null) {
+        return Err(EventNotFound(`Event with id ${eventId} was not found.`));
+      }
+
+      if (!event.rsvps.includes(userId)) {
+        if (event.capacity !== null && event.rsvps.length >= event.capacity) {
+          return Err(UnexpectedRepositoryError('Event capacity has been reached.'));
+        }
+        event.rsvps.push(userId);
+      }
+
+      this.events.set(eventId, event);
+      return Ok(event);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to rsvp for event.'));
+    }
+  }
+
+  async rsvpCancelEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>> {
+    try {
+      if (!Number.isInteger(eventId) || eventId < 1) {
+        return Err(InvalidId(`${eventId} is not a valid event id.`));
+      }
+      const event = this.events.get(eventId) ?? null;
+      if (event === null) {
+        return Err(EventNotFound(`Event with id ${eventId} was not found.`));
+      }
+      event.rsvps = event.rsvps.filter(id => id !== userId);
+      this.events.set(eventId, event);
+      return Ok(event);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to cancel rsvp for event.'));
+    }
+  }
+    
 
   async updateEventStatus(id: number, status: EventStatus): Promise<Result<IEvent, EventError>> {
     try {

@@ -1,28 +1,28 @@
 import type { Response } from "express";
 import type { ILoggingService } from "../service/LoggingService";
 import type { IAppBrowserSession } from "../session/AppSession";
-import type { ICommentService } from "../service/CommentService";
+import type { ICommentService, CommentServiceError } from "../service/CommentService";
+import type { IAdminUserService } from "../auth/AdminUserService";
+import type { IEventService } from "../service/EventService";
+import type { Result } from "../lib/result";
+import type { IComment } from "../repository/CommentRepository";
 
 export interface ICommentController {
   getComments(res: Response, eventId: number, session: IAppBrowserSession): Promise<void>;
   addComment(res: Response, eventId: number, content: string, session: IAppBrowserSession): Promise<void>;
-  deleteComment(res: Response, commentId: number, session: IAppBrowserSession): Promise<void>;
-}
-
-function timeAgo(date: Date): string {
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (seconds < 60)    return `${seconds}s ago`;
-  if (seconds < 3600)  return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  return `${Math.floor(seconds / 86400)}d ago`;
+  deleteComment(res: Response, eventId: number, commentId: number, session: IAppBrowserSession): Promise<void>;
 }
 
 function mapErrorToStatus(name: string): number {
   switch (name) {
-    case "Forbidden":       return 403;
-    case "CommentNotFound": return 404;
-    case "InvalidContent":  return 400;
-    default:                return 500;
+    case "Forbidden":
+      return 403;
+    case "CommentNotFound":
+      return 404;
+    case "InvalidContent":
+      return 400;
+    default:
+      return 500;
   }
 }
 
@@ -30,35 +30,65 @@ export class CommentController implements ICommentController {
   constructor(
     private readonly service: ICommentService,
     private readonly logger: ILoggingService,
+    private readonly users: IAdminUserService,
+    private readonly events: IEventService,
   ) {}
 
-  async getComments(
-    res: Response,
-    eventId: number,
-    session: IAppBrowserSession,
-  ): Promise<void> {
-    const result = await this.service.getCommentsByEventId(eventId);
+  private async loadComments(eventId: number): Promise<Result<{ comments: (IComment & { displayName?: string })[]; organizerId: string }, CommentServiceError>> {
+    const commentsResult = await this.service.getCommentsByEventId(eventId);
+    if (commentsResult.ok === false) {
+      return commentsResult;
+    }
 
-    if (!result.ok) {
-      const err = result.value as { name: string; message: string };
+    const eventResult = await this.events.getEventByID(eventId);
+    if (eventResult.ok === false) {
+      return {
+        ok: false,
+        value: eventResult.value,
+      } as any;
+    }
+
+    const usersResult = await this.users.listUsers();
+
+    const usersMap = new Map(
+      usersResult.ok
+        ? usersResult.value.map(u => [u.id, u])
+        : [],
+    );
+
+    const enriched = commentsResult.value.map(comment => ({
+      ...comment,
+      displayName: usersMap.get(comment.userId)?.displayName,
+    }));
+
+    return {
+      ok: true,
+      value: {
+        comments: enriched,
+        organizerId: eventResult.value.organizerId,
+      },
+    };
+  }
+
+  async getComments(res: Response, eventId: number, session: IAppBrowserSession): Promise<void> {
+    const result = await this.loadComments(eventId);
+
+    if (result.ok === false) {
+      const err = result.value;
       this.logger.warn(err.message);
       res.status(mapErrorToStatus(err.name)).send(err.message);
       return;
     }
 
     res.status(200).render("partials/comments", {
-      comments: result.value,
+      comments: result.value.comments,
+      organizerId: result.value.organizerId,
       user: session.authenticatedUser,
       layout: false,
     });
   }
 
-  async addComment(
-    res: Response,
-    eventId: number,
-    content: string,
-    session: IAppBrowserSession,
-  ): Promise<void> {
+  async addComment(res: Response, eventId: number, content: string, session: IAppBrowserSession): Promise<void> {
     if (!session.authenticatedUser) {
       res.status(401).send("Unauthorized");
       return;
@@ -70,26 +100,31 @@ export class CommentController implements ICommentController {
       role: session.authenticatedUser.role,
     });
 
-    if (!result.ok) {
-      const err = result.value as { name: string; message: string };
+    if (result.ok === false) {
+      const err = result.value;
       this.logger.warn(err.message);
       res.status(mapErrorToStatus(err.name)).send(err.message);
       return;
     }
 
-    res.status(201).render("partials/comment", {
-      comment: result.value,
+    const updated = await this.loadComments(eventId);
+
+    if (updated.ok === false) {
+      const err = updated.value;
+      this.logger.error(err.message);
+      res.status(mapErrorToStatus(err.name)).send(err.message);
+      return;
+    }
+
+    res.status(200).render("partials/comments", {
+      comments: updated.value.comments,
+      organizerId: updated.value.organizerId,
       user: session.authenticatedUser,
       layout: false,
-      timeAgo,
     });
   }
 
-  async deleteComment(
-    res: Response,
-    commentId: number,
-    session: IAppBrowserSession,
-  ): Promise<void> {
+  async deleteComment(res: Response, eventId: number, commentId: number, session: IAppBrowserSession): Promise<void> {
     if (!session.authenticatedUser) {
       res.status(401).send("Unauthorized");
       return;
@@ -101,13 +136,27 @@ export class CommentController implements ICommentController {
       role: session.authenticatedUser.role,
     });
 
-    if (!result.ok) {
-      const err = result.value as { name: string; message: string };
+    if (result.ok === false) {
+      const err = result.value;
       this.logger.warn(err.message);
       res.status(mapErrorToStatus(err.name)).send(err.message);
       return;
     }
 
-    res.status(204).send();
+    const updated = await this.loadComments(eventId);
+
+    if (updated.ok === false) {
+      const err = updated.value;
+      this.logger.error(err.message);
+      res.status(mapErrorToStatus(err.name)).send(err.message);
+      return;
+    }
+
+    res.status(200).render("partials/comments", {
+      comments: updated.value.comments,
+      organizerId: updated.value.organizerId,
+      user: session.authenticatedUser,
+      layout: false,
+    });
   }
 }

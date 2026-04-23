@@ -1,0 +1,45 @@
+<section id="dashboard-events-list-container" class="p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <div class="mb-4">
+    <h2 class="text-xl font-semibold mb-2">Your Events</h2>
+    <div class="flex gap-2 mt-4">
+      <a
+        href="/dashboard"
+        hx-get="/dashboard/list?type=active"
+        hx-target="#dashboard-events-list-container"
+        hx-swap="outerHTML"
+        hx-push-url="/dashboard"
+        class="px-3 py-1 rounded text-sm border <%= !isArchive ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white text-slate-700' %>"
+      >
+        Active Events
+      </a>
+
+      <a
+        href="/dashboard/archive"
+        hx-get="/dashboard/list?type=archive"
+        hx-target="#dashboard-events-list-container"
+        hx-swap="outerHTML"
+        hx-push-url="/dashboard/archive"
+        class="px-3 py-1 rounded text-sm border <%= isArchive ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white text-slate-700 hover:bg-gray-200' %>"
+      >
+        Archived Events
+      </a>
+    </div>
+    <p class="text-slate-500 mt-4">
+      <% if (data && data.length > 0) { %>
+        Displaying <%= data.length %> event<%= data.length === 1 ? '' : 's' %>.
+      <% } else { %>
+        No events found.
+      <% } %>
+    </p>
+  </div>
+
+  <% if (data && data.length > 0) { %>
+    <ul class="list-none m-0 p-0 grid gap-3.5">
+      <% data.forEach((event) => { %>
+        <%- include('./dashboard-event-item', { event, session }) %>
+      <% }) %>
+    </ul>
+  <% } else { %>
+    <p class="text-center text-slate-500 py-8">No events available at this time.</p>
+  <% } %>
+</section>

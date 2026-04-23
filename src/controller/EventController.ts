@@ -1,9 +1,11 @@
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
 import type { IEventService, CreateEventServiceInput } from '../service/EventService';
 import type { ILoggingService } from '../service/LoggingService';
 import type { IAppBrowserSession } from '../session/AppSession';
+import type { Result } from '../lib/result';
 import type { EventError } from '../repository/Errors';
 import type { EventStatus, IEvent} from '../repository/EventRepository';
+import type { IAdminUserService } from '../auth/AdminUserService';
 
 export interface IEditEventForm {
   title: string;
@@ -18,16 +20,21 @@ export interface IEditEventForm {
 
 export interface IEventController {
     showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
+    showDashboardEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void>;
     showAllEvents(res: Response, session: IAppBrowserSession): Promise<void>;
-    handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>): Promise<void>;
+    showEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void>;
+    handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>, isHtmx: boolean): Promise<void>;
     showEventDetail(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     submitEventEdit(res: Response, session: IAppBrowserSession, eventId: number, form: IEditEventForm): Promise<void>;
-    handlePublishEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
-    handleCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
+    handlePublishEvent(req: Request, res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
+    handleCancelEvent(req: Request, res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     showUserEvents(res: Response, session: IAppBrowserSession): Promise<void>;
     searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
+    searchEventsPartial(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
     showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void>;
+    handleRsvpEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
+    handleRsvpCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
 }
 
 const VALID_STATUSES: EventStatus[] = ['draft', 'published', 'cancelled', 'past'];
@@ -35,16 +42,22 @@ const VALID_STATUSES: EventStatus[] = ['draft', 'published', 'cancelled', 'past'
 class EventController implements IEventController {
     private service: IEventService;
     private logger: ILoggingService;
+    private adminUserService: IAdminUserService;
 
-    constructor(service: IEventService, logger: ILoggingService) {
+    constructor(service: IEventService, logger: ILoggingService, adminUserService: IAdminUserService) {
         this.service = service;
         this.logger = logger;
+        this.adminUserService = adminUserService;
     }
 
     private mapErrorStatus(error: EventError): number {
         if(error.name === 'ValidationError'){return 400;}
+        if(error.name === 'InvalidSearchInput'){return 400;}
         if(error.name === 'EventNotFound'){return 404;}
         if(error.name === 'InvalidId'){return 400;}
+        if(error.name === 'UnautherizedError'){return 403;}
+        if(error.name === 'InvalidEventState') {return 409;}
+        if(error.name === 'InvalidInput') {return 400;}
         return 500;
     }
         
@@ -91,8 +104,43 @@ class EventController implements IEventController {
         };
     }
 
+    async handleRsvpEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+        const result = await this.service.rsvpEvent(eventId, session.authenticatedUser?.userId ?? '');
+        if (!result.ok) {
+            this.logger.error('Error RSVPing for event');
+            const error = result.value as EventError;
+            res.status(this.mapErrorStatus(error)).send(error.message);
+            return;
+        }
+        res.status(200).render("events/partials/event-item", {
+            event: result.value,
+            session,
+            layout: false,
+        });
+    }
+
+    async handleRsvpCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+        const result = await this.service.rsvpCancelEvent(eventId, session.authenticatedUser?.userId ?? '');
+        if (!result.ok) {
+            this.logger.error('Error cancelling RSVP for event');
+            const error = result.value as EventError;
+            res.status(this.mapErrorStatus(error)).send(error.message);
+            return;
+        }
+        res.status(200).render("events/partials/event-item", {
+            event: result.value,
+            session,
+            layout: false,
+        });
+    }
+
+
     async showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
-        const result = await this.service.getUserEvents(session.authenticatedUser?.userId ?? '');
+        await this.service.archiveExpiredEvents();
+        const currentUserId = session.authenticatedUser?.userId ?? '';
+        const isAdmin = session.authenticatedUser?.role === 'admin';
+        const result = await (isAdmin ? this.service.getActiveEvents() : this.service.getActiveUserEvents(currentUserId));
+        
         if (!result.ok) {
             this.logger.error('Error fetching dashboard data');
             res.status(500).send('Error fetching dashboard data');
@@ -100,28 +148,89 @@ class EventController implements IEventController {
         }
         res.status(200);
         this.logger.info('Dashboard data fetched successfully');
-        res.render('dashboard', { data: result.value, session }); // will update this to send the actual data once we have it defined
+        res.render('dashboard', { data: result.value, session, isArchive: false });
+    }
+
+    async showDashboardEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void> {
+        await this.service.archiveExpiredEvents();
+        const currentUserId = session.authenticatedUser?.userId ?? '';
+        const isAdmin = session.authenticatedUser?.role === 'admin';
+        
+        const result = isArchive
+            ? (isAdmin ? await this.service.getPastEvents() : await this.service.getPastUserEvents(currentUserId))
+            : (isAdmin ? await this.service.getActiveEvents() : await this.service.getActiveUserEvents(currentUserId));
+
+        if (!result.ok) {
+            this.logger.error('Error fetching dashboard event list');
+            res.status(500).send('Error fetching dashboard event list');
+            return;
+        }
+
+        res.status(200).render('dashboard/partials/dashboard-events-list-page', {
+            data: result.value,
+            session,
+            isArchive,
+            layout: false,
+        });
+    }
+
+    private async renderEventsSection(
+        res: Response,
+        session: IAppBrowserSession,
+        eventsResult: Result<IEvent[], EventError>,
+        isArchive: boolean,
+        partialOnly: boolean,
+    ): Promise<void> {
+        if (!eventsResult.ok) {
+            this.logger.error('Error fetching event list data');
+            res.status(500).send('Error fetching event list data');
+            return;
+        }
+
+        if (partialOnly) {
+            res.status(200).render('events/partials/events-list-page', {
+                data: eventsResult.value,
+                session,
+                isArchive,
+                layout: false,
+            });
+            return;
+        }
+
+        res.status(200);
+        this.logger.info('All events data fetched successfully');
+        res.render('events/index', {
+            data: eventsResult.value,
+            session,
+            isArchive,
+        });
     }
 
     async showAllEvents(res: Response, session: IAppBrowserSession): Promise<void> {
         await this.service.archiveExpiredEvents();
         const result = await this.service.getActiveEvents();
-        if (!result.ok) {
-            this.logger.error('Error fetching all events data');
-            res.status(500).send('Error fetching all events data');
-            return;
-        }
-        res.status(200);
-        this.logger.info('All events data fetched successfully');
-        res.render('events/index', { data: result.value, session, isArchive: false });
-        
+        await this.renderEventsSection(res, session, result, false, false);
+    }
+
+    async showEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void> {
+        await this.service.archiveExpiredEvents();
+        const result = isArchive
+            ? await this.service.getPastEvents()
+            : await this.service.getActiveEvents();
+        await this.renderEventsSection(res, session, result, isArchive, true);
     }
 
     async searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void> {
         const result = await this.service.getEventsBySearch(query);
         if (result.ok === false) {
-            this.logger.error(`Error searching events with query "${query}": ${result.value.message}`);
-            res.status(500).send('Error searching events');
+            const statusCode = this.mapErrorStatus(result.value);
+            this.logger.warn(`Invalid search request with query "${query}": ${result.value.message}`);
+            res.status(statusCode).render('events/search', { 
+                data: [], 
+                session, 
+                query,
+                error: result.value.message 
+            });
             return;
         }
         res.status(200);
@@ -129,8 +238,27 @@ class EventController implements IEventController {
         res.render('events/search', { data: result.value, session, query });
     }
 
+    async searchEventsPartial(res: Response, session: IAppBrowserSession, query: string): Promise<void> {
+        const result = await this.service.getEventsBySearch(query);
+        if (result.ok === false) {
+            const statusCode = this.mapErrorStatus(result.value);
+            this.logger.warn(`Invalid search request with query "${query}": ${result.value.message}`);
+            res.status(statusCode).render('events/partials/search-results-page', { 
+                data: [], 
+                session, 
+                query,
+                error: result.value.message,
+                layout: false 
+            });
+            return;
+        }
+        res.status(200);
+        this.logger.info(`Events found for query "${query}": ${result.value.length}`);
+        res.render('events/partials/search-results-page', { data: result.value, session, query, layout: false });
+    }
 
-    async handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>): Promise<void> {
+
+    async handleCreateEvent(res: Response, session: IAppBrowserSession, body: Record<string, unknown>, isHtmx: boolean): Promise<void> {
         const organizerId = session.authenticatedUser?.userId ?? '';
         const title = typeof body.title === 'string' ? body.title : '';
         const description = typeof body.description === 'string' ? body.description : '';
@@ -161,12 +289,24 @@ class EventController implements IEventController {
             const httpStatus = this.mapErrorStatus(result.value);
             const log = httpStatus >= 500 ? this.logger.error : this.logger.warn;
             log.call(this.logger, `Create event failed: ${result.value.message}`);
-            res.status(httpStatus).render('events/create', { session, pageError: result.value.message });
+            if(isHtmx){
+                res.render('events/partials/create-form-response', {
+                    pageError: result.value.message,
+                    layout: false,
+                });
+            }else{
+                res.status(httpStatus).render('events/create', { session, pageError: result.value.message });
+            }
             return;
         }
 
-        this.logger.info('Created event ${result.value.id}: "${result.value.title}"');
-        res.redirect(`/events/${result.value.id}`);
+        this.logger.info(`Created event ${result.value.id}: "${result.value.title}"`);
+        if(isHtmx){
+            res.setHeader('HX-Redirect', `/events/${result.value.id}`);
+            res.status(200).send('');
+        }else{
+            res.redirect(`/events/${result.value.id}`);
+        }
     }
 
     async showEventDetail(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
@@ -177,9 +317,22 @@ class EventController implements IEventController {
             res.status(status).render('partials/error', { message: result.value.message, layout: false });
             return;
         }
+        const event = result.value;
+        if (event.status === 'draft') {
+            const currentUser = session.authenticatedUser;
+            const isAdmin = currentUser?.role === 'admin';
+            const isOwner = currentUser?.userId === event.organizerId;
+            if (!isAdmin && !isOwner) {
+                this.logger.warn(`Blocked draft event ${eventId} from user ${currentUser?.userId ?? 'unauthenticated'}`);
+                res.status(404).render('partials/error', { message: 'Event not found.', layout: false });
+                return;
+            }
+        }
+        const organizerRes = await this.adminUserService.findUserById(event.organizerId);
+        const organizerName = organizerRes.ok && organizerRes.value ? organizerRes.value.displayName : 'Unkown Organizer';
         this.logger.info(`Fetched event detail for id ${eventId}`);
         res.status(200);
-        res.render('events/detail', { event: result.value, session, pageError: null });
+        res.render('events/detail', { event, organizerName, session, pageError: null });
     }
     
     async showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
@@ -298,9 +451,11 @@ class EventController implements IEventController {
         this.logger.info(`Fetched ${result.value.length} events for user ${userId}`);
         res.status(200).render('events/my-events', { data: result.value, session, pageError: null });
     }
-    
-    async handlePublishEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+
+    async handlePublishEvent(req: Request, res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
         const currentUser = session.authenticatedUser;
+        const isHtmx = req.get("HX-Request") === "true";
+
         if (!currentUser) {
           this.logger.warn("Blocked publish for unauthenticated user");
           res.status(401).render("partials/error", {
@@ -309,12 +464,12 @@ class EventController implements IEventController {
           });
           return;
         }
-    
+
         const result = await this.service.publishEvent(eventId, currentUser.userId, String(currentUser.role ?? ""));
         if (result.ok === false) {
           const status = this.mapErrorStatus(result.value);
           this.logger.warn(`Publish failed for event ${eventId}: ${result.value.message}`);
-    
+
           const eventResult = await this.service.getEventByID(eventId);
           if (eventResult.ok === false) {
             res.status(status).render("partials/error", {
@@ -323,7 +478,17 @@ class EventController implements IEventController {
             });
             return;
           }
-    
+
+          if (isHtmx) {
+            res.status(status).render("dashboard/partials/dashboard-event-item", {
+              event: eventResult.value,
+              session,
+              pageError: result.value.message,
+              layout: false,
+            });
+            return;
+          }
+
           res.status(status).render("events/detail", {
             event: eventResult.value,
             session,
@@ -331,13 +496,25 @@ class EventController implements IEventController {
           });
           return;
         }
-    
+
         this.logger.info(`Event ${eventId} published successfully`);
-        res.redirect(`/events/${result.value.id}`);
+
+        if (isHtmx) {
+          res.status(200).render("dashboard/partials/dashboard-event-item", {
+            event: result.value,
+            session,
+            pageError: null,
+            layout: false,
+          });
+        } else {
+          res.redirect(`/events/${result.value.id}`);
+        }
     }
-    
-    async handleCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+
+    async handleCancelEvent(req: Request, res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
         const currentUser = session.authenticatedUser;
+        const isHtmx = req.get("HX-Request") === "true";
+
         if (!currentUser) {
           this.logger.warn("Blocked cancel for unauthenticated user");
           res.status(401).render("partials/error", {
@@ -346,17 +523,17 @@ class EventController implements IEventController {
           });
           return;
         }
-    
+
         const result = await this.service.cancelEvent(
           eventId,
           currentUser.userId,
           String(currentUser.role ?? ""),
         );
-    
+
         if (result.ok === false) {
           const status = this.mapErrorStatus(result.value);
           this.logger.warn(`Cancel failed for event ${eventId}: ${result.value.message}`);
-    
+
           const eventResult = await this.service.getEventByID(eventId);
           if (eventResult.ok === false) {
             res.status(status).render("partials/error", {
@@ -365,7 +542,17 @@ class EventController implements IEventController {
             });
             return;
           }
-    
+
+          if (isHtmx) {
+            res.status(status).render("dashboard/partials/dashboard-event-item", {
+              event: eventResult.value,
+              session,
+              pageError: result.value.message,
+              layout: false,
+            });
+            return;
+          }
+
           res.status(status).render("events/detail", {
             event: eventResult.value,
             session,
@@ -373,9 +560,19 @@ class EventController implements IEventController {
           });
           return;
         }
-    
+
         this.logger.info(`Event ${eventId} cancelled successfully`);
-        res.redirect(`/events/${result.value.id}`);
+
+        if (isHtmx) {
+          res.status(200).render("dashboard/partials/dashboard-event-item", {
+            event: result.value,
+            session,
+            pageError: null,
+            layout: false,
+          });
+        } else {
+          res.redirect(`/events/${result.value.id}`);
+        }
     }
 
     async showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void> {
@@ -392,6 +589,6 @@ class EventController implements IEventController {
     }
 }
 
-export function CreateController(service: IEventService, logger: ILoggingService): IEventController {
-    return new EventController(service, logger);
+export function CreateController(service: IEventService, logger: ILoggingService, adminUserService: IAdminUserService): IEventController {
+    return new EventController(service, logger, adminUserService);
 }

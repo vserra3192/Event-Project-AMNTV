@@ -26,11 +26,11 @@ export function createComposedApp(logger?: ILoggingService): IApp {
 
   const eventRepo = CreateInMemoryEventRepository();
   const eventService = CreateEventService(eventRepo);
-  const eventController = CreateController(eventService, resolvedLogger);
+  const eventController = CreateController(eventService, resolvedLogger, adminUserService);
 
   const commentRepo = new InMemoryCommentRepository();
-  const commentService = new CommentService(commentRepo);
-  const commentController = new CommentController(commentService, resolvedLogger);
+  const commentService = new CommentService(commentRepo, eventRepo);
+  const commentController = new CommentController(commentService, resolvedLogger, adminUserService, eventService);
 
   return CreateApp(authController, eventController, commentController, resolvedLogger);
 }

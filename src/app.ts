@@ -228,6 +228,7 @@ class ExpressApp implements IApp {
 
         const browserSession = touchAppSession(sessionStore(req));
         await this.eventController.handlePublishEvent(
+          req,
           res,
           browserSession,
           Number(req.params.id),
@@ -244,6 +245,7 @@ class ExpressApp implements IApp {
 
         const browserSession = touchAppSession(sessionStore(req));
         await this.eventController.handleCancelEvent(
+          req,
           res,
           browserSession,
           Number(req.params.id),
@@ -361,6 +363,18 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/dashboard/list",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const browserSession = recordPageView(sessionStore(req));
+        const isArchive = typeof req.query.type === "string" && req.query.type === "archive";
+        this.logger.info(`GET /dashboard/list?type=${isArchive ? "archive" : "active"} for ${browserSession.browserLabel}`);
+        await this.eventController.showDashboardEventsList(res, browserSession, isArchive);
+      }),
+    );
+
+    this.app.get(
       '/events/new',
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
@@ -376,7 +390,7 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) return;
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`POST /events for ${browserSession.browserLabel}`);
-        await this.eventController.handleCreateEvent(res, browserSession, req.body as Record<string, unknown>);
+        await this.eventController.handleCreateEvent(res, browserSession, req.body as Record<string, unknown>, this.isHtmxRequest(req));
       }),
     );
 
@@ -387,6 +401,18 @@ class ExpressApp implements IApp {
 
         const session = recordPageView(sessionStore(req));
         await this.eventController.showArchivedEvents(res, session);
+      }),
+    );
+
+    this.app.get(
+      "/events/list",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+
+        const browserSession = recordPageView(sessionStore(req));
+        const isArchive = typeof req.query.type === "string" && req.query.type === "archive";
+        this.logger.info(`GET /events/list?type=${isArchive ? "archive" : "active"} for ${browserSession.browserLabel}`);
+        await this.eventController.showEventsList(res, browserSession, isArchive);
       }),
     );
 
@@ -406,12 +432,47 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/events/search/results",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        const searchQuery = typeof req.query.q === "string" ? req.query.q.trim() : "";
+        this.logger.info(`GET /events/search/results?q=${searchQuery} for ${browserSession.browserLabel}`);
+
+        await this.eventController.searchEventsPartial(res, browserSession, searchQuery);
+      }),
+    );
+
+    this.app.get(
       '/events/:id',
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`GET /events/${req.params.id} for ${browserSession.browserLabel}`);
         await this.eventController.showEventDetail(res, browserSession, Number(req.params.id));
+      }),
+    );
+
+    this.app.post(
+      '/events/:id/rsvp',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = touchAppSession(sessionStore(req));
+        this.logger.info(`POST /events/${req.params.id}/rsvp for ${browserSession.browserLabel}`);
+        await this.eventController.handleRsvpEvent(res, browserSession, Number(req.params.id));
+      }),
+    );
+
+    this.app.post(
+      '/events/:id/rsvp/cancel',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = touchAppSession(sessionStore(req));
+        this.logger.info(`POST /events/${req.params.id}/rsvp/cancel for ${browserSession.browserLabel}`);
+        await this.eventController.handleRsvpCancelEvent(res, browserSession, Number(req.params.id));
       }),
     );
 
@@ -454,11 +515,17 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) return;
 
         const commentId = Number(req.params.id);
+        const eventId = Number(req.query.eventId);
         const session = touchAppSession(sessionStore(req));
 
         this.logger.info(`POST /comments/${commentId}/delete`);
 
-        await this.commentController.deleteComment(res, commentId, session);
+        await this.commentController.deleteComment(
+          res,
+          eventId,
+          commentId,
+          session,
+        );
       }),
     );
 
