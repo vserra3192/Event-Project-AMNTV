@@ -32,3 +32,28 @@ export interface IEvent {
   createdAt: Date;
   updatedAt: Date;
 }
+
+model Event {
+  id            Int      @id @default(autoincrement())
+  title         String
+  description   String
+  location      String
+  category      String
+  status        String   @default("draft")
+  capacity      Int?
+  startDatetime DateTime
+  endDatetime   DateTime
+  organizerId   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  rsvps         EventRsvp[]
+}
+
+model EventRsvp {
+  id      Int    @id @default(autoincrement())
+  eventId Int
+  userId  String
+  event   Event  @relation(fields: [eventId], references: [id])
+
+  @@unique([eventId, userId])
+}
