@@ -19,12 +19,6 @@ datasource db {
 // }
 
 
-enum Status {
-  draft
-  publish
-  cancelled
-  past
-}
 
 model Event {
   id            Int      @id @default(autoincrement())
@@ -32,7 +26,7 @@ model Event {
   description   String
   location      String
   category      String
-  status        Status
+  status        String
   capacity      Int?
   startDatetime DateTime
   endDatetime   DateTime
