@@ -148,13 +148,13 @@ export class PrismaEventRepository implements IEventRepository {
       const events = await this.prisma.event.findMany({
         where: {
           OR: [
-            { title: { contains: searchQuery, mode: 'insensitive' } },
-            { description: { contains: searchQuery, mode: 'insensitive' } },
-            { location: { contains: searchQuery, mode: 'insensitive' } },
+            { title: { contains: searchQuery } },
+            { description: { contains: searchQuery } },
+            { location: { contains: searchQuery } },
           ],
         },
         include: { rsvps: true },
-      });
+      }) as Array<PrismaEvent & { rsvps: PrismaEventRsvp[] }>;
 
       return Ok(events.map((event) => this.mapEvent(event)));
     } catch (error) {
