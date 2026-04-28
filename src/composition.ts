@@ -13,6 +13,7 @@ import { CreateController } from "./controller/EventController";
 import { InMemoryCommentRepository } from "./repository/InMemoryCommentRepository";
 import { CommentService } from "./service/CommentService";
 import { CommentController } from "./controller/CommentController";
+import { CreatePrismaCommentRepository, PrismaCommentRepository } from "./repository/PrismaCommentRepository";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -28,7 +29,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const eventService = CreateEventService(eventRepo);
   const eventController = CreateController(eventService, resolvedLogger, adminUserService);
 
-  const commentRepo = new InMemoryCommentRepository();
+  const commentRepo = CreatePrismaCommentRepository();
   const commentService = new CommentService(commentRepo, eventRepo);
   const commentController = new CommentController(commentService, resolvedLogger, adminUserService, eventService);
 

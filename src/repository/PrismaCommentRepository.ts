@@ -70,3 +70,8 @@ export class PrismaCommentRepository implements ICommentRepository {
     }
   }
 }
+
+export function CreatePrismaCommentRepository(prisma?: PrismaClient): ICommentRepository {
+  const resolvedPrisma = prisma ?? new PrismaClient();
+  return new PrismaCommentRepository(resolvedPrisma);
+}
