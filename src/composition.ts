@@ -1,3 +1,5 @@
+import { PrismaClient } from "@prisma/client";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { CreateAdminUserService } from "./auth/AdminUserService";
 import { CreateAuthController } from "./auth/AuthController";
 import { CreateAuthService } from "./auth/AuthService";
@@ -8,9 +10,9 @@ import type { IApp } from "./contracts";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
 import { CreatePrismaEventRepository } from "./repository/PrismaEventRepository";
+import { CreatePrismaCommentRepository } from "./repository/PrismaCommentRepository";
 import { CreateEventService } from "./service/EventService";
 import { CreateController } from "./controller/EventController";
-import { InMemoryCommentRepository } from "./repository/InMemoryCommentRepository";
 import { CommentService } from "./service/CommentService";
 import { CommentController } from "./controller/CommentController";
 import { CreatePrismaCommentRepository, PrismaCommentRepository } from "./repository/PrismaCommentRepository";
