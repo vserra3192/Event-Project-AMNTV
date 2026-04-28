@@ -1,4 +1,4 @@
-import { PrismaClient, type Event as PrismaEvent, type EventRsvp as PrismaEventRsvp } from '@prisma/client';
+import { PrismaClient, Prisma, type Event as PrismaEvent, type EventRsvp as PrismaEventRsvp } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { IEventRepository, type IEvent, type CreateEventInput, type UpdateEventInput, type EventStatus } from './InMemoryEventRepository';
 import { Ok, Err, type Result } from '../lib/result';
@@ -108,11 +108,101 @@ export class PrismaEventRepository implements IEventRepository {
   }
 
   async rsvpEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>> {
-    return Err(UnexpectedRepositoryError('rsvpEvent not implemented.'));
+    try {
+      if (!Number.isInteger(eventId) || eventId < 1) {
+        return Err(InvalidId(`${eventId} is not a valid event id.`));
+      }
+
+      const event = await this.prisma.event.findUnique({
+        where: { id: eventId },
+        include: { rsvps: true },
+      });
+
+      if (event === null) {
+        return Err(EventNotFound(`Event with id ${eventId} was not found.`));
+      }
+
+      const alreadyRsvped = event.rsvps.some((rsvp) => rsvp.userId === userId);
+      if (alreadyRsvped) {
+        return Ok(this.mapEvent(event));
+      }
+
+      if (event.capacity !== null && event.rsvps.length >= event.capacity) {
+        return Err(UnexpectedRepositoryError('Event capacity has been reached.'));
+      }
+
+      try {
+        await this.prisma.eventRsvp.create({
+          data: {
+            eventId,
+            userId,
+          },
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          return Ok(this.mapEvent(event));
+        }
+        throw error;
+      }
+
+      const updatedEvent = await this.prisma.event.findUnique({
+        where: { id: eventId },
+        include: { rsvps: true },
+      });
+
+      if (updatedEvent === null) {
+        return Err(EventNotFound(`Event with id ${eventId} was not found.`));
+      }
+
+      return Ok(this.mapEvent(updatedEvent));
+    } catch (error) {
+      return Err(
+        UnexpectedRepositoryError(
+          `Failed to rsvp for event: ${error instanceof Error ? error.message : String(error)}`
+        )
+      );
+    }
   }
 
   async rsvpCancelEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>> {
-    return Err(UnexpectedRepositoryError('rsvpCancelEvent not implemented.'));
+    try {
+      if (!Number.isInteger(eventId) || eventId < 1) {
+        return Err(InvalidId(`${eventId} is not a valid event id.`));
+      }
+
+      const event = await this.prisma.event.findUnique({
+        where: { id: eventId },
+        include: { rsvps: true },
+      });
+
+      if (event === null) {
+        return Err(EventNotFound(`Event with id ${eventId} was not found.`));
+      }
+
+      await this.prisma.eventRsvp.deleteMany({
+        where: {
+          eventId,
+          userId,
+        },
+      });
+
+      const updatedEvent = await this.prisma.event.findUnique({
+        where: { id: eventId },
+        include: { rsvps: true },
+      });
+
+      if (updatedEvent === null) {
+        return Err(EventNotFound(`Event with id ${eventId} was not found.`));
+      }
+
+      return Ok(this.mapEvent(updatedEvent));
+    } catch (error) {
+      return Err(
+        UnexpectedRepositoryError(
+          `Failed to cancel rsvp for event: ${error instanceof Error ? error.message : String(error)}`
+        )
+      );
+    }
   }
 }
 
