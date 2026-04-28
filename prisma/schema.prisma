@@ -24,7 +24,7 @@ model Event {
   description   String
   location      String
   category      String
-  status        String      @default("draft")
+  status        String
   capacity      Int?
   startDatetime DateTime
   endDatetime   DateTime
