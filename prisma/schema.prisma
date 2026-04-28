@@ -18,10 +18,8 @@ datasource db {
 //   updatedAt DateTime @updatedAt
 // }
 
-
-
 model Event {
-  id            Int      @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   title         String
   description   String
   location      String
@@ -31,9 +29,10 @@ model Event {
   startDatetime DateTime
   endDatetime   DateTime
   organizerId   String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   rsvps         EventRsvp[]
+  comments      Comment[]
 }
 
 model EventRsvp {
@@ -43,4 +42,14 @@ model EventRsvp {
   event   Event  @relation(fields: [eventId], references: [id])
 
   @@unique([eventId, userId])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
 }
