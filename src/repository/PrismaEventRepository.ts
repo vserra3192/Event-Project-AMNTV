@@ -71,7 +71,42 @@ export class PrismaEventRepository implements IEventRepository {
   }
 
   async updateEvent(id: number, input: UpdateEventInput): Promise<Result<IEvent, EventError>> {
-    return Err(UnexpectedRepositoryError('updateEvent not implemented.'));
+    try {
+      if (!Number.isInteger(id) || id < 1) {
+        return Err(InvalidId(`${id} is not a valid event id.`));
+      }
+
+      const existing = await this.prisma.event.findUnique({
+        where: { id },
+      });
+
+      if (existing === null) {
+        return Err(EventNotFound(`Event with id ${id} was not found.`));
+      }
+
+      const updated = await this.prisma.event.update({
+        where: { id },
+        data: {
+          title: input.title,
+          description: input.description,
+          location: input.location,
+          category: input.category,
+          status: input.status,
+          capacity: input.capacity,
+          startDatetime: input.startDatetime,
+          endDatetime: input.endDatetime,
+        },
+        include: { rsvps: true },
+      });
+
+      return Ok(this.mapEvent(updated));
+    } catch (error) {
+      return Err(
+        UnexpectedRepositoryError(
+          `Failed to update event: ${error instanceof Error ? error.message : String(error)}`
+        )
+      );
+    }
   }
 
   async updateEventStatus(id: number, status: EventStatus): Promise<Result<IEvent, EventError>> {
