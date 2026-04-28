@@ -15,6 +15,7 @@ import { CreateEventService } from "./service/EventService";
 import { CreateController } from "./controller/EventController";
 import { CommentService } from "./service/CommentService";
 import { CommentController } from "./controller/CommentController";
+import { CreatePrismaCommentRepository, PrismaCommentRepository } from "./repository/PrismaCommentRepository";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();

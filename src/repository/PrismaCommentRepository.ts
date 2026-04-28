@@ -74,11 +74,6 @@ export class PrismaCommentRepository implements ICommentRepository {
 }
 
 export function CreatePrismaCommentRepository(prisma?: PrismaClient): ICommentRepository {
-  if (prisma != null) {
-    return new PrismaCommentRepository(prisma);
-  }
-
-  const databaseUrl = process.env.DATABASE_URL ?? 'file:./dev.db';
-  const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
-  return new PrismaCommentRepository(new PrismaClient({ adapter }));
+  const resolvedPrisma = prisma ?? new PrismaClient();
+  return new PrismaCommentRepository(resolvedPrisma);
 }
