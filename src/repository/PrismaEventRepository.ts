@@ -30,7 +30,24 @@ export class PrismaEventRepository implements IEventRepository {
   }
 
   async createEvent(input: CreateEventInput): Promise<Result<IEvent, EventError>> {
-    return Err(UnexpectedRepositoryError('createEvent not implemented.'));
+    try {
+      const event = await this.prisma.event.create({
+        data: {
+          ...input,
+          rsvps: {
+            create: [],
+          },
+        },
+        include: {rsvps: true}
+      });
+      return Ok(this.mapEvent(event));
+    } catch (error){
+        return Err(
+          UnexpectedRepositoryError(
+            `Failed to Create Event: ${error instanceof Error ? error.message : String(error)}`
+          )
+        );
+    }
   }
 
   async getEventById(id: number): Promise<Result<IEvent, EventError>> {
@@ -59,7 +76,15 @@ export class PrismaEventRepository implements IEventRepository {
   }
 
   async getAllEvents(): Promise<Result<IEvent[], EventError>> {
-    return Err(UnexpectedRepositoryError('getAllEvents not implemented.'));
+    try {
+      const events = await this.prisma.event.findMany({
+        include: { rsvps: true },
+      });
+
+      return Ok(events.map(e => this.mapEvent(e)));
+    } catch (error) {
+      return Err(UnexpectedRepositoryError(`Failed to fetch events`));
+    }
   }
 
   async getActiveUserEvents(organizerId: string): Promise<Result<IEvent[], EventError>> {
