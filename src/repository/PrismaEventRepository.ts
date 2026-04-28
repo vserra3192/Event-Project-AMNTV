@@ -79,7 +79,28 @@ export class PrismaEventRepository implements IEventRepository {
   }
 
   async getEventBySearch(query: string): Promise<Result<IEvent[], EventError>> {
-    return Err(UnexpectedRepositoryError('getEventBySearch not implemented.'));
+    try {
+      const searchQuery = query.trim();
+
+      const events = await this.prisma.event.findMany({
+        where: {
+          OR: [
+            { title: { contains: searchQuery, mode: 'insensitive' } },
+            { description: { contains: searchQuery, mode: 'insensitive' } },
+            { location: { contains: searchQuery, mode: 'insensitive' } },
+          ],
+        },
+        include: { rsvps: true },
+      });
+
+      return Ok(events.map((event) => this.mapEvent(event)));
+    } catch (error) {
+      return Err(
+        UnexpectedRepositoryError(
+          `Failed to search events: ${error instanceof Error ? error.message : String(error)}`
+        )
+      );
+    }
   }
 
   async getEventsByOrganizerId(organizerId: string): Promise<Result<IEvent[], EventError>> {
