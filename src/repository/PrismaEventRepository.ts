@@ -59,7 +59,18 @@ export class PrismaEventRepository implements IEventRepository {
   }
 
   async getAllEvents(): Promise<Result<IEvent[], EventError>> {
-    return Err(UnexpectedRepositoryError('getAllEvents not implemented.'));
+    try {
+      const events = await this.prisma.event.findMany({
+        include: { rsvps: true },
+      });
+      return Ok(events.map((event) => this.mapEvent(event)));
+    } catch (error) {
+      return Err(
+        UnexpectedRepositoryError(
+          `Failed to list events: ${error instanceof Error ? error.message : String(error)}`
+        )
+      );
+    }
   }
 
   async getActiveUserEvents(organizerId: string): Promise<Result<IEvent[], EventError>> {
