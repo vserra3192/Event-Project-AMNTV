@@ -7,7 +7,7 @@ import { CreateApp } from "./app";
 import type { IApp } from "./contracts";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
-import { CreateInMemoryEventRepository } from "./repository/InMemoryEventRepository";
+import { CreatePrismaEventRepository } from "./repository/PrismaEventRepository";
 import { CreateEventService } from "./service/EventService";
 import { CreateController } from "./controller/EventController";
 import { InMemoryCommentRepository } from "./repository/InMemoryCommentRepository";
@@ -24,7 +24,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-  const eventRepo = CreateInMemoryEventRepository();
+  const eventRepo = CreatePrismaEventRepository();
   const eventService = CreateEventService(eventRepo);
   const eventController = CreateController(eventService, resolvedLogger, adminUserService);
 
