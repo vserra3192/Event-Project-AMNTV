@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { Err, Ok, type Result } from "../lib/result";
 import { CommentError, CommentNotFound, IComment, ICommentRepository } from "./InMemoryCommentRepository";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaEventRepository } from "./PrismaEventRepository";
 
 export class PrismaCommentRepository implements ICommentRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -69,4 +71,14 @@ export class PrismaCommentRepository implements ICommentRepository {
       return Err(CommentNotFound("Failed to delete comment."));
     }
   }
+}
+
+export function CreatePrismaCommentRepository(prisma?: PrismaClient): ICommentRepository {
+  if (prisma != null) {
+    return new PrismaCommentRepository(prisma);
+  }
+
+  const databaseUrl = process.env.DATABASE_URL ?? 'file:./dev.db';
+  const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
+  return new PrismaCommentRepository(new PrismaClient({ adapter }));
 }
