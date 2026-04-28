@@ -1,4 +1,5 @@
 import { PrismaClient, type Event as PrismaEvent, type EventRsvp as PrismaEventRsvp } from '@prisma/client';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { IEventRepository, type IEvent, type CreateEventInput, type UpdateEventInput, type EventStatus } from './InMemoryEventRepository';
 import { Ok, Err, type Result } from '../lib/result';
 import { type EventError, EventNotFound, InvalidId, UnexpectedRepositoryError } from './Errors';
@@ -95,5 +96,11 @@ export class PrismaEventRepository implements IEventRepository {
 }
 
 export function CreatePrismaEventRepository(prisma?: PrismaClient): IEventRepository {
-  return new PrismaEventRepository(prisma ?? new PrismaClient());
+  if (prisma != null) {
+    return new PrismaEventRepository(prisma);
+  }
+
+  const databaseUrl = process.env.DATABASE_URL ?? 'file:./dev.db';
+  const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
+  return new PrismaEventRepository(new PrismaClient({ adapter }));
 }
