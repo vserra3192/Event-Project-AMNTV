@@ -361,7 +361,7 @@ export function CreatePrismaEventRepository(prisma?: PrismaClient): IEventReposi
     return new PrismaEventRepository(prisma);
   }
 
-  const databaseUrl = process.env.DATABASE_URL ?? 'file:./dev.db';
+  const databaseUrl = process.env.DATABASE_URL ?? 'file:./prisma/dev.db';
   const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
   return new PrismaEventRepository(new PrismaClient({ adapter }));
 }
