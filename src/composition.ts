@@ -13,6 +13,10 @@ import { CreateEventService } from "./service/EventService";
 import { CreateController } from "./controller/EventController";
 import { CommentService } from "./service/CommentService";
 import { CommentController } from "./controller/CommentController";
+import { CreateInMemoryEventRepository } from "./repository/InMemoryEventRepository";
+import { InMemoryCommentRepository } from "./repository/InMemoryCommentRepository";
+
+const usePrisma = true; // Set to false to use in-memory repositories instead of Prisma
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -24,11 +28,11 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-  const eventRepo = CreatePrismaEventRepository();
+  const eventRepo = usePrisma?  CreatePrismaEventRepository() : CreateInMemoryEventRepository();
   const eventService = CreateEventService(eventRepo);
   const eventController = CreateController(eventService, resolvedLogger, adminUserService);
 
-  const commentRepo = CreatePrismaCommentRepository();
+  const commentRepo = usePrisma?  CreatePrismaCommentRepository() : new InMemoryCommentRepository();
   const commentService = new CommentService(commentRepo, eventRepo);
   const commentController = new CommentController(commentService, resolvedLogger, adminUserService, eventService);
 
