@@ -90,8 +90,8 @@ describe('Organizer Dashboard Routes', () => {
           category: 'Test Category',
           status: 'draft',
           capacity: '10',
-          startDatetime: '2026-04-20T10:00',
-          endDatetime: '2026-04-20T12:00'
+          startDatetime: '2027-04-20T10:00',
+          endDatetime: '2027-04-20T12:00'
         });
 
       expect(response.status).toBe(302);
@@ -163,8 +163,8 @@ describe('Organizer Dashboard Routes', () => {
           category: 'Test Category',
           status: 'draft',
           capacity: '20',
-          startDatetime: '2026-04-25T10:00',
-          endDatetime: '2026-04-25T12:00'
+          startDatetime: '2027-04-25T10:00',
+          endDatetime: '2027-04-25T12:00'
         });
 
       await organizerAgent
@@ -177,8 +177,8 @@ describe('Organizer Dashboard Routes', () => {
           category: 'Test Category 2',
           status: 'published',
           capacity: '15',
-          startDatetime: '2026-04-26T14:00',
-          endDatetime: '2026-04-26T16:00'
+          startDatetime: '2027-04-26T14:00',
+          endDatetime: '2027-04-26T16:00'
         });
 
       // Create event for admin
@@ -192,8 +192,8 @@ describe('Organizer Dashboard Routes', () => {
           category: 'Admin Category',
           status: 'published',
           capacity: '30',
-          startDatetime: '2026-04-27T10:00',
-          endDatetime: '2026-04-27T12:00'
+          startDatetime: '2027-04-27T10:00',
+          endDatetime: '2027-04-27T12:00'
         });
     });
 
