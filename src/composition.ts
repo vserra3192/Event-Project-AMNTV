@@ -1,5 +1,3 @@
-import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { CreateAdminUserService } from "./auth/AdminUserService";
 import { CreateAuthController } from "./auth/AuthController";
 import { CreateAuthService } from "./auth/AuthService";
@@ -15,7 +13,6 @@ import { CreateEventService } from "./service/EventService";
 import { CreateController } from "./controller/EventController";
 import { CommentService } from "./service/CommentService";
 import { CommentController } from "./controller/CommentController";
-import { CreatePrismaCommentRepository, PrismaCommentRepository } from "./repository/PrismaCommentRepository";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
