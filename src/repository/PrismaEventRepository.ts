@@ -91,11 +91,60 @@ export class PrismaEventRepository implements IEventRepository {
   }
 
   async getActiveUserEvents(organizerId: string): Promise<Result<IEvent[], EventError>> {
-    return Err(UnexpectedRepositoryError('getActiveUserEvents not implemented.'));
+    try {
+      const now = new Date();
+      const events = await this.prisma.event.findMany({
+        where: {
+          organizerId,
+          status: {
+            not: 'past',
+          },
+          endDatetime: {
+            gte: now,
+          },
+        },
+        include: { rsvps: true },
+      });
+
+      return Ok(events.map((event) => this.mapEvent(event)));
+    } catch (error) {
+      return Err(
+        UnexpectedRepositoryError(
+          `Failed to fetch active events for organizer: ${error instanceof Error ? error.message : String(error)}`
+        )
+      );
+    }
   }
 
   async getPastUserEvents(organizerId: string): Promise<Result<IEvent[], EventError>> {
-    return Err(UnexpectedRepositoryError('getPastUserEvents not implemented.'));
+    try {
+      const now = new Date();
+      const events = await this.prisma.event.findMany({
+        where: {
+          organizerId,
+          OR: [
+            { status: 'past' },
+            {
+              endDatetime: {
+                lt: now,
+              },
+            },
+          ],
+        },
+        include: { rsvps: true },
+        orderBy: {
+          endDatetime: 'desc',
+        },
+      });
+
+      return Ok(events.map((event) => this.mapEvent(event)));
+    } catch (error) {
+      return Err(
+        UnexpectedRepositoryError(
+          `Failed to fetch past events for organizer: ${error instanceof Error ? error.message : String(error)}`
+        )
+      );
+    }
   }
 
   async updateEvent(id: number, input: UpdateEventInput): Promise<Result<IEvent, EventError>> {
