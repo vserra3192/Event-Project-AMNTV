@@ -7,6 +7,8 @@ import { CreateApp } from "./app";
 import type { IApp } from "./contracts";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
+import { CreateInMemoryEventRepository } from "./repository/InMemoryEventRepository";
+import { InMemoryCommentRepository } from "./repository/InMemoryCommentRepository";
 import { CreatePrismaEventRepository } from "./repository/PrismaEventRepository";
 import { CreatePrismaCommentRepository } from "./repository/PrismaCommentRepository";
 import { CreateEventService } from "./service/EventService";
@@ -24,11 +26,17 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-  const eventRepo = CreatePrismaEventRepository();
+  const useInMemoryRepositories = process.env.NODE_ENV === "test";
+
+  const eventRepo = useInMemoryRepositories
+    ? CreateInMemoryEventRepository()
+    : CreatePrismaEventRepository();
   const eventService = CreateEventService(eventRepo);
   const eventController = CreateController(eventService, resolvedLogger, adminUserService);
 
-  const commentRepo = CreatePrismaCommentRepository();
+  const commentRepo = useInMemoryRepositories
+    ? new InMemoryCommentRepository()
+    : CreatePrismaCommentRepository();
   const commentService = new CommentService(commentRepo, eventRepo);
   const commentController = new CommentController(commentService, resolvedLogger, adminUserService, eventService);
 
