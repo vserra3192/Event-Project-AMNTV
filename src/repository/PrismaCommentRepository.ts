@@ -3,8 +3,12 @@ import { Err, Ok, type Result } from "../lib/result";
 import { CommentError, CommentNotFound, IComment, ICommentRepository } from "./InMemoryCommentRepository";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
+type PrismaCommentClient = PrismaClient & {
+  comment: any;
+};
+
 export class PrismaCommentRepository implements ICommentRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaCommentClient) {}
 
   async getCommentsByEventId(eventId: number): Promise<Result<IComment[], CommentError>> {
     try {
@@ -74,10 +78,10 @@ export class PrismaCommentRepository implements ICommentRepository {
 
 export function CreatePrismaCommentRepository(prisma?: PrismaClient): ICommentRepository {
   if (prisma != null) {
-    return new PrismaCommentRepository(prisma);
+    return new PrismaCommentRepository(prisma as PrismaCommentClient);
   }
 
   const databaseUrl = process.env.DATABASE_URL ?? 'file:./prisma/dev.db';
   const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
-  return new PrismaCommentRepository(new PrismaClient({ adapter }));
+  return new PrismaCommentRepository(new PrismaClient({ adapter }) as PrismaCommentClient);
 }
