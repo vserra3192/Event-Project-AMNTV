@@ -4,8 +4,13 @@ import { IEventRepository, type IEvent, type CreateEventInput, type UpdateEventI
 import { Ok, Err, type Result } from '../lib/result';
 import { type EventError, EventNotFound, InvalidId, UnexpectedRepositoryError } from './Errors';
 
+type PrismaEventClient = PrismaClient & {
+  event: any;
+  eventRsvp: any;
+};
+
 export class PrismaEventRepository implements IEventRepository {
-  private readonly prisma: PrismaClient;
+  private readonly prisma: PrismaEventClient;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
@@ -79,7 +84,7 @@ export class PrismaEventRepository implements IEventRepository {
     try {
       const events = await this.prisma.event.findMany({
         include: { rsvps: true },
-      });
+      }) as Array<PrismaEvent & { rsvps: PrismaEventRsvp[] }>;
       return Ok(events.map((event) => this.mapEvent(event)));
     } catch (error) {
       return Err(
@@ -104,7 +109,7 @@ export class PrismaEventRepository implements IEventRepository {
           },
         },
         include: { rsvps: true },
-      });
+      }) as Array<PrismaEvent & { rsvps: PrismaEventRsvp[] }>;
 
       return Ok(events.map((event) => this.mapEvent(event)));
     } catch (error) {
@@ -135,7 +140,7 @@ export class PrismaEventRepository implements IEventRepository {
         orderBy: {
           endDatetime: 'desc',
         },
-      });
+      }) as Array<PrismaEvent & { rsvps: PrismaEventRsvp[] }>;
 
       return Ok(events.map((event) => this.mapEvent(event)));
     } catch (error) {
@@ -246,7 +251,7 @@ export class PrismaEventRepository implements IEventRepository {
       const events = await this.prisma.event.findMany({
         where: { organizerId },
         include: { rsvps: true },
-      });
+      }) as Array<PrismaEvent & { rsvps: PrismaEventRsvp[] }>;
       return Ok(events.map((event) => this.mapEvent(event)));
     } catch (error) {
       return Err(
@@ -266,7 +271,7 @@ export class PrismaEventRepository implements IEventRepository {
       const event = await this.prisma.event.findUnique({
         where: { id: eventId },
         include: { rsvps: true },
-      });
+      }) as PrismaEvent & { rsvps: PrismaEventRsvp[] } | null;
 
       if (event === null) {
         return Err(EventNotFound(`Event with id ${eventId} was not found.`));
@@ -298,7 +303,7 @@ export class PrismaEventRepository implements IEventRepository {
       const updatedEvent = await this.prisma.event.findUnique({
         where: { id: eventId },
         include: { rsvps: true },
-      });
+      }) as PrismaEvent & { rsvps: PrismaEventRsvp[] } | null;
 
       if (updatedEvent === null) {
         return Err(EventNotFound(`Event with id ${eventId} was not found.`));
@@ -339,7 +344,7 @@ export class PrismaEventRepository implements IEventRepository {
       const updatedEvent = await this.prisma.event.findUnique({
         where: { id: eventId },
         include: { rsvps: true },
-      });
+      }) as PrismaEvent & { rsvps: PrismaEventRsvp[] } | null;
 
       if (updatedEvent === null) {
         return Err(EventNotFound(`Event with id ${eventId} was not found.`));
@@ -358,10 +363,10 @@ export class PrismaEventRepository implements IEventRepository {
 
 export function CreatePrismaEventRepository(prisma?: PrismaClient): IEventRepository {
   if (prisma != null) {
-    return new PrismaEventRepository(prisma);
+    return new PrismaEventRepository(prisma as PrismaEventClient);
   }
 
   const databaseUrl = process.env.DATABASE_URL ?? 'file:./prisma/dev.db';
   const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
-  return new PrismaEventRepository(new PrismaClient({ adapter }));
+  return new PrismaEventRepository(new PrismaClient({ adapter }) as PrismaEventClient);
 }
