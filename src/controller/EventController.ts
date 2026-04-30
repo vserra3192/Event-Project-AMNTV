@@ -35,6 +35,9 @@ export interface IEventController {
     showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void>;
     handleRsvpEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     handleRsvpCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
+    showRSVPDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
+    showRSVPedUsers(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
+    handleRemoveRSVPedUser(res: Response, session: IAppBrowserSession, eventId: number, userId: string): Promise<void>;
 }
 
 const VALID_STATUSES: EventStatus[] = ['draft', 'published', 'cancelled', 'past'];
@@ -132,6 +135,37 @@ class EventController implements IEventController {
             session,
             layout: false,
         });
+    }
+
+    async handleRemoveRSVPedUser(res: Response, session: IAppBrowserSession, eventId: number, userId: string): Promise<void> {
+        const currentUser = session.authenticatedUser;
+        if (!currentUser) {
+            res.status(401).render('partials/error', { message: 'Authentication required.', layout: false });
+            return;
+        }
+
+        const eventResult = await this.service.getEventByID(eventId);
+        if (!eventResult.ok) {
+            const error = eventResult.value as EventError;
+            res.status(this.mapErrorStatus(error)).render('partials/error', { message: error.message, layout: false });
+            return;
+        }
+
+        const isOwner = currentUser.userId === eventResult.value.organizerId;
+        const isAdmin = currentUser.role === 'admin';
+        if (!isOwner && !isAdmin) {
+            res.status(403).render('partials/error', { message: 'You are not authorized to manage RSVPs for this event.', layout: false });
+            return;
+        }
+
+        const result = await this.service.rsvpCancelEvent(eventId, userId);
+        if (!result.ok) {
+            const error = result.value as EventError;
+            res.status(this.mapErrorStatus(error)).render('partials/error', { message: error.message, layout: false });
+            return;
+        }
+
+        await this.showRSVPedUsers(res, session, eventId);
     }
 
 
@@ -586,6 +620,48 @@ class EventController implements IEventController {
         }
 
         res.status(200).render("events/archive", {data: result.value, session, isArchive: true});
+    }
+
+    async showRSVPDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
+        const userId = session.authenticatedUser?.userId ?? '';
+        const result = await this.service.getUsersRSVPedEvents(userId);
+        if (!result.ok) {
+            const error = result.value as EventError;
+            this.logger.error(`Error fetching RSVP dashboard for user ${userId}: ${error.message}`);
+            res.status(500).render('partials/error', { message: 'Could not load your RSVPs.', layout: false });
+            return;
+        }
+        this.logger.info(`Fetched ${result.value.length} RSVPed events for user ${userId}`);
+        res.status(200).render('events/rsvp-dashboard', { data: result.value, session, pageError: null });
+    }   
+
+    async showRSVPedUsers(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+        const result = await this.service.getAllRSVPedUserByEventId(eventId);
+        if (!result.ok) {
+            const error = result.value as EventError;
+            this.logger.error(`Error fetching RSVPed users for event ${eventId}: ${error.message}`);
+            res.status(500).render('partials/error', { message: 'Could not load RSVPed users.', layout: false });
+            return;
+        }
+
+        const attendees = await Promise.all(
+            result.value.map(async (userId) => {
+                const userResult = await this.adminUserService.findUserById(userId);
+                return {
+                    id: userId,
+                    displayName: userResult.ok && userResult.value ? userResult.value.displayName : 'Unknown attendee',
+                };
+            }),
+        );
+
+        this.logger.info(`Fetched ${attendees.length} RSVPed users for event ${eventId}`);
+        res.status(200).render('events/rsvped-users', {
+            data: attendees,
+            eventId,
+            session,
+            pageError: null,
+            layout: false,
+        });
     }
 }
 
