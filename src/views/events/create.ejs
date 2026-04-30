@@ -1,6 +1,6 @@
-<section class="mb-5 p-4 sm:p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
-  <h1 class="text-2xl md:text-3xl font-bold text-slate-900 mb-3">Create New Event</h1>
-  <p class="text-slate-500">
+<section class="mb-6 rounded-3xl border border-blue-300/15 bg-slate-900/60 px-7 py-6 shadow-[0_25px_60px_-35px_rgba(15,105,255,0.45)] backdrop-blur-lg">
+  <h1 class="text-2xl md:text-3xl font-semibold text-white mb-3">Create New Event</h1>
+  <p class="text-blue-100/70">
     Fill in the details to organize your event.
   </p>
 </section>
@@ -11,57 +11,57 @@
   <% } %>
 </div>
 
-<section class="max-w-3xl p-4 sm:p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+<section class="max-w-3xl rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
   <form hx-post="/events/new" hx-target="#form-feedback" hx-swap="innerHTML" class="space-y-6">
     <div>
-      <label for="title" class="block text-sm font-medium text-slate-700 mb-2">Event Title *</label>
+      <label for="title" class="block text-sm font-medium text-blue-100/80 mb-2">Event Title *</label>
       <input
         type="text"
         id="title"
         name="title"
         required
-        class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
         placeholder="Enter event title"
       />
     </div>
 
     <div x-data="{ count: 0, max: 500}">
-      <label for="description" class="block text-sm font-medium text-slate-700 mb-2">Description</label>
+      <label for="description" class="block text-sm font-medium text-blue-100/80 mb-2">Description</label>
       <textarea
         id="description"
         name="description"
         rows="4"
         maxlength="500"
         x-on:input="count = $event.target.value.length"
-        class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
         placeholder="Describe your event"
       ></textarea>
-      <p class="test-xs mt-1" x-bind:class="count >= 450 ? 'text-red-500' : 'text-slate-500'">
+      <p class="test-xs mt-1" x-bind:class="count >= 450 ? 'text-red-500' : 'text-blue-100/70'">
         <span x-text="count"></span> / <span x-text="max"></span> characters
       </p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <label for="location" class="block text-sm font-medium text-slate-700 mb-2">Location *</label>
+        <label for="location" class="block text-sm font-medium text-blue-100/80 mb-2">Location *</label>
         <input
           type="text"
           id="location"
           name="location"
           required
-          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
           placeholder="Event location"
         />
       </div>
 
       <div>
-        <label for="category" class="block text-sm font-medium text-slate-700 mb-2">Category *</label>
+        <label for="category" class="block text-sm font-medium text-blue-100/80 mb-2">Category *</label>
         <input
           type="text"
           id="category"
           name="category"
           required
-          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
           placeholder="e.g., Conference, Workshop, Social"
         />
       </div>
@@ -69,35 +69,35 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <label for="startDatetime" class="block text-sm font-medium text-slate-700 mb-2">Start Date & Time *</label>
+        <label for="startDatetime" class="block text-sm font-medium text-blue-100/80 mb-2">Start Date & Time *</label>
         <input
           type="datetime-local"
           id="startDatetime"
           name="startDatetime"
           required
-          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
         />
       </div>
 
       <div>
-        <label for="endDatetime" class="block text-sm font-medium text-slate-700 mb-2">End Date & Time *</label>
+        <label for="endDatetime" class="block text-sm font-medium text-blue-100/80 mb-2">End Date & Time *</label>
         <input
           type="datetime-local"
           id="endDatetime"
           name="endDatetime"
           required
-          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
         />
       </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <label for="status" class="block text-sm font-medium text-slate-700 mb-2">Status</label>
+        <label for="status" class="block text-sm font-medium text-blue-100/80 mb-2">Status</label>
         <select
           id="status"
           name="status"
-          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
         >
           <option value="draft">Draft</option>
           <option value="published">Published</option>
@@ -107,13 +107,13 @@
       </div>
 
       <div>
-        <label for="capacity" class="block text-sm font-medium text-slate-700 mb-2">Capacity</label>
+        <label for="capacity" class="block text-sm font-medium text-blue-100/80 mb-2">Capacity</label>
         <input
           type="number"
           id="capacity"
           name="capacity"
           min="1"
-          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
           placeholder="Leave empty for unlimited"
         />
       </div>
@@ -122,13 +122,13 @@
     <div class="flex flex-wrap gap-3">
       <button
         type="submit"
-        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-blue-900/80 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         Create Event
       </button>
       <a
         href="/home"
-        class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+        class="px-6 py-2 bg-slate-800/80 text-blue-100/80 rounded-lg hover:bg-blue-400/20 focus:outline-none focus:ring-2 focus:ring-slate-500"
       >
         Cancel
       </a>
