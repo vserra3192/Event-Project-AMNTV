@@ -321,7 +321,7 @@ class EventService implements IEventService {
     }
 
     return Ok(
-      result.value.filter(e => e.status !== "past")
+      result.value.filter(e => e.status !== "past" && e.status !== "cancelled")
     );
   }
 
@@ -333,7 +333,7 @@ class EventService implements IEventService {
 
     return Ok(
       result.value
-        .filter(e => e.status === "past")
+        .filter(e => e.status === "past" || e.status === "cancelled")
         .sort((a, b) =>
           b.endDatetime.getTime() - a.endDatetime.getTime()
         )
