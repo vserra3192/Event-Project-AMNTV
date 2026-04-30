@@ -1,0 +1,30 @@
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+  <h1 class="text-3xl font-bold text-slate-900 mb-3">My RSVP Dashboard</h1>
+  <p class="text-slate-500">
+    Events you have RSVP'd for are listed below.
+  </p>
+</section>
+
+<% if (pageError) { %>
+  <%- include("../partials/error", { message: pageError }) %>
+<% } %>
+
+<section class="max-w-4xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <% if (data && data.length > 0) { %>
+    <ul class="list-none m-0 p-0 grid gap-3.5">
+      <% data.forEach((event) => { %>
+        <%- include('./partials/event-item', { event, session }) %>
+      <% }) %>
+    </ul>
+  <% } else { %>
+    <div class="text-center py-12">
+      <p class="text-slate-500">You haven't RSVP'd to any events yet.</p>
+      <a
+        href="/events"
+        class="mt-4 inline-flex items-center justify-center px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+      >
+        Browse Events
+      </a>
+    </div>
+  <% } %>
+</section>
