@@ -1,5 +1,6 @@
 <%
 const list = comments || [];
+const latestCommentId = typeof newCommentId === 'number' ? newCommentId : null;
 
 function timeAgo(date) {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -16,6 +17,6 @@ function timeAgo(date) {
   <% } %>
 
   <% list.forEach(comment => { %>
-    <%- include('comment', { comment, user, timeAgo }) %>
+    <%- include('comment', { comment, user, timeAgo, animate: comment.id === latestCommentId }) %>
   <% }) %>
 </div>

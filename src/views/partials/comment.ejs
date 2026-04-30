@@ -1,4 +1,10 @@
-<div class="comment border-b py-2" id="comment-<%= comment.id %>">
+<div
+  class="comment border-b py-2 transition duration-300 ease-out"
+  id="comment-<%= comment.id %>"
+  x-data="{ entered: <%= animate ? 'false' : 'true' %> }"
+  x-init="if (!entered) requestAnimationFrame(() => { entered = true; })"
+  :class="entered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'"
+>
 
   <div class="flex justify-between items-center text-sm text-gray-600">
     <div>
