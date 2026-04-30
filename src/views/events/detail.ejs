@@ -73,7 +73,7 @@
       <% const isAdmin = currentUser?.role === "admin"; %>
       <% const isOwner = currentUser?.userId === event.organizerId; %>
 
-      <% if (isOwner || isAdmin) { %>
+      <% if ((isOwner || isAdmin) && event.status !== 'cancelled') { %>
         <a
           href="/events/<%= event.id %>/edit"
           class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"

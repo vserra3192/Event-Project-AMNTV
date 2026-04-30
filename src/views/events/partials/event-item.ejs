@@ -35,7 +35,7 @@
     >
       View Details
     </a>
-    <% if (session.authenticatedUser && session.authenticatedUser.userId === event.organizerId) { %>
+    <% if (session.authenticatedUser && session.authenticatedUser.userId === event.organizerId && event.status !== 'cancelled') { %>
       <a
         href="/events/<%= event.id %>/edit"
         class="px-3 py-1 bg-slate-600 text-white text-sm rounded hover:bg-slate-700"
