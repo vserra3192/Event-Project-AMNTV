@@ -1,29 +1,14 @@
 import request from 'supertest';
 import { createComposedApp } from '../../src/composition';
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient } from "@prisma/client";
-
-process.env.DATABASE_URL = "file:./prisma/test.db";
 
 describe('Organizer Dashboard Routes', () => {
   let app: any;
   let agent: any;
 
-  const databaseUrl = process.env.DATABASE_URL;
-  const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
-  const prisma = new PrismaClient({ adapter });
-
   beforeEach(async () => {
     process.env.SESSION_SECRET = 'test-secret';
     app = createComposedApp();
     agent = request.agent(app.getExpressApp());
-    await prisma.comment.deleteMany();
-    await prisma.eventRsvp.deleteMany();
-    await prisma.event.deleteMany();
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
   });
 
   describe('Authentication', () => {
