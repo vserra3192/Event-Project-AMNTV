@@ -1,5 +1,5 @@
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
-  <h1 class="text-3xl font-bold text-slate-900 mb-3"><%= event.title %></h1>
+<section class="mb-5 p-4 sm:p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+  <h1 class="text-2xl md:text-3xl font-bold text-slate-900 mb-3"><%= event.title %></h1>
   <p class="text-slate-500">
     Event details and information.
   </p>
@@ -9,11 +9,19 @@
   <%- include("../partials/error", { message: pageError }) %>
 <% } %>
 
-<section class="max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+<section class="max-w-3xl p-4 sm:p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
   <div class="space-y-6">
     <div>
       <h2 class="text-xl font-semibold mb-4">Event Information</h2>
-      <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <dl class="grid grid-cols-1 md:grid-cols-2 gap-4" x-data="{
+        relativeTime(dateStr){
+          const diff = Math.round((new Date(dateStr) - Date.now()) / 86400000);
+          if(diff === 0) return 'today';
+          if(diff === 1) return 'tomorrow';
+          if(diff === -1) return 'yesterday';
+          return diff > 0 ? 'in ' + diff + ' days' : Math.abs(diff) + ' days ago';
+        }
+      }">
         <div>
           <dt class="text-sm font-medium text-slate-500">Category</dt>
           <dd class="text-slate-900"><%= event.category %></dd>
@@ -46,11 +54,19 @@
         </div>
         <div>
           <dt class="text-sm font-medium text-slate-500">Start Time</dt>
-          <dd class="text-slate-900"><%= new Date(event.startDatetime).toLocaleString() %></dd>
+          <dd class="text-slate-900">
+            <%= new Date(event.startDatetime).toLocaleString() %>
+            <span class="ml-2 text-xs text-slate-400 italic"
+                  x-text="relativeTime('<%= new Date(event.startDatetime).toISOString() %>')"></span>
+          </dd>
         </div>
         <div>
           <dt class="text-sm font-medium text-slate-500">End Time</dt>
-          <dd class="text-slate-900"><%= new Date(event.endDatetime).toLocaleString() %></dd>
+          <dd class="text-slate-900">
+            <%= new Date(event.endDatetime).toLocaleString() %>
+            <span class="ml-2 text-xs text-slate-400 italic"
+                  x-text="relativeTime('<%= new Date(event.endDatetime).toISOString() %>')"></span>
+          </dd>
         </div>
       </dl>
     </div>
@@ -62,7 +78,7 @@
       </div>
     <% } %>
 
-    <div class="flex gap-4">
+    <div class="flex flex-wrap gap-3">
       <a
         href="/home"
         class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -106,7 +122,7 @@
     </div>
 
     <% if (isOwner || isAdmin) { %>
-      <section class="mt-6 max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+      <section class="mt-6 p-4 sm:p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
         <div class="flex flex-col gap-4">
           <div class="flex items-center justify-between">
             <div>
@@ -130,7 +146,7 @@
       </section>
     <% } %>
 
-    <section class="mt-6 max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+    <section class="mt-6 p-4 sm:p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
       <h2 class="text-xl font-semibold mb-4">Comments</h2>
 
       <form
