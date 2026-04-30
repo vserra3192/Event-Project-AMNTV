@@ -7,40 +7,101 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      [x-cloak] {
+        display: none !important;
+      }
+
+      body {
+        background: radial-gradient(circle at 20% 20%, #1b3b6f, transparent 55%),
+                    radial-gradient(circle at 80% 0%, #0b2447, transparent 45%),
+                    linear-gradient(135deg, #060b1f 0%, #0f1d3b 45%, #0d2e70 100%);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: -60vh -40vw;
+        background: radial-gradient(circle, rgba(33, 150, 243, 0.12), transparent 60%);
+        filter: blur(60px);
+        animation: float 18s ease-in-out infinite alternate;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      @keyframes float {
+        0% {
+          transform: translate3d(-8%, -6%, 0) scale(1.05);
+        }
+        100% {
+          transform: translate3d(6%, 8%, 0) scale(0.95);
+        }
+      }
+    </style>
   </head>
-  <body class="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 text-slate-900 p-6">
-    <div class="max-w-5xl mx-auto">
-      <nav class="flex items-center justify-between gap-3 mb-6 flex-wrap">
-        <a
-          href="<%= session?.authenticatedUser ? '/home' : '/login' %>"
-          class="inline-flex items-center gap-2.5 px-4 py-3 rounded-xl bg-white border border-slate-200 shadow-lg font-bold text-slate-900 no-underline"
-        >
-          <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-blue-400 to-blue-600"></span>
-          Home
-        </a>
-        <div class="flex items-center gap-3 flex-wrap">
-          <% if (session?.authenticatedUser) { %>
-            <% if (session.authenticatedUser.role === "admin") { %>
-              <a href="/admin/users" class="text-blue-700 font-semibold no-underline hover:underline">Manage Users</a>
-            <% } %>
-            <span class="text-slate-500">
-              Signed in as <strong class="text-slate-700"><%= session.authenticatedUser.displayName %></strong>
-              (<%= session.authenticatedUser.role %>)
-            </span>
-            <form method="post" action="/logout" class="m-0">
-              <button
-                type="submit"
-                class="px-3.5 py-2 rounded-lg bg-white text-blue-700 border border-slate-200 cursor-pointer hover:bg-blue-50 text-sm font-medium"
+  <body class="min-h-screen text-slate-100 antialiased bg-slate-950/90 selection:bg-blue-300/40 selection:text-white">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+      <nav
+        class="mb-8 rounded-2xl border border-blue-400/10 bg-white/5 shadow-[0_15px_40px_-25px_rgba(15,105,255,0.55)] backdrop-blur-md"
+      >
+        <div class="flex flex-col gap-5 px-6 py-5 md:flex-row md:items-center md:justify-between">
+          <a
+            href="<%= session?.authenticatedUser ? '/home' : '/login' %>"
+            class="inline-flex items-center gap-3 rounded-xl bg-gradient-to-br from-blue-400/90 via-blue-500/90 to-blue-600/90 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg shadow-blue-900/40 transition hover:-translate-y-0.5 hover:shadow-blue-900/60"
+          >
+            <span class="inline-flex h-3 w-3 items-center justify-center rounded-full bg-white"></span>
+            Event Tracker
+          </a>
+
+          <div class="flex flex-wrap items-center gap-4 text-sm">
+            <% if (session?.authenticatedUser) { %>
+              <% if (session.authenticatedUser.role === "admin") { %>
+                <a
+                  href="/admin/users"
+                  class="rounded-lg border border-blue-300/30 px-4 py-2 font-medium text-blue-200 transition hover:bg-blue-400/15 hover:text-white"
+                >
+                  Manage Users
+                </a>
+              <% } %>
+              <span class="text-blue-100/80">
+                Signed in as
+                <strong class="ml-1 font-semibold text-white"><%= session.authenticatedUser.displayName %></strong>
+                (<%= session.authenticatedUser.role %>)
+              </span>
+              <form method="post" action="/logout" class="m-0">
+                <button
+                  type="submit"
+                  class="rounded-lg border border-blue-300/30 bg-blue-400/20 px-4 py-2 font-medium text-blue-100 transition hover:bg-blue-400/30 hover:text-white"
+                >
+                  Log out
+                </button>
+              </form>
+            <% } else { %>
+              <a
+                href="/login"
+                class="rounded-lg border border-blue-300/30 bg-blue-400/20 px-4 py-2 font-medium text-blue-100 transition hover:bg-blue-400/30 hover:text-white"
               >
-                Log out
-              </button>
-            </form>
-          <% } else { %>
-            <a href="/login" class="text-blue-700 font-semibold no-underline hover:underline">Log in</a>
-          <% } %>
+                Log in
+              </a>
+            <% } %>
+          </div>
         </div>
       </nav>
-      <main class="max-w-5xl mx-auto"><%- body %></main>
+
+      <main
+        class="rounded-3xl border border-white/5 bg-slate-900/60 px-6 py-8 shadow-[0_35px_80px_-35px_rgba(15,105,255,0.45)] backdrop-blur-md sm:px-10 sm:py-10"
+      >
+        <%- body %>
+      </main>
+
+      <footer class="mt-10 flex flex-wrap justify-between gap-3 text-xs text-blue-200/60">
+        <span>&copy; <%= new Date().getFullYear() %> CS326 Group 5 Event Tracker</span>
+      </footer>
     </div>
   </body>
 </html>
