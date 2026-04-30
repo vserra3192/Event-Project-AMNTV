@@ -11,4 +11,21 @@
   <% } %>
 </section>
 
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <form action="/events/search" method="get" class="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <input
+      type="text"
+      name="q"
+      placeholder="Search events..."
+      class="flex-1 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+    />
+    <button
+      type="submit"
+      class="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      Search
+    </button>
+  </form>
+</section>
+
 <%- include('./partials/events-list-page', { data, session, isArchive }) %>
