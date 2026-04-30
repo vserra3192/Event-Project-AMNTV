@@ -30,7 +30,8 @@ export interface IEventService {
   getEventsBySearch(query: string): Promise<Result<IEvent[], EventError>>;
   rsvpEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>>;
   rsvpCancelEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>>;
-
+  getUsersRSVPedEvents(userId: string): Promise<Result<IEvent[], EventError>>;
+  getAllRSVPedUserByEventId(eventId: number): Promise<Result<string[], EventError>>;
 }
 
 class EventService implements IEventService {
@@ -337,6 +338,14 @@ class EventService implements IEventService {
           b.endDatetime.getTime() - a.endDatetime.getTime()
         )
     );
+  }
+
+  async getUsersRSVPedEvents(userId: string): Promise<Result<IEvent[], EventError>> {
+    return this.repo.getUsersRSVPedEvents(userId);
+  }
+
+  async getAllRSVPedUserByEventId(eventId: number): Promise<Result<string[], EventError>> {
+    return this.repo.getAllRSVPedUserByEventId(eventId);
   }
 }
 

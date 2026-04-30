@@ -1,0 +1,32 @@
+<div class="space-y-4">
+  <% if (pageError) { %>
+    <div class="rounded-lg bg-red-50 border border-red-200 p-4 text-red-700">
+      <%= pageError %>
+    </div>
+  <% } %>
+
+  <% if (data && data.length > 0) { %>
+    <div class="space-y-3">
+      <% data.forEach((attendee) => { %>
+        <div class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div>
+            <p class="text-slate-900 font-medium"><%= attendee.displayName %></p>
+            <p class="text-slate-500 text-sm">User ID: <%= attendee.id %></p>
+          </div>
+          <button
+            hx-post="/events/<%= eventId %>/rsvped-users/<%= attendee.id %>/remove"
+            hx-target="#rsvp-list"
+            hx-swap="innerHTML"
+            class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+          >
+            Remove
+          </button>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-6 text-center">
+      <p class="text-slate-700">No attendees have RSVP'd for this event yet.</p>
+    </div>
+  <% } %>
+</div>

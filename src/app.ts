@@ -447,6 +447,26 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      '/events/rsvp',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events/rsvp for ${browserSession.browserLabel}`);
+        await this.eventController.showRSVPDashboard(res, browserSession);
+      }),
+    );
+
+    this.app.get(
+      '/events/:id/rsvped-users',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events/${req.params.id}/rsvped-users for ${browserSession.browserLabel}`);
+        await this.eventController.showRSVPedUsers(res, browserSession, Number(req.params.id));
+      }),
+    );
+
+    this.app.get(
       '/events/:id',
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
@@ -473,6 +493,21 @@ class ExpressApp implements IApp {
         const browserSession = touchAppSession(sessionStore(req));
         this.logger.info(`POST /events/${req.params.id}/rsvp/cancel for ${browserSession.browserLabel}`);
         await this.eventController.handleRsvpCancelEvent(res, browserSession, Number(req.params.id));
+      }),
+    );
+
+    this.app.post(
+      '/events/:id/rsvped-users/:userId/remove',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = touchAppSession(sessionStore(req));
+        this.logger.info(`POST /events/${req.params.id}/rsvped-users/${req.params.userId}/remove for ${browserSession.browserLabel}`);
+        await this.eventController.handleRemoveRSVPedUser(
+          res,
+          browserSession,
+          Number(req.params.id),
+          String(req.params.userId),
+        );
       }),
     );
 

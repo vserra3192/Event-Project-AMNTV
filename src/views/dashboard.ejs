@@ -8,6 +8,14 @@
       Signed in as <strong class="text-slate-700"><%= session.authenticatedUser.displayName %></strong>
       (<%= session.authenticatedUser.role %>).
     </p>
+    <div class="mt-4">
+      <a
+        href="/events/rsvp"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200"
+      >
+        View My RSVPs
+      </a>
+    </div>
   <% } %>
 </section>
 

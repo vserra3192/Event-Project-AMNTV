@@ -54,6 +54,8 @@ export interface IEventRepository {
   getEventsByOrganizerId(organizerId: string): Promise<Result<IEvent[], EventError>>;
   rsvpEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>>;
   rsvpCancelEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>>;
+  getUsersRSVPedEvents(userId: string): Promise<Result<IEvent[], EventError>>;
+  getAllRSVPedUserByEventId(eventId: number): Promise<Result<string[], EventError>>;
 }
 
 class InMemoryEventRepository implements IEventRepository {
@@ -259,6 +261,29 @@ class InMemoryEventRepository implements IEventRepository {
     }
   }
 
+  async getUsersRSVPedEvents(userId: string): Promise<Result<IEvent[], EventError>> {
+    try {
+      const events = [...this.events.values()].filter(event => event.rsvps.includes(userId));
+      return Ok(events);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to fetch user\'s rsvped events.'));
+    }
+  }
+
+  async getAllRSVPedUserByEventId(eventId: number): Promise<Result<string[], EventError>> {
+    try {
+      if (!Number.isInteger(eventId) || eventId < 1) {
+        return Err(InvalidId(`${eventId} is not a valid event id.`));
+      }
+      const event = this.events.get(eventId) ?? null;
+      if (event === null) {
+        return Err(EventNotFound(`Event with id ${eventId} was not found.`));
+      }
+      return Ok(event.rsvps);
+    } catch {
+      return Err(UnexpectedRepositoryError('Failed to fetch all users who rsvped for the event.'));
+    }
+  }
 }
 
 export function CreateInMemoryEventRepository(): IEventRepository {
