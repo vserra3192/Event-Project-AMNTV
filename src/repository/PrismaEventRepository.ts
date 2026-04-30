@@ -354,6 +354,50 @@ export class PrismaEventRepository implements IEventRepository {
       );
     }
   }
+
+  async getUsersRSVPedEvents(userId: string): Promise<Result<IEvent[], EventError>> {
+    try {
+      const rsvps = await this.prisma.eventRsvp.findMany({
+        where: { userId },
+        include: {
+          event: {
+            include: { rsvps: true },
+          },
+        },
+      });
+      const events = rsvps.map((rsvp) => this.mapEvent(rsvp.event as PrismaEvent & { rsvps: PrismaEventRsvp[] }));
+      return Ok(events);
+    } catch (error) {
+      return Err(
+        UnexpectedRepositoryError(
+          `Failed to fetch user's RSVPed events: ${error instanceof Error ? error.message : String(error)}`
+        )
+      );
+    }
+
+  }
+
+  async getAllRSVPedUserByEventId(eventId: number): Promise<Result<string[], EventError>> {
+    try {
+      if (!Number.isInteger(eventId) || eventId < 1) {
+        return Err(InvalidId(`${eventId} is not a valid event id.`));
+      }
+      const event = await this.prisma.event.findUnique({
+        where: { id: eventId },
+        include: { rsvps: true },
+      });
+      if (event === null) {
+        return Err(EventNotFound(`Event with id ${eventId} was not found.`));
+      }
+      return Ok(event.rsvps.map((rsvp) => rsvp.userId));
+    } catch (error) {
+      return Err(
+        UnexpectedRepositoryError(
+          `Failed to fetch all users who rsvped for the event: ${error instanceof Error ? error.message : String(error)}`
+        )
+      );
+    }
+  }
 }
 
 export function CreatePrismaEventRepository(prisma?: PrismaClient): IEventRepository {
