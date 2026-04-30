@@ -97,7 +97,7 @@ export class PrismaEventRepository implements IEventRepository {
         where: {
           organizerId,
           status: {
-            not: 'past',
+            notIn: ['past', 'cancelled'],
           },
           endDatetime: {
             gte: now,
@@ -124,6 +124,7 @@ export class PrismaEventRepository implements IEventRepository {
           organizerId,
           OR: [
             { status: 'past' },
+            { status: 'cancelled' },
             {
               endDatetime: {
                 lt: now,
