@@ -13,7 +13,15 @@
   <div class="space-y-6">
     <div>
       <h2 class="text-xl font-semibold mb-4">Event Information</h2>
-      <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <dl class="grid grid-cols-1 md:grid-cols-2 gap-4" x-data="{
+        relativeTime(dateStr){
+          const diff = Math.round((new Date(dateStr) - Date.now()) / 86400000);
+          if(diff === 0) return 'today';
+          if(diff === 1) return 'tomorrow';
+          if(diff === -1) return 'yesterday';
+          return diff > 0 ? 'in ' + diff + ' days' : Math.abs(diff) + ' days ago';
+        }
+      }">
         <div>
           <dt class="text-sm font-medium text-slate-500">Category</dt>
           <dd class="text-slate-900"><%= event.category %></dd>
@@ -46,11 +54,19 @@
         </div>
         <div>
           <dt class="text-sm font-medium text-slate-500">Start Time</dt>
-          <dd class="text-slate-900"><%= new Date(event.startDatetime).toLocaleString() %></dd>
+          <dd class="text-slate-900">
+            <%= new Date(event.startDatetime).toLocaleString() %>
+            <span class="ml-2 text-xs text-slate-400 italic"
+                  x-text="relativeTime('<%= new Date(event.startDatetime).toISOString() %>')"></span>
+          </dd>
         </div>
         <div>
           <dt class="text-sm font-medium text-slate-500">End Time</dt>
-          <dd class="text-slate-900"><%= new Date(event.endDatetime).toLocaleString() %></dd>
+          <dd class="text-slate-900">
+            <%= new Date(event.endDatetime).toLocaleString() %>
+            <span class="ml-2 text-xs text-slate-400 italic"
+                  x-text="relativeTime('<%= new Date(event.endDatetime).toISOString() %>')"></span>
+          </dd>
         </div>
       </dl>
     </div>
