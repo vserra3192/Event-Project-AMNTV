@@ -11,9 +11,17 @@
   <% } %>
 </section>
 
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
-  <form class="flex gap-3">
+<section class="mb-5 p-6 border border-slate-200 rounded-3xl bg-gradient-to-br from-slate-50 via-white to-slate-100 shadow-xl">
+  <form
+    x-data="{ query: '' }"
+    x-init="query = $refs.searchInput.value"
+    class="relative"
+  >
+    <label for="search-query" class="sr-only">Search events</label>
     <input
+      id="search-query"
+      x-ref="searchInput"
+      x-model="query"
       type="text"
       name="q"
       placeholder="Search events..."
@@ -24,12 +32,13 @@
       hx-target="#search-results-container"
       hx-swap="outerHTML"
       hx-on="htmx:beforeRequest: document.getElementById('search-error').style.display='none'"
-      class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="w-full rounded-2xl border border-slate-300 bg-white px-5 py-4 pr-20 text-slate-900 text-base shadow-sm transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
     />
     <button
       type="button"
-      onclick="location.href='/events/search'; return false;"
-      class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      x-show="query.length > 0"
+      x-on:click.prevent="query = ''; $refs.searchInput.value = ''; $refs.searchInput.dispatchEvent(new Event('input'))"
+      class="absolute inset-y-0 right-3 inline-flex items-center rounded-full bg-slate-200 px-3 text-slate-600 transition hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
       Clear
     </button>
