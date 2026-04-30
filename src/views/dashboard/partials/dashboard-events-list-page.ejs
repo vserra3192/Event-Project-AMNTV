@@ -1,14 +1,14 @@
-<section id="dashboard-events-list-container" class="p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+<section id="dashboard-events-list-container" class="rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
   <div class="mb-4">
-    <h2 class="text-xl font-semibold mb-2">Your Events</h2>
-    <div class="flex gap-2 mt-4">
+    <h2 class="text-xl font-semibold text-white mb-2">Your Events</h2>
+    <div class="flex flex-wrap gap-2 mt-4">
       <a
         href="/dashboard"
         hx-get="/dashboard/list?type=active"
         hx-target="#dashboard-events-list-container"
         hx-swap="outerHTML"
         hx-push-url="/dashboard"
-        class="px-3 py-1 rounded text-sm border <%= !isArchive ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white text-slate-700' %>"
+        class="px-3 py-1 rounded text-sm border <%= !isArchive ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 border-blue-600 hover:shadow-blue-900/80' : 'bg-slate-900/70 text-blue-100/80' %>"
       >
         Active Events
       </a>
@@ -19,12 +19,12 @@
         hx-target="#dashboard-events-list-container"
         hx-swap="outerHTML"
         hx-push-url="/dashboard/archive"
-        class="px-3 py-1 rounded text-sm border <%= isArchive ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-white text-slate-700 hover:bg-gray-200' %>"
+        class="px-3 py-1 rounded text-sm border <%= isArchive ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 border-blue-600 hover:shadow-blue-900/80' : 'bg-slate-900/70 text-blue-100/80 hover:bg-blue-400/15' %>"
       >
         Archived Events
       </a>
     </div>
-    <p class="text-slate-500 mt-4">
+    <p class="text-blue-100/70 mt-4">
       <% if (data && data.length > 0) { %>
         Displaying <%= data.length %> event<%= data.length === 1 ? '' : 's' %>.
       <% } else { %>
@@ -33,13 +33,117 @@
     </p>
   </div>
 
-  <% if (data && data.length > 0) { %>
-    <ul class="list-none m-0 p-0 grid gap-3.5">
-      <% data.forEach((event) => { %>
-        <%- include('./dashboard-event-item', { event, session }) %>
-      <% }) %>
-    </ul>
+  <% if (!isArchive) { %>
+    <% const unpublished = data.filter(event => event.status === 'draft'); %>
+    <% const published = data.filter(event => event.status === 'published'); %>
+
+    <div class="grid gap-4">
+      <section class="rounded-3xl border border-amber-300/30 bg-amber-400/10 p-5">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-semibold text-white">Unpublished Events</h3>
+            <p class="text-sm text-blue-100/70">Draft events are waiting for publishing.</p>
+          </div>
+          <span class="inline-flex items-center rounded-full bg-amber-400/15 px-3 py-1 text-sm font-medium text-amber-100">
+            <%= unpublished.length %> <%= unpublished.length === 1 ? 'event' : 'events' %>
+          </span>
+        </div>
+
+        <% if (unpublished.length > 0) { %>
+          <ul class="mt-5 grid gap-3.5">
+            <% unpublished.forEach((event) => { %>
+              <%- include('./dashboard-event-item', { event, session }) %>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p class="mt-5 text-sm text-blue-100/70">No unpublished events yet.</p>
+        <% } %>
+      </section>
+
+      <section class="rounded-3xl border border-emerald-300/30 bg-emerald-400/10 p-5">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-semibold text-white">Published Events</h3>
+            <p class="text-sm text-blue-100/70">Live events visible to attendees.</p>
+          </div>
+          <span class="inline-flex items-center rounded-full bg-emerald-400/15 px-3 py-1 text-sm font-medium text-emerald-100">
+            <%= published.length %> <%= published.length === 1 ? 'event' : 'events' %>
+          </span>
+        </div>
+
+        <% if (published.length > 0) { %>
+          <ul class="mt-5 grid gap-3.5">
+            <% published.forEach((event) => { %>
+              <%- include('./dashboard-event-item', { event, session }) %>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p class="mt-5 text-sm text-blue-100/70">No published events yet.</p>
+        <% } %>
+      </section>
+    </div>
   <% } else { %>
-    <p class="text-center text-slate-500 py-8">No events available at this time.</p>
+    <% const cancelled = data.filter(event => event.status === 'cancelled'); %>
+    <% const past = data.filter(event => event.status === 'past'); %>
+
+    <section x-data="{ cancelledOpen: false, pastOpen: false }" class="space-y-4">
+      <section class="rounded-3xl border border-red-300/30 bg-red-500/10 p-5">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-semibold text-white">Cancelled Events</h3>
+            <p class="text-sm text-blue-100/70">Events that were cancelled and archived.</p>
+          </div>
+          <button
+            type="button"
+            x-on:click="cancelledOpen = !cancelledOpen"
+            class="inline-flex items-center gap-2 rounded-full bg-red-500/90 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-950/40 transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400/60"
+          >
+            <span x-text="cancelledOpen ? 'Collapse' : 'Expand'"></span>
+            <span x-text="cancelledOpen ? '-' : '+'"></span>
+          </button>
+        </div>
+
+        <div x-show="cancelledOpen" x-cloak class="mt-5 space-y-3">
+          <% if (cancelled.length > 0) { %>
+            <ul class="grid gap-3.5">
+              <% cancelled.forEach((event) => { %>
+                <%- include('./dashboard-event-item', { event, session }) %>
+              <% }) %>
+            </ul>
+          <% } else { %>
+            <p class="text-sm text-blue-100/70">No cancelled events are archived yet.</p>
+          <% } %>
+        </div>
+      </section>
+
+      <section class="rounded-3xl border border-red-300/30 bg-red-500/10 p-5">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-semibold text-white">Past Events</h3>
+            <p class="text-sm text-blue-100/70">Events that have already concluded.</p>
+          </div>
+          <button
+            type="button"
+            x-on:click="pastOpen = !pastOpen"
+            class="inline-flex items-center gap-2 rounded-full bg-red-500/90 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-950/40 transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400/60"
+          >
+            <span x-text="pastOpen ? 'Collapse' : 'Expand'"></span>
+            <span x-text="pastOpen ? '-' : '+'"></span>
+          </button>
+        </div>
+
+        <div x-show="pastOpen" x-cloak class="mt-5 space-y-3">
+          <% if (past.length > 0) { %>
+            <ul class="grid gap-3.5">
+              <% past.forEach((event) => { %>
+                <%- include('./dashboard-event-item', { event, session }) %>
+              <% }) %>
+            </ul>
+          <% } else { %>
+            <p class="text-sm text-blue-100/70">No past events are archived yet.</p>
+          <% } %>
+        </div>
+      </section>
+    </section>
   <% } %>
 </section>
