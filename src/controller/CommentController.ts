@@ -5,7 +5,7 @@ import type { ICommentService, CommentServiceError } from "../service/CommentSer
 import type { IAdminUserService } from "../auth/AdminUserService";
 import type { IEventService } from "../service/EventService";
 import type { Result } from "../lib/result";
-import type { IComment } from "../repository/CommentRepository";
+import type { IComment } from "../repository/InMemoryCommentRepository";
 
 export interface ICommentController {
   getComments(res: Response, eventId: number, session: IAppBrowserSession): Promise<void>;

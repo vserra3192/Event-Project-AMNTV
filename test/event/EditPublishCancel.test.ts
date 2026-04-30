@@ -1,6 +1,6 @@
 import express from "express";
 import request from "supertest";
-import { CreateInMemoryEventRepository } from "../../src/repository/EventRepository";
+import { CreateInMemoryEventRepository } from "../../src/repository/InMemoryEventRepository";
 import { CreateEventService, type CreateEventServiceInput } from "../../src/service/EventService";
 import { CreateController } from "../../src/controller/EventController";
 import type { ILoggingService } from "../../src/service/LoggingService";

@@ -18,17 +18,38 @@ datasource db {
 //   updatedAt DateTime @updatedAt
 // }
 
-export interface IEvent {
-  id: number;
-  title: string;
-  description: string;
-  location: string;
-  category: string;
-  status: "draft" | "published" | "cancelled" | "past";
-  capacity?: number | null;
-  startDatetime: Date;
-  endDatetime: Date;
-  organizerId: string;
-  createdAt: Date;
-  updatedAt: Date;
+model Event {
+  id            Int         @id @default(autoincrement())
+  title         String
+  description   String
+  location      String
+  category      String
+  status        String
+  capacity      Int?
+  startDatetime DateTime
+  endDatetime   DateTime
+  organizerId   String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  rsvps         EventRsvp[]
+  comments      Comment[]
+}
+
+model EventRsvp {
+  id      Int    @id @default(autoincrement())
+  eventId Int
+  userId  String
+  event   Event  @relation(fields: [eventId], references: [id])
+
+  @@unique([eventId, userId])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
 }

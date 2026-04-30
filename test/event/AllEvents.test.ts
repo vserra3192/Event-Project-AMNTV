@@ -3,9 +3,9 @@ import { createComposedApp } from '../../src/composition';
 
 describe('All Events Routes', () => {
   let app: any;
-  let agent: request.SuperAgentTest;
+  let agent: any;
 
-  beforeEach(() => {
+  beforeEach(async()  => {
     process.env.SESSION_SECRET = 'test-secret';
     app = createComposedApp();
     agent = request.agent(app.getExpressApp());

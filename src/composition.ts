@@ -7,12 +7,16 @@ import { CreateApp } from "./app";
 import type { IApp } from "./contracts";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
-import { CreateInMemoryEventRepository } from "./repository/EventRepository";
+import { CreatePrismaEventRepository } from "./repository/PrismaEventRepository";
+import { CreatePrismaCommentRepository } from "./repository/PrismaCommentRepository";
 import { CreateEventService } from "./service/EventService";
 import { CreateController } from "./controller/EventController";
-import { InMemoryCommentRepository } from "./repository/CommentRepository";
 import { CommentService } from "./service/CommentService";
 import { CommentController } from "./controller/CommentController";
+import { InMemoryCommentRepository } from "./repository/InMemoryCommentRepository";
+import { CreateInMemoryEventRepository } from "./repository/InMemoryEventRepository";
+
+const usePrismaRepo = true; // Toggle this to switch between in-memory and Prisma repositories
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -24,11 +28,11 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-  const eventRepo = CreateInMemoryEventRepository();
+  const eventRepo = usePrismaRepo ? CreatePrismaEventRepository() : CreateInMemoryEventRepository();
   const eventService = CreateEventService(eventRepo);
   const eventController = CreateController(eventService, resolvedLogger, adminUserService);
 
-  const commentRepo = new InMemoryCommentRepository();
+  const commentRepo = usePrismaRepo ? CreatePrismaCommentRepository() : new InMemoryCommentRepository();
   const commentService = new CommentService(commentRepo, eventRepo);
   const commentController = new CommentController(commentService, resolvedLogger, adminUserService, eventService);
 
