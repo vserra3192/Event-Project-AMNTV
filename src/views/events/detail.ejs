@@ -135,17 +135,26 @@
 
       <form
         class="mb-6 space-y-2"
+        x-data="{ content: '' }"
         hx-post="/events/<%= event.id %>/comments"
         hx-target="#comments"
         hx-swap="innerHTML"
-        hx-on::after-request="this.reset()"
+        x-on:htmx:after-request="if ($event.detail.successful) content = ''"
       >
-        <textarea
-          name="content"
-          class="w-full border border-slate-300 rounded-lg p-2"
-          placeholder="Write a comment..."
-          required
-        ></textarea>
+        <div class="relative">
+          <textarea
+            name="content"
+            class="w-full border border-slate-300 rounded-lg p-2 pb-8"
+            placeholder="Write a comment..."
+            x-model="content"
+            required
+          ></textarea>
+
+          <div
+            class="pointer-events-none absolute bottom-2 right-3 text-xs text-slate-400"
+            x-text="`${content.length} character${content.length === 1 ? '' : 's'}`"
+          ></div>
+        </div>
 
         <button
           type="submit"
