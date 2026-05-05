@@ -68,6 +68,12 @@
                   Manage Users
                 </a>
               <% } %>
+              <a
+                href="/friends"
+                class="rounded-lg border border-blue-300/30 px-4 py-2 font-medium text-blue-200 transition hover:bg-blue-400/15 hover:text-white"
+              >
+                Friends
+              </a>
               <span class="text-blue-100/80">
                 Signed in as
                 <strong class="ml-1 font-semibold text-white"><%= session.authenticatedUser.displayName %></strong>
