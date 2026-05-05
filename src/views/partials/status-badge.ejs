@@ -1,0 +1,42 @@
+<%
+  const statusBadgeClasses = {
+    draft: "border-amber-300/30 bg-amber-400/15 text-amber-100 shadow-amber-950/30",
+    published: "border-emerald-300/30 bg-emerald-400/15 text-emerald-100 shadow-emerald-950/30",
+    cancelled: "border-rose-300/30 bg-rose-500/15 text-rose-100 shadow-rose-950/30",
+    past: "border-slate-300/25 bg-slate-400/15 text-slate-100 shadow-slate-950/30",
+  };
+
+  const normalizedStatus = String(status ?? "draft");
+  const statusClass = statusBadgeClasses[normalizedStatus] ?? "border-blue-300/25 bg-blue-400/15 text-blue-100 shadow-blue-950/30";
+%>
+
+<span
+  class="inline-flex items-center rounded-full border px-2.5 py-1.5 text-xs font-semibold capitalize shadow-sm transition duration-300 ease-out <%= statusClass %>"
+  x-data="{
+    eventId: '<%= eventId %>',
+    status: '<%= normalizedStatus %>',
+    animate: false,
+    init() {
+      this.$nextTick(() => {
+        const key = `event-status-${this.eventId}`;
+
+        try {
+          const previousStatus = window.sessionStorage.getItem(key);
+
+          if (previousStatus && previousStatus !== this.status) {
+            this.animate = true;
+            window.setTimeout(() => {
+              this.animate = false;
+            }, 650);
+          }
+
+          window.sessionStorage.setItem(key, this.status);
+        } catch {
+        }
+      });
+    }
+  }"
+  x-bind:class="animate ? 'scale-110 ring-2 ring-white/70 shadow-lg' : 'scale-100'"
+>
+  <%= normalizedStatus %>
+</span>

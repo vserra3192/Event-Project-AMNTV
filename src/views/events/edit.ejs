@@ -1,8 +1,8 @@
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
-  <h1 class="text-3xl font-bold text-slate-900 mb-3">
+<section class="mb-6 rounded-3xl border border-blue-300/15 bg-slate-900/60 px-7 py-6 shadow-[0_25px_60px_-35px_rgba(15,105,255,0.45)] backdrop-blur-lg">
+  <h1 class="text-3xl font-semibold text-white mb-3">
     Edit: <%= formData.title %>
   </h1>
-  <p class="text-slate-500">
+  <p class="text-blue-100/70">
     Update event details and save your changes.
   </p>
 </section>
@@ -11,31 +11,55 @@
   <%- include("../partials/error", { message: pageError }) %>
 <% } %>
 
-<section class="max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
-  <form method="POST" action="/events/<%= eventId %>/edit">
+<section class="max-w-3xl rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
+  <form
+    method="POST"
+    action="/events/<%= eventId %>/edit"
+    x-data="{
+      initialState: '',
+      hasUnsavedChanges: false,
+      isSubmitting: false,
+      formState() {
+        return new URLSearchParams(new FormData(this.$refs.editEventForm)).toString();
+      },
+      updateDirtyState() {
+        this.hasUnsavedChanges = this.formState() !== this.initialState;
+      },
+      init() {
+        this.$nextTick(() => {
+          this.initialState = this.formState();
+        });
+      }
+    }"
+    x-ref="editEventForm"
+    x-on:input="updateDirtyState()"
+    x-on:change="updateDirtyState()"
+    x-on:submit="isSubmitting = true"
+    x-on:beforeunload.window="if (hasUnsavedChanges && !isSubmitting) { $event.preventDefault(); $event.returnValue = ''; }"
+  >
     <div class="space-y-6">
 
       <div>
-        <h2 class="text-xl font-semibold mb-4">Event Information</h2>
+        <h2 class="text-xl font-semibold text-white mb-4">Event Information</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
           <div>
-            <label class="text-sm font-medium text-slate-500">Category</label>
+            <label class="text-sm font-medium text-blue-100/70">Category</label>
             <input
               type="text"
               name="category"
               value="<%= formData.category %>"
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+              class="mt-1 w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
               required
             />
           </div>
 
           <div>
-            <label class="text-sm font-medium text-slate-500">Status</label>
+            <label class="text-sm font-medium text-blue-100/70">Status</label>
             <select
               name="status"
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+              class="mt-1 w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
             >
               <option value="draft" <%= formData.status === "draft" ? "selected" : "" %>>Draft</option>
               <option value="published" <%= formData.status === "published" ? "selected" : "" %>>Published</option>
@@ -45,45 +69,45 @@
           </div>
 
           <div>
-            <label class="text-sm font-medium text-slate-500">Location</label>
+            <label class="text-sm font-medium text-blue-100/70">Location</label>
             <input
               type="text"
               name="location"
               value="<%= formData.location %>"
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+              class="mt-1 w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
               required
             />
           </div>
 
           <div>
-            <label class="text-sm font-medium text-slate-500">Capacity</label>
+            <label class="text-sm font-medium text-blue-100/70">Capacity</label>
             <input
               type="number"
               name="capacity"
               min="1"
               value="<%= formData.capacity %>"
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+              class="mt-1 w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
             />
           </div>
 
           <div>
-            <label class="text-sm font-medium text-slate-500">Start Time</label>
+            <label class="text-sm font-medium text-blue-100/70">Start Time</label>
             <input
               type="datetime-local"
               name="startDatetime"
               value="<%= formData.startDatetime %>"
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+              class="mt-1 w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
               required
             />
           </div>
 
           <div>
-            <label class="text-sm font-medium text-slate-500">End Time</label>
+            <label class="text-sm font-medium text-blue-100/70">End Time</label>
             <input
               type="datetime-local"
               name="endDatetime"
               value="<%= formData.endDatetime %>"
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+              class="mt-1 w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
               required
             />
           </div>
@@ -92,22 +116,22 @@
       </div>
 
       <div>
-        <label class="text-sm font-medium text-slate-500">Title</label>
+        <label class="text-sm font-medium text-blue-100/70">Title</label>
         <input
           type="text"
           name="title"
           value="<%= formData.title %>"
-          class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+          class="mt-1 w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
           required
         />
       </div>
 
       <div>
-        <label class="text-sm font-medium text-slate-500">Description</label>
+        <label class="text-sm font-medium text-blue-100/70">Description</label>
         <textarea
           name="description"
           rows="4"
-          class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+          class="mt-1 w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
           required
         ><%= formData.description %></textarea>
       </div>
@@ -115,14 +139,14 @@
       <div class="flex gap-4">
         <button
           type="submit"
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-blue-900/80 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           Save Changes
         </button>
 
         <a
           href="/events/<%= eventId %>"
-          class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
+          class="px-6 py-2 bg-slate-800/80 text-blue-100/80 rounded-lg hover:bg-blue-400/20 focus:outline-none focus:ring-2 focus:ring-slate-500"
         >
           Cancel
         </a>

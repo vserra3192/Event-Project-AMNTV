@@ -1,6 +1,6 @@
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
-  <h1 class="text-3xl font-bold text-slate-900 mb-3">My RSVP Dashboard</h1>
-  <p class="text-slate-500">
+<section class="mb-6 rounded-3xl border border-blue-300/15 bg-slate-900/60 px-7 py-6 shadow-[0_25px_60px_-35px_rgba(15,105,255,0.45)] backdrop-blur-lg">
+  <h1 class="text-3xl font-semibold text-white mb-3">My RSVP Dashboard</h1>
+  <p class="text-blue-100/70">
     Events you have RSVP'd for are listed below.
   </p>
 </section>
@@ -9,7 +9,7 @@
   <%- include("../partials/error", { message: pageError }) %>
 <% } %>
 
-<section class="max-w-4xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+<section class="max-w-4xl rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
   <% if (data && data.length > 0) { %>
     <ul class="list-none m-0 p-0 grid gap-3.5">
       <% data.forEach((event) => { %>
@@ -18,10 +18,10 @@
     </ul>
   <% } else { %>
     <div class="text-center py-12">
-      <p class="text-slate-500">You haven't RSVP'd to any events yet.</p>
+      <p class="text-blue-100/70">You haven't RSVP'd to any events yet.</p>
       <a
         href="/events"
-        class="mt-4 inline-flex items-center justify-center px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        class="mt-4 inline-flex items-center justify-center px-5 py-3 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 rounded-lg hover:shadow-blue-900/80"
       >
         Browse Events
       </a>

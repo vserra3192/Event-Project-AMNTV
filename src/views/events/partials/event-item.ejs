@@ -1,29 +1,27 @@
-<li class="flex flex-col gap-3 p-4 border border-slate-200 rounded-xl bg-slate-50">
+<li class="flex flex-col gap-3 rounded-2xl border border-blue-300/10 bg-slate-950/40 p-4">
   <div class="flex items-start justify-between gap-4">
     <div>
-      <strong class="text-slate-900 text-lg"><%= event.title %></strong>
-      <p class="text-sm text-slate-500 mt-1 mb-0">
-        Category: <span class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-600/12 text-blue-700">
+      <strong class="text-white text-lg"><%= event.title %></strong>
+      <p class="text-sm text-blue-100/70 mt-1 mb-0">
+        Category: <span class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-400/15 text-blue-100">
           <%= event.category %>
         </span>
       </p>
     </div>
     <div class="text-right">
-      <p class="text-xs font-semibold <%= event.status === 'published' ? 'text-green-700 bg-green-50' : 'text-slate-500 bg-slate-100' %> px-2.5 py-1.5 rounded-full">
-        <%= event.status %>
-      </p>
+      <%- include("../../partials/status-badge", { status: event.status, eventId: event.id }) %>
     </div>
   </div>
   <div class="grid grid-cols-2 gap-3 text-sm">
     <div>
-      <p class="text-slate-500 mb-0.5">Start</p>
-      <p class="text-slate-900 font-medium">
+      <p class="text-blue-100/70 mb-0.5">Start</p>
+      <p class="text-white font-medium">
         <%= new Date(event.startDatetime).toLocaleString() %>
       </p>
     </div>
     <div>
-      <p class="text-slate-500 mb-0.5">End</p>
-      <p class="text-slate-900 font-medium">
+      <p class="text-blue-100/70 mb-0.5">End</p>
+      <p class="text-white font-medium">
         <%= new Date(event.endDatetime).toLocaleString() %>
       </p>
     </div>
@@ -31,14 +29,14 @@
   <div class="flex gap-2 mt-2">
     <a
       href="/events/<%= event.id %>"
-      class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+      class="px-3 py-1 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 text-sm rounded hover:shadow-blue-900/80"
     >
       View Details
     </a>
-    <% if (session.authenticatedUser && session.authenticatedUser.userId === event.organizerId) { %>
+    <% if (session.authenticatedUser && session.authenticatedUser.userId === event.organizerId && event.status !== 'cancelled') { %>
       <a
         href="/events/<%= event.id %>/edit"
-        class="px-3 py-1 bg-slate-600 text-white text-sm rounded hover:bg-slate-700"
+        class="px-3 py-1 bg-slate-800/80 text-blue-100 border border-blue-300/20 text-sm rounded hover:bg-blue-400/20 hover:text-white"
       >
         Edit Event
       </a>
@@ -50,7 +48,7 @@
           hx-post="/events/<%= event.id %>/rsvp/cancel"
           hx-target="closest li"
           hx-swap="outerHTML"
-          class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+          class="px-3 py-1 bg-red-500/90 text-white shadow-lg shadow-red-950/40 text-sm rounded hover:bg-red-500"
         >
           Cancel RSVP
         </button>
@@ -59,7 +57,7 @@
           hx-post="/events/<%= event.id %>/rsvp"
           hx-target="closest li"
           hx-swap="outerHTML"
-          class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+          class="px-3 py-1 bg-emerald-500/90 text-white shadow-lg shadow-emerald-900/40 text-sm rounded hover:bg-emerald-500"
         >
           RSVP
         </button>

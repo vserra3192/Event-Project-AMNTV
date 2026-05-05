@@ -1,19 +1,27 @@
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
-  <h1 class="text-3xl font-bold text-slate-900 mb-3">Search Events</h1>
-  <p class="text-slate-500">
+<section class="mb-6 rounded-3xl border border-blue-300/15 bg-slate-900/60 px-7 py-6 shadow-[0_25px_60px_-35px_rgba(15,105,255,0.45)] backdrop-blur-lg">
+  <h1 class="text-3xl font-semibold text-white mb-3">Search Events</h1>
+  <p class="text-blue-100/70">
     Search results for "<%= query %>".
   </p>
   <% if (session.authenticatedUser) { %>
-    <p class="text-slate-500 mt-2 mb-0">
-      Signed in as <strong class="text-slate-700"><%= session.authenticatedUser.displayName %></strong>
+    <p class="text-blue-100/70 mt-2 mb-0">
+      Signed in as <strong class="text-blue-100/80"><%= session.authenticatedUser.displayName %></strong>
       (<%= session.authenticatedUser.role %>).
     </p>
   <% } %>
 </section>
 
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
-  <form class="flex gap-3">
+<section class="mb-6 rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
+  <form
+    x-data="{ query: '' }"
+    x-init="query = $refs.searchInput.value"
+    class="relative"
+  >
+    <label for="search-query" class="sr-only">Search events</label>
     <input
+      id="search-query"
+      x-ref="searchInput"
+      x-model="query"
       type="text"
       name="q"
       placeholder="Search events..."
@@ -24,19 +32,21 @@
       hx-target="#search-results-container"
       hx-swap="outerHTML"
       hx-on="htmx:beforeRequest: document.getElementById('search-error').style.display='none'"
-      class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-5 py-4 pr-16 text-base text-white shadow-inner shadow-slate-900 transition focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
     />
     <button
       type="button"
-      onclick="location.href='/events/search'; return false;"
-      class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      x-show="query.length > 0"
+      x-on:click.prevent="query = ''; $refs.searchInput.value = ''; $refs.searchInput.dispatchEvent(new Event('input'))"
+      class="absolute inset-y-0 right-2 inline-flex h-9 items-center justify-center rounded-full bg-slate-800/80 px-2 text-blue-100/80 transition hover:bg-blue-400/20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      style="top: 50%; transform: translateY(-50%);"
     >
       Clear
     </button>
   </form>
 </section>
 
-<section id="search-error" class="mb-4 p-4 rounded-xl border border-red-200 bg-red-50 text-red-800 <%= typeof error === 'undefined' || !error ? 'hidden' : '' %>" aria-live="polite">
+<section id="search-error" class="mb-4 p-4 rounded-xl border border-red-400/30 bg-red-950/50 text-red-100 <%= typeof error === 'undefined' || !error ? 'hidden' : '' %>" aria-live="polite">
   <h3 class="text-base font-semibold mb-1">Search Error</h3>
   <p class="mb-0 text-sm"><%= typeof error !== 'undefined' ? error : '' %></p>
 </section>

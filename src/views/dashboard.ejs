@@ -1,19 +1,25 @@
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
-  <h1 class="text-3xl font-bold text-slate-900 mb-3">Dashboard</h1>
-  <p class="text-slate-500">
+<section class="mb-6 rounded-3xl border border-blue-300/15 bg-slate-900/60 px-7 py-6 shadow-[0_25px_60px_-35px_rgba(15,105,255,0.45)] backdrop-blur-lg">
+  <h1 class="text-3xl font-semibold text-white mb-3">Dashboard</h1>
+  <p class="text-blue-100/70">
     Manage your upcoming events.
   </p>
   <% if (session.authenticatedUser) { %>
-    <p class="text-slate-500 mt-2 mb-0">
-      Signed in as <strong class="text-slate-700"><%= session.authenticatedUser.displayName %></strong>
+    <p class="text-blue-100/70 mt-2 mb-0">
+      Signed in as <strong class="text-blue-100/80"><%= session.authenticatedUser.displayName %></strong>
       (<%= session.authenticatedUser.role %>).
     </p>
-    <div class="mt-4">
+    <div class="mt-4 flex flex-wrap gap-3">
       <a
         href="/events/rsvp"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/70 text-blue-100/80 rounded-lg hover:bg-slate-800/80"
       >
         View My RSVPs
+      </a>
+      <a
+        href="/events/new"
+        class="inline-flex items-center gap-2 rounded-lg border border-blue-300/20 bg-slate-950/40 px-4 py-2 text-blue-100/80 transition hover:bg-blue-400/15 hover:text-white"
+      >
+        Create Event
       </a>
     </div>
   <% } %>

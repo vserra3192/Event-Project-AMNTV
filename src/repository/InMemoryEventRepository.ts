@@ -115,7 +115,7 @@ class InMemoryEventRepository implements IEventRepository {
       const now = new Date();
       const events = [...this.events.values()].filter(event => {
         if (event.organizerId !== organizerId) return false;
-        const isPast = event.status === 'past' || event.endDatetime < now;
+        const isPast = event.status === 'past' || event.endDatetime < now || event.status === 'cancelled';
         return !isPast;
       });
       return Ok(events);
@@ -130,7 +130,7 @@ class InMemoryEventRepository implements IEventRepository {
       const events = [...this.events.values()]
         .filter(event => {
           if (event.organizerId !== organizerId) return false;
-          const isPast = event.status === 'past' || event.endDatetime < now;
+          const isPast = event.status === 'past' || event.status === 'cancelled' || event.endDatetime < now;
           return isPast;
         })
         .sort((a, b) => b.endDatetime.getTime() - a.endDatetime.getTime());
