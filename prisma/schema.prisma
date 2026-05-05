@@ -24,6 +24,7 @@ model Event {
   description   String
   location      String
   category      String
+  emoji         String?
   status        String
   capacity      Int?
   startDatetime DateTime
