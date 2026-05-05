@@ -1,6 +1,7 @@
 import { CreateAdminUserService } from "./auth/AdminUserService";
 import { CreateAuthController } from "./auth/AuthController";
 import { CreateAuthService } from "./auth/AuthService";
+import { CreateFriendsController } from "./auth/FriendsController";
 import { CreatePrismaUserRepository } from "./auth/PrismaUserRepository";
 import { CreatePasswordHasher } from "./auth/PasswordHasher";
 import { CreateApp } from "./app";
@@ -27,6 +28,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const authService = CreateAuthService(authUsers, passwordHasher);
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
+  const friendsController = CreateFriendsController(authUsers, resolvedLogger);
 
   const eventRepo = usePrismaRepo ? CreatePrismaEventRepository() : CreateInMemoryEventRepository();
   const eventService = CreateEventService(eventRepo);
@@ -36,5 +38,5 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const commentService = new CommentService(commentRepo, eventRepo);
   const commentController = new CommentController(commentService, resolvedLogger, adminUserService, eventService);
 
-  return CreateApp(authController, eventController, commentController, resolvedLogger);
+  return CreateApp(authController, eventController, commentController, friendsController, resolvedLogger);
 }
