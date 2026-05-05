@@ -10,6 +10,7 @@ import type { IAdminUserService } from '../auth/AdminUserService';
 export interface IEditEventForm {
   title: string;
   category: string;
+  emoji: string;
   location: string;
   description: string;
   status: string;
@@ -77,6 +78,7 @@ class EventController implements IEventController {
         return {
             title: event.title,
             category: event.category,
+            emoji: event.emoji ?? "",
             location: event.location,
             description: event.description,
             status: event.status,
@@ -94,10 +96,12 @@ class EventController implements IEventController {
         const capacityText = form.capacity.trim();
         const capacity =
         capacityText.length === 0 ? null : Number.parseInt(capacityText, 10);
+        const emoji = form.emoji.trim().length === 0 ? null : form.emoji;
 
         return {
             title: form.title,
             category: form.category,
+            emoji,
             location: form.location,
             description: form.description,
             status,
@@ -298,6 +302,8 @@ class EventController implements IEventController {
         const description = typeof body.description === 'string' ? body.description : '';
         const location = typeof body.location === 'string' ? body.location : '';
         const category = typeof body.category === 'string' ? body.category : '';
+        const emojiRaw = typeof body.emoji === 'string' ? body.emoji : '';
+        const emoji = emojiRaw.trim().length === 0 ? null : emojiRaw;
         const statusRaw = typeof body.status === 'string' ? body.status : '';
         const status: EventStatus = VALID_STATUSES.includes(statusRaw as EventStatus)
             ? (statusRaw as EventStatus)
@@ -312,6 +318,7 @@ class EventController implements IEventController {
             description,
             location,
             category,
+            emoji,
             status,
             capacity,
             startDatetime,
@@ -407,6 +414,7 @@ class EventController implements IEventController {
                 formData: {
                 title: "",
                 category: "",
+                emoji: "",
                 location: "",
                 description: "",
                 status: "draft",

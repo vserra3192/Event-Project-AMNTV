@@ -7,6 +7,7 @@ export interface CreateEventServiceInput {
   description: string;
   location: string;
   category: string;
+  emoji: string | null;
   status: EventStatus;
   capacity: number | null;
   startDatetime: Date;
@@ -35,6 +36,20 @@ export interface IEventService {
 }
 
 class EventService implements IEventService {
+  private static readonly VALID_EVENT_EMOJIS = new Set([
+    "🎉",
+    "🎸",
+    "🍿",
+    "🎂",
+    "📚",
+    "👾",
+    "💒",
+    "👻",
+    "🍕",
+    "🏆",
+    "✈️",
+  ]);
+
   constructor(private readonly repo: IEventRepository) {}
 
   private validateEventInput(input: CreateEventServiceInput): Result<void, EventError> {
@@ -52,6 +67,13 @@ class EventService implements IEventService {
 
     if (input.category.trim().length === 0) {
       return Err(ValidationError("Category is required."));
+    }
+
+    if (
+      input.emoji !== null &&
+      !EventService.VALID_EVENT_EMOJIS.has(input.emoji)
+    ) {
+      return Err(ValidationError("Emoji must be selected from the provided options."));
     }
 
     if (Number.isNaN(input.startDatetime.getTime())) {
@@ -90,6 +112,7 @@ class EventService implements IEventService {
       description: input.description.trim(),
       location: input.location.trim(),
       category: input.category.trim(),
+      emoji: input.emoji,
       status: input.status,
       capacity: input.capacity,
       startDatetime: input.startDatetime,
@@ -210,6 +233,7 @@ class EventService implements IEventService {
       description: input.description.trim(),
       location: input.location.trim(),
       category: input.category.trim(),
+      emoji: input.emoji,
       status: input.status,
       capacity: input.capacity,
       startDatetime: input.startDatetime,
