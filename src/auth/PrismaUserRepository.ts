@@ -10,9 +10,11 @@ type UserWithFriendState = PrismaUser & {
   freindsList?: Array<{ friendId: string }>;
   outgoingFriendRequests?: Array<{ recipientId: string }>;
   ingoingFriendRequests?: Array<{ requesterId: string }>;
+  outgoingEventInvites?: Array<{ eventId: number; senderId: string; recipientId: string }>;
+  incomingEventInvites?: Array<{ eventId: number; senderId: string; recipientId: string }>;
 };
 
-const userFriendStateInclude = {
+const userStateInclude = {
   freindsList: {
     select: { friendId: true },
     orderBy: { createdAt: "asc" },
@@ -23,6 +25,14 @@ const userFriendStateInclude = {
   },
   ingoingFriendRequests: {
     select: { requesterId: true },
+    orderBy: { createdAt: "asc" },
+  },
+  outgoingEventInvites: {
+    select: { eventId: true, senderId: true, recipientId: true },
+    orderBy: { createdAt: "asc" },
+  },
+  incomingEventInvites: {
+    select: { eventId: true, senderId: true, recipientId: true },
     orderBy: { createdAt: "asc" },
   },
 } satisfies Prisma.UserInclude;
@@ -44,6 +54,10 @@ class PrismaUserRepository implements IUserRepository {
         user.outgoingFriendRequests?.map((request) => request.recipientId) ?? [],
       ingoingFriendRequests:
         user.ingoingFriendRequests?.map((request) => request.requesterId) ?? [],
+      outgoingEventInvites:
+        user.outgoingEventInvites?.map((invite) => ({ ...invite })) ?? [],
+      incomingEventInvites:
+        user.incomingEventInvites?.map((invite) => ({ ...invite })) ?? [],
     };
   }
 
@@ -77,7 +91,7 @@ class PrismaUserRepository implements IUserRepository {
       await this.ensureDemoUsers();
       const match = await this.prisma.user.findUnique({
         where: { email },
-        include: userFriendStateInclude,
+        include: userStateInclude,
       });
 
       return Ok(match ? this.mapUser(match) : null);
@@ -91,7 +105,7 @@ class PrismaUserRepository implements IUserRepository {
       await this.ensureDemoUsers();
       const match = await this.prisma.user.findUnique({
         where: { id },
-        include: userFriendStateInclude,
+        include: userStateInclude,
       });
 
       return Ok(match ? this.mapUser(match) : null);
@@ -105,7 +119,7 @@ class PrismaUserRepository implements IUserRepository {
       await this.ensureDemoUsers();
       const users = await this.prisma.user.findMany({
         orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-        include: userFriendStateInclude,
+        include: userStateInclude,
       });
 
       return Ok(users.map((user) => this.mapUser(user)));
@@ -125,7 +139,7 @@ class PrismaUserRepository implements IUserRepository {
           role: user.role,
           passwordHash: user.passwordHash,
         },
-        include: userFriendStateInclude,
+        include: userStateInclude,
       });
 
       return Ok(this.mapUser(created));
@@ -264,7 +278,7 @@ class PrismaUserRepository implements IUserRepository {
         orderBy: { createdAt: "asc" },
         include: {
           friend: {
-            include: userFriendStateInclude,
+            include: userStateInclude,
           },
         },
       });

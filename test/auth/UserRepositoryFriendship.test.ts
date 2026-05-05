@@ -15,6 +15,8 @@ const testUser = (id: string): IUserRecord => ({
   freindsList: [],
   outgoingFriendRequests: [],
   ingoingFriendRequests: [],
+  outgoingEventInvites: [],
+  incomingEventInvites: [],
 });
 
 async function createPair(repo: IUserRepository): Promise<[IUserRecord, IUserRecord]> {
