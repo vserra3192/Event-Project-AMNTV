@@ -119,6 +119,28 @@
       </div>
     </div>
 
+    <fieldset>
+      <legend class="block text-sm font-medium text-blue-100/80 mb-2">Event Emoji</legend>
+      <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
+        <input type="radio" id="emoji-none" name="emoji" value="" class="sr-only peer/none" checked />
+        <label
+          for="emoji-none"
+          class="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-blue-300/20 bg-slate-950/60 text-xs font-semibold text-blue-100/80 transition hover:border-blue-300/50 hover:bg-blue-400/15 peer-checked/none:border-blue-300 peer-checked/none:bg-blue-500/25 peer-checked/none:text-white"
+        >
+          None
+        </label>
+        <% ["🎉", "🎸", "🍿", "🎂", "📚", "👾", "💒", "👻", "🍕", "🏆", "✈️"].forEach((emoji, index) => { %>
+          <input type="radio" id="emoji-<%= index %>" name="emoji" value="<%= emoji %>" class="sr-only peer/emoji-<%= index %>" />
+          <label
+            for="emoji-<%= index %>"
+            class="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-blue-300/20 bg-slate-950/60 text-2xl transition hover:border-blue-300/50 hover:bg-blue-400/15 peer-checked/emoji-<%= index %>:border-blue-300 peer-checked/emoji-<%= index %>:bg-blue-500/25"
+          >
+            <%= emoji %>
+          </label>
+        <% }) %>
+      </div>
+    </fieldset>
+
     <div class="flex flex-wrap gap-3">
       <button
         type="submit"
