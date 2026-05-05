@@ -12,7 +12,31 @@
 <% } %>
 
 <section class="max-w-3xl rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
-  <form method="POST" action="/events/<%= eventId %>/edit">
+  <form
+    method="POST"
+    action="/events/<%= eventId %>/edit"
+    x-data="{
+      initialState: '',
+      hasUnsavedChanges: false,
+      isSubmitting: false,
+      formState() {
+        return new URLSearchParams(new FormData(this.$refs.editEventForm)).toString();
+      },
+      updateDirtyState() {
+        this.hasUnsavedChanges = this.formState() !== this.initialState;
+      },
+      init() {
+        this.$nextTick(() => {
+          this.initialState = this.formState();
+        });
+      }
+    }"
+    x-ref="editEventForm"
+    x-on:input="updateDirtyState()"
+    x-on:change="updateDirtyState()"
+    x-on:submit="isSubmitting = true"
+    x-on:beforeunload.window="if (hasUnsavedChanges && !isSubmitting) { $event.preventDefault(); $event.returnValue = ''; }"
+  >
     <div class="space-y-6">
 
       <div>
