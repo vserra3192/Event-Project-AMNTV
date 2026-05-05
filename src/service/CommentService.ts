@@ -40,9 +40,30 @@ export class CommentService implements ICommentService {
     private readonly eventRepo: IEventRepository,
   ) {}
 
+  private async ensureCommentsAvailable(eventId: number): Promise<Result<void, CommentServiceError>> {
+    const eventResult = await this.eventRepo.getEventById(eventId);
+    if (!eventResult.ok) {
+      if (!isCommentError(eventResult.value)) {
+        return Err(InvalidContent("Unknown repository error"));
+      }
+      return Err(eventResult.value);
+    }
+
+    if (eventResult.value.status !== "past") {
+      return Err(Forbidden("Comments are only available on past events."));
+    }
+
+    return Ok(undefined);
+  }
+
   async getCommentsByEventId(eventId: number): Promise<Result<IComment[], CommentServiceError>> {
     if (!Number.isInteger(eventId) || eventId <= 0) {
       return Err(InvalidContent("Invalid event ID."));
+    }
+
+    const available = await this.ensureCommentsAvailable(eventId);
+    if (available.ok === false) {
+      return Err(available.value);
     }
 
     const result = await this.repo.getCommentsByEventId(eventId);
@@ -64,6 +85,11 @@ export class CommentService implements ICommentService {
 
     if (!content || content.trim().length === 0) {
       return Err(InvalidContent("Content cannot be empty."));
+    }
+
+    const available = await this.ensureCommentsAvailable(eventId);
+    if (available.ok === false) {
+      return Err(available.value);
     }
 
     const result = await this.repo.createComment({eventId, userId: actor.userId, content: content.trim()});
@@ -102,6 +128,9 @@ export class CommentService implements ICommentService {
     }
 
     const event = eventResult.value;
+    if (event.status !== "past") {
+      return Err(Forbidden("Comments are only available on past events."));
+    }
 
     const isAuthor = comment.userId === actor.userId;
     const isAdmin = actor.role === "admin";

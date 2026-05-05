@@ -201,6 +201,15 @@ class EventService implements IEventService {
   }
 
   async rsvpCancelEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>> {
+    const eventResult = await this.getEventByID(eventId);
+    if (!eventResult.ok) {
+      return eventResult;
+    }
+
+    if (eventResult.value.status !== "published") {
+      return Err(InvalidEventState("RSVPs are only available for published events."));
+    }
+
     return this.repo.rsvpCancelEvent(eventId, userId);
   }
 

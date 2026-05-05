@@ -120,20 +120,6 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <label for="status" class="block text-sm font-medium text-blue-100/80 mb-2">Status</label>
-        <select
-          id="status"
-          name="status"
-          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
-        >
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="past">Past</option>
-        </select>
-      </div>
-
-      <div>
         <label for="capacity" class="block text-sm font-medium text-blue-100/80 mb-2">Capacity</label>
         <input
           type="number"
@@ -184,9 +170,19 @@
     <div class="flex flex-wrap gap-3">
       <button
         type="submit"
+        name="status"
+        value="draft"
+        class="inline-flex items-center justify-center rounded-2xl border border-blue-300/30 bg-blue-400/20 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-blue-100 shadow-lg shadow-blue-900/30 transition duration-200 hover:-translate-y-0.5 hover:bg-blue-400/30 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Save as Draft
+      </button>
+      <button
+        type="submit"
+        name="status"
+        value="published"
         class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-blue-900/80 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        Create Event
+        Publish
       </button>
       <a
         href="/home"

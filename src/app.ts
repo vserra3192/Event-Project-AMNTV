@@ -381,6 +381,31 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/friends/panel",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        await this.friendsController.showFriendsPanel(
+          res,
+          browserSession,
+          currentUser.userId,
+        );
+      }),
+    );
+
+    this.app.get(
       "/invites",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
@@ -417,6 +442,7 @@ class ExpressApp implements IApp {
           browserSession,
           currentUser.userId,
           query,
+          req.query.panel === "true",
         );
       }),
     );
@@ -443,6 +469,7 @@ class ExpressApp implements IApp {
           browserSession,
           currentUser.userId,
           typeof req.body.userId === "string" ? req.body.userId : "",
+          req.query.panel === "true",
         );
       }),
     );
@@ -469,6 +496,7 @@ class ExpressApp implements IApp {
           browserSession,
           currentUser.userId,
           typeof req.params.requesterId === "string" ? req.params.requesterId : "",
+          req.query.panel === "true",
         );
       }),
     );
@@ -495,6 +523,7 @@ class ExpressApp implements IApp {
           browserSession,
           currentUser.userId,
           typeof req.params.requesterId === "string" ? req.params.requesterId : "",
+          req.query.panel === "true",
         );
       }),
     );
@@ -521,6 +550,7 @@ class ExpressApp implements IApp {
           browserSession,
           currentUser.userId,
           typeof req.params.friendId === "string" ? req.params.friendId : "",
+          req.query.panel === "true",
         );
       }),
     );

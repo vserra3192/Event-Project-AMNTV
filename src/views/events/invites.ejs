@@ -1,7 +1,7 @@
 <section class="mb-6 rounded-3xl border border-blue-300/15 bg-slate-900/60 px-7 py-6 shadow-[0_25px_60px_-35px_rgba(15,105,255,0.45)] backdrop-blur-lg">
-  <h1 class="text-2xl md:text-3xl font-semibold text-white mb-3">Invites</h1>
+  <h1 class="text-2xl md:text-3xl font-semibold text-white mb-3">Inbox</h1>
   <p class="text-blue-100/70">
-    Events your friends have invited you to join.
+    Track event invites and friend requests in one place.
   </p>
 </section>
 
@@ -9,40 +9,109 @@
   <%- include("../partials/error", { message: pageError }) %>
 <% } %>
 
-<section class="max-w-3xl rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
-  <% if (!invites || invites.length === 0) { %>
-    <p class="rounded-2xl border border-blue-300/10 bg-slate-950/40 p-4 text-blue-100/70">
-      No event invites yet.
-    </p>
-  <% } else { %>
-    <ul class="space-y-4">
-      <% invites.forEach((invite) => { %>
-        <li class="rounded-2xl border border-blue-300/10 bg-slate-950/40 p-5">
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p class="text-sm text-blue-100/60">Invited by <%= invite.senderName %></p>
-              <h2 class="mt-1 text-xl font-semibold text-white"><%= invite.event.title %></h2>
+<section class="grid gap-6 lg:grid-cols-2">
+  <div class="space-y-6">
+    <section class="rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
+      <div class="mb-5">
+        <h2 class="text-xl font-semibold text-white mb-2">Incoming Event Invites</h2>
+        <p class="text-blue-100/70 mb-0"><%= invites.length %> invite<%= invites.length === 1 ? "" : "s" %></p>
+      </div>
+
+      <% if (!invites || invites.length === 0) { %>
+        <p class="rounded-2xl border border-blue-300/10 bg-slate-950/40 p-4 text-blue-100/70">
+          No incoming event invites.
+        </p>
+      <% } else { %>
+        <ul class="space-y-4">
+          <% invites.forEach((invite) => { %>
+            <li class="rounded-2xl border border-blue-300/10 bg-slate-950/40 p-5">
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p class="text-sm text-blue-100/60">Invited by <%= invite.senderName %></p>
+                  <h3 class="mt-1 text-lg font-semibold text-white"><%= invite.event.title %></h3>
+                  <p class="mt-2 text-sm text-blue-100/70">
+                    <%= new Date(invite.event.startDatetime).toLocaleString() %> at <%= invite.event.location %>
+                  </p>
+                </div>
+                <a href="/events/<%= invite.event.id %>" class="rounded-lg border border-blue-300/30 bg-blue-400/20 px-4 py-2 text-sm font-medium text-blue-100 transition hover:bg-blue-400/30 hover:text-white">
+                  View
+                </a>
+              </div>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+
+    <section class="rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
+      <div class="mb-5">
+        <h2 class="text-xl font-semibold text-white mb-2">Incoming Friend Requests</h2>
+        <p class="text-blue-100/70 mb-0"><%= incomingFriendRequests.length %> waiting</p>
+      </div>
+
+      <% if (incomingFriendRequests.length === 0) { %>
+        <p class="rounded-2xl border border-blue-300/10 bg-slate-950/40 p-4 text-blue-100/70">
+          No incoming friend requests.
+        </p>
+      <% } else { %>
+        <ul class="space-y-3">
+          <% incomingFriendRequests.forEach((request) => { %>
+            <li class="rounded-2xl border border-blue-300/10 bg-slate-950/40 p-4">
+              <p class="mb-1 font-semibold text-white"><%= request.displayName %></p>
+              <p class="mb-0 text-sm text-blue-100/65"><%= request.email %></p>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  </div>
+
+  <div class="space-y-6">
+    <section class="rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
+      <div class="mb-5">
+        <h2 class="text-xl font-semibold text-white mb-2">Outgoing Event Invites</h2>
+        <p class="text-blue-100/70 mb-0"><%= outgoingInvites.length %> sent</p>
+      </div>
+
+      <% if (!outgoingInvites || outgoingInvites.length === 0) { %>
+        <p class="rounded-2xl border border-blue-300/10 bg-slate-950/40 p-4 text-blue-100/70">
+          No outgoing event invites.
+        </p>
+      <% } else { %>
+        <ul class="space-y-4">
+          <% outgoingInvites.forEach((invite) => { %>
+            <li class="rounded-2xl border border-blue-300/10 bg-slate-950/40 p-5">
+              <p class="text-sm text-blue-100/60">Sent to <%= invite.recipientName %></p>
+              <h3 class="mt-1 text-lg font-semibold text-white"><%= invite.event.title %></h3>
               <p class="mt-2 text-sm text-blue-100/70">
-                <%= new Date(invite.event.startDatetime).toLocaleString() %> at <%= invite.event.location %>
+                <%= new Date(invite.event.startDatetime).toLocaleString() %>
               </p>
-            </div>
-            <div class="flex gap-2">
-              <a
-                href="/events/<%= invite.event.id %>"
-                class="rounded-lg border border-blue-300/30 bg-blue-400/20 px-4 py-2 text-sm font-medium text-blue-100 transition hover:bg-blue-400/30 hover:text-white"
-              >
-                View
-              </a>
-              <% const hasRsvped = invite.event.rsvps && invite.event.rsvps.includes(session.authenticatedUser.userId); %>
-              <% if (hasRsvped) { %>
-                <span class="rounded-lg border border-emerald-300/30 bg-emerald-400/15 px-4 py-2 text-sm font-medium text-emerald-100">
-                  RSVPed
-                </span>
-              <% } %>
-            </div>
-          </div>
-        </li>
-      <% }) %>
-    </ul>
-  <% } %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+
+    <section class="rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
+      <div class="mb-5">
+        <h2 class="text-xl font-semibold text-white mb-2">Outgoing Friend Requests</h2>
+        <p class="text-blue-100/70 mb-0"><%= outgoingFriendRequests.length %> pending</p>
+      </div>
+
+      <% if (outgoingFriendRequests.length === 0) { %>
+        <p class="rounded-2xl border border-blue-300/10 bg-slate-950/40 p-4 text-blue-100/70">
+          No outgoing friend requests.
+        </p>
+      <% } else { %>
+        <ul class="space-y-3">
+          <% outgoingFriendRequests.forEach((request) => { %>
+            <li class="rounded-2xl border border-blue-300/10 bg-slate-950/40 p-4">
+              <p class="mb-1 font-semibold text-white"><%= request.displayName %></p>
+              <p class="mb-0 text-sm text-blue-100/65"><%= request.email %></p>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  </div>
 </section>

@@ -53,6 +53,15 @@ type EventInviteCard = {
     event: IEvent;
     senderName: string;
 };
+type OutgoingEventInviteCard = {
+    event: IEvent;
+    recipientName: string;
+};
+type FriendRequestCard = {
+    id: string;
+    displayName: string;
+    email: string;
+};
 
 class EventController implements IEventController {
     private service: IEventService;
@@ -486,6 +495,11 @@ class EventController implements IEventController {
             return;
         }
 
+        if (eventResult.value.status !== 'published') {
+            res.status(409).render('partials/error', { message: 'Invites are only available for published events.', layout: false });
+            return;
+        }
+
         const sendResult = await this.userRepository.sendEventInvite(eventId, currentUser.userId, recipientId);
         const inviteFriends = await this.getInviteFriends(eventResult.value, session);
         const invitedRecipientIds = await this.getInvitedRecipientIds(eventId, currentUser.userId);
@@ -780,6 +794,11 @@ class EventController implements IEventController {
             return;
         }
 
+        const usersResult = await this.adminUserService.listUsers();
+        const usersById = new Map(
+            usersResult.ok ? usersResult.value.map((user) => [user.id, user]) : [],
+        );
+
         const cards: EventInviteCard[] = [];
         for (const invite of userResult.value.incomingEventInvites) {
             const eventResult = await this.service.getEventByID(invite.eventId);
@@ -791,15 +810,52 @@ class EventController implements IEventController {
                 continue;
             }
 
-            const senderResult = await this.adminUserService.findUserById(invite.senderId);
             cards.push({
                 event: eventResult.value,
-                senderName: senderResult.ok && senderResult.value ? senderResult.value.displayName : 'Unknown sender',
+                senderName: usersById.get(invite.senderId)?.displayName ?? 'Unknown sender',
             });
         }
 
+        const outgoingInvites: OutgoingEventInviteCard[] = [];
+        for (const invite of userResult.value.outgoingEventInvites) {
+            const eventResult = await this.service.getEventByID(invite.eventId);
+            if (!eventResult.ok) {
+                continue;
+            }
+
+            if (eventResult.value.status === 'past' || eventResult.value.status === 'cancelled') {
+                continue;
+            }
+
+            outgoingInvites.push({
+                event: eventResult.value,
+                recipientName: usersById.get(invite.recipientId)?.displayName ?? 'Unknown recipient',
+            });
+        }
+
+        const incomingFriendRequests: FriendRequestCard[] = userResult.value.ingoingFriendRequests
+            .map((requesterId) => usersById.get(requesterId))
+            .filter((user): user is IUserRecord => user !== undefined)
+            .map((user) => ({
+                id: user.id,
+                displayName: user.displayName,
+                email: user.email,
+            }));
+
+        const outgoingFriendRequests: FriendRequestCard[] = userResult.value.outgoingFriendRequests
+            .map((recipientId) => usersById.get(recipientId))
+            .filter((user): user is IUserRecord => user !== undefined)
+            .map((user) => ({
+                id: user.id,
+                displayName: user.displayName,
+                email: user.email,
+            }));
+
         res.status(200).render('events/invites', {
             invites: cards,
+            outgoingInvites,
+            incomingFriendRequests,
+            outgoingFriendRequests,
             session,
             pageError: null,
         });
