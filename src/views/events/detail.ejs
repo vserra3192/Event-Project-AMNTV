@@ -43,6 +43,12 @@
           </dd>
         </div>
         <div>
+          <dt class="text-sm font-medium text-blue-100/70">Who can RSVP?</dt>
+          <dd class="text-white">
+            <%= event.rsvpPolicy === "friends-only" ? "Friends only" : event.rsvpPolicy === "invite-only" ? "Invite only" : "Anyone" %>
+          </dd>
+        </div>
+        <div>
           <dt class="text-sm font-medium text-blue-100/70">Location</dt>
           <dd class="text-white"><%= event.location %></dd>
         </div>
@@ -123,9 +129,44 @@
           </button>
         </form>
       <% } %>
+
+      <% if (currentUser && event.status === "published" && !isOwner) { %>
+        <% const hasRsvped = event.rsvps && event.rsvps.includes(currentUser.userId); %>
+        <% if (hasRsvped) { %>
+          <form method="POST" action="/events/<%= event.id %>/rsvp/cancel?redirect=/events/<%= event.id %>" class="inline">
+            <button
+              type="submit"
+              class="px-6 py-2 bg-red-500/90 text-white shadow-lg shadow-red-950/40 rounded-lg hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              Cancel RSVP
+            </button>
+          </form>
+        <% } else { %>
+          <form method="POST" action="/events/<%= event.id %>/rsvp?redirect=/events/<%= event.id %>" class="inline">
+            <button
+              type="submit"
+              class="px-6 py-2 bg-emerald-500/90 text-white shadow-lg shadow-emerald-900/40 rounded-lg hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              RSVP
+            </button>
+          </form>
+        <% } %>
+      <% } %>
     </div>
 
     <% if (isOwner || isAdmin) { %>
+      <% if (isOwner) { %>
+        <section class="mt-6 rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
+          <%- include("partials/invite-panel", {
+            event,
+            session,
+            inviteFriends: inviteFriends ?? [],
+            invitedRecipientIds: invitedRecipientIds ?? [],
+            pageError: null,
+          }) %>
+        </section>
+      <% } %>
+
       <section class="mt-6 rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
         <div class="flex flex-col gap-4">
           <div class="flex items-center justify-between">
