@@ -419,6 +419,18 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/inbox/indicator",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        await this.eventController.showInboxIndicator(res, browserSession);
+      }),
+    );
+
+    this.app.get(
       "/friends/search",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
@@ -707,6 +719,17 @@ class ExpressApp implements IApp {
           Number(req.params.id),
           typeof req.query.redirect === 'string' ? req.query.redirect : undefined,
         );
+      }),
+    );
+
+    this.app.get(
+      '/events/rsvp/list',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = recordPageView(sessionStore(req));
+        const isPast = typeof req.query.type === "string" && req.query.type === "past";
+        this.logger.info(`GET /events/rsvp/list?type=${isPast ? "past" : "upcoming"} for ${browserSession.browserLabel}`);
+        await this.eventController.showRSVPList(res, browserSession, isPast);
       }),
     );
 

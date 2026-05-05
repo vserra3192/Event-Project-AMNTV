@@ -43,6 +43,8 @@ export interface IEventController {
     handleRsvpEvent(res: Response, session: IAppBrowserSession, eventId: number, redirectTo?: string): Promise<void>;
     handleRsvpCancelEvent(res: Response, session: IAppBrowserSession, eventId: number, redirectTo?: string): Promise<void>;
     showRSVPDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
+    showRSVPList(res: Response, session: IAppBrowserSession, isPast: boolean): Promise<void>;
+    showInboxIndicator(res: Response, session: IAppBrowserSession): Promise<void>;
     showRSVPedUsers(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
     handleRemoveRSVPedUser(res: Response, session: IAppBrowserSession, eventId: number, userId: string): Promise<void>;
 }
@@ -476,6 +478,15 @@ class EventController implements IEventController {
             .map((invite) => invite.recipientId);
     }
 
+    private getInboxSignature(user: IUserRecord): string {
+        const incomingInvites = user.incomingEventInvites
+            .map((invite) => `event:${invite.eventId}:${invite.senderId}:${invite.recipientId}`);
+        const incomingRequests = user.ingoingFriendRequests
+            .map((requesterId) => `friend:${requesterId}`);
+
+        return [...incomingInvites, ...incomingRequests].sort().join("|");
+    }
+
     async handleSendEventInvite(res: Response, session: IAppBrowserSession, eventId: number, recipientId: string): Promise<void> {
         const currentUser = session.authenticatedUser;
         if (!currentUser) {
@@ -794,6 +805,8 @@ class EventController implements IEventController {
             return;
         }
 
+        session.inboxSeenSignature = this.getInboxSignature(userResult.value);
+
         const usersResult = await this.adminUserService.listUsers();
         const usersById = new Map(
             usersResult.ok ? usersResult.value.map((user) => [user.id, user]) : [],
@@ -870,9 +883,53 @@ class EventController implements IEventController {
             res.status(500).render('partials/error', { message: 'Could not load your RSVPs.', layout: false });
             return;
         }
+        const now = new Date();
+        const upcoming = result.value.filter((event) => event.status !== 'past' && event.status !== 'cancelled' && event.endDatetime >= now);
         this.logger.info(`Fetched ${result.value.length} RSVPed events for user ${userId}`);
-        res.status(200).render('events/rsvp-dashboard', { data: result.value, session, pageError: null });
+        res.status(200).render('events/rsvp-dashboard', { data: upcoming, session, pageError: null, isPast: false });
     }   
+
+    async showRSVPList(res: Response, session: IAppBrowserSession, isPast: boolean): Promise<void> {
+        const userId = session.authenticatedUser?.userId ?? '';
+        const result = await this.service.getUsersRSVPedEvents(userId);
+        if (!result.ok) {
+            const error = result.value as EventError;
+            this.logger.error(`Error fetching RSVP list for user ${userId}: ${error.message}`);
+            res.status(500).render('partials/error', { message: 'Could not load your RSVPs.', layout: false });
+            return;
+        }
+
+        const now = new Date();
+        const data = result.value.filter((event) => {
+            const past = event.status === 'past' || event.status === 'cancelled' || event.endDatetime < now;
+            return isPast ? past : !past;
+        });
+
+        res.status(200).render('events/partials/rsvp-list', {
+            data,
+            session,
+            isPast,
+            layout: false,
+        });
+    }
+
+    async showInboxIndicator(res: Response, session: IAppBrowserSession): Promise<void> {
+        const currentUser = session.authenticatedUser;
+        if (!currentUser) {
+            res.status(200).send('');
+            return;
+        }
+
+        const userResult = await this.userRepository.findById(currentUser.userId);
+        const hasPending = userResult.ok && userResult.value
+            ? this.getInboxSignature(userResult.value) !== (session.inboxSeenSignature ?? "")
+            : false;
+
+        res.status(200).render('events/partials/inbox-indicator', {
+            hasPending,
+            layout: false,
+        });
+    }
 
     async showRSVPedUsers(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
         const result = await this.service.getAllRSVPedUserByEventId(eventId);

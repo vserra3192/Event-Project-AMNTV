@@ -197,7 +197,12 @@ class EventService implements IEventService {
       return Err(UnautherizedError("You do not have permission to RSVP for this event."));
     }
 
-    return this.repo.rsvpEvent(eventId, userId);
+    const result = await this.repo.rsvpEvent(eventId, userId);
+    if (result.ok && this.userRepo) {
+      await this.userRepo.removeEventInvite(eventId, userId);
+    }
+
+    return result;
   }
 
   async rsvpCancelEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>> {

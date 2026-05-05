@@ -14,4 +14,5 @@ export interface IUserRepository {
   getFriendList(userId: string): Promise<Result<IUserRecord[], AuthError>>;
   removeFriend(userId: string, friendId: string): Promise<Result<boolean, AuthError>>;
   sendEventInvite(eventId: number, senderId: string, recipientId: string): Promise<Result<boolean, AuthError>>;
+  removeEventInvite(eventId: number, recipientId: string): Promise<Result<boolean, AuthError>>;
 }

@@ -348,6 +348,22 @@ class PrismaUserRepository implements IUserRepository {
       return Err(UnexpectedDependencyError("Unable to send event invite."));
     }
   }
+
+  async removeEventInvite(eventId: number, recipientId: string): Promise<Result<boolean, AuthError>> {
+    try {
+      await this.ensureDemoUsers();
+      const result = await this.prisma.eventInvite.deleteMany({
+        where: {
+          eventId,
+          recipientId,
+        },
+      });
+
+      return Ok(result.count > 0);
+    } catch {
+      return Err(UnexpectedDependencyError("Unable to remove event invite."));
+    }
+  }
 }
 
 export function CreatePrismaUserRepository(prisma?: PrismaClient): IUserRepository {

@@ -18,8 +18,9 @@
 
     <a
       href="/invites"
-      class="inline-flex items-center justify-center rounded-2xl border border-blue-300/30 bg-blue-400/20 px-5 py-3 text-sm font-semibold text-blue-100 shadow-lg shadow-blue-900/30 transition hover:bg-blue-400/30 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="relative inline-flex items-center justify-center rounded-2xl border border-blue-300/30 bg-blue-400/20 px-5 py-3 text-sm font-semibold text-blue-100 shadow-lg shadow-blue-900/30 transition hover:bg-blue-400/30 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
+      <span hx-get="/inbox/indicator" hx-trigger="load, every 30s" hx-swap="innerHTML"></span>
       Inbox
     </a>
   </div>
@@ -30,7 +31,7 @@
 <% } %>
 
 <section
-  class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]"
+  class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]"
   x-data="{ friendsOpen: false }"
 >
   <div class="min-w-0 space-y-5">
@@ -72,7 +73,7 @@
     </div>
   </div>
 
-  <aside class="space-y-3">
+  <aside class="space-y-3 xl:sticky xl:top-8 xl:self-start">
     <a
       href="/events/new"
       class="flex min-h-28 flex-col justify-center rounded-3xl border border-blue-300/15 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 px-6 py-5 text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-blue-900/80 focus:outline-none focus:ring-2 focus:ring-blue-500"

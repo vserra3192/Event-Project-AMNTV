@@ -261,6 +261,32 @@ class InMemoryUserRepository implements IUserRepository {
       return Err(UnexpectedDependencyError("Unable to send event invite."));
     }
   }
+
+  async removeEventInvite(eventId: number, recipientId: string): Promise<Result<boolean, AuthError>> {
+    try {
+      let removed = false;
+      for (const user of this.users) {
+        const outgoingCount = user.outgoingEventInvites.length;
+        user.outgoingEventInvites = user.outgoingEventInvites.filter(
+          (invite) => invite.eventId !== eventId || invite.recipientId !== recipientId,
+        );
+        removed = removed || outgoingCount !== user.outgoingEventInvites.length;
+      }
+
+      const recipient = this.findUser(recipientId);
+      if (recipient) {
+        const incomingCount = recipient.incomingEventInvites.length;
+        recipient.incomingEventInvites = recipient.incomingEventInvites.filter(
+          (invite) => invite.eventId !== eventId,
+        );
+        removed = removed || incomingCount !== recipient.incomingEventInvites.length;
+      }
+
+      return Ok(removed);
+    } catch {
+      return Err(UnexpectedDependencyError("Unable to remove event invite."));
+    }
+  }
 }
 
 export function CreateInMemoryUserRepository(): IUserRepository {
