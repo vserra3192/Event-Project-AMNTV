@@ -6,6 +6,9 @@ export interface IUserRecord {
   displayName: string;
   role: UserRole;
   passwordHash: string;
+  freindsList: string[];
+  outgoingFriendRequests: string[];
+  ingoingFriendRequests: string[];
 }
 
 export interface IAuthenticatedUser {
