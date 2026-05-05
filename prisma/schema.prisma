@@ -33,6 +33,7 @@ model Event {
   updatedAt     DateTime    @updatedAt
   rsvps         EventRsvp[]
   comments      Comment[]
+  invites       EventInvite[]
 }
 
 model EventRsvp {
@@ -66,6 +67,8 @@ model User {
   friendedBy             Friend[]        @relation("FriendOfUsers")
   outgoingFriendRequests FriendRequest[] @relation("OutgoingFriendRequests")
   ingoingFriendRequests  FriendRequest[] @relation("IngoingFriendRequests")
+  outgoingEventInvites   EventInvite[]   @relation("OutgoingEventInvites")
+  incomingEventInvites   EventInvite[]   @relation("IncomingEventInvites")
 }
 
 model Friend {
@@ -86,4 +89,17 @@ model FriendRequest {
   recipient   User     @relation("IngoingFriendRequests", fields: [recipientId], references: [id], onDelete: Cascade)
 
   @@id([requesterId, recipientId])
+}
+
+model EventInvite {
+  id          Int      @id @default(autoincrement())
+  eventId     Int
+  senderId    String
+  recipientId String
+  createdAt   DateTime @default(now())
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sender      User     @relation("OutgoingEventInvites", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient   User     @relation("IncomingEventInvites", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, senderId, recipientId])
 }

@@ -1,5 +1,11 @@
 export type UserRole = "admin" | "staff" | "user";
 
+export interface IUserEventInvite {
+  eventId: number;
+  senderId: string;
+  recipientId: string;
+}
+
 export interface IUserRecord {
   id: string;
   email: string;
@@ -9,6 +15,8 @@ export interface IUserRecord {
   freindsList: string[];
   outgoingFriendRequests: string[];
   ingoingFriendRequests: string[];
+  outgoingEventInvites: IUserEventInvite[];
+  incomingEventInvites: IUserEventInvite[];
 }
 
 export interface IAuthenticatedUser {
