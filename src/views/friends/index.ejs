@@ -1,0 +1,24 @@
+<section class="mb-6 rounded-3xl border border-blue-300/15 bg-slate-900/60 px-7 py-6 shadow-[0_25px_60px_-35px_rgba(15,105,255,0.45)] backdrop-blur-lg">
+  <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div>
+      <h1 class="text-3xl font-semibold text-white mb-3">Friends</h1>
+      <p class="text-blue-100/70 mb-0">
+        Search for members, handle requests, and keep your event circle close.
+      </p>
+    </div>
+    <a
+      href="/home"
+      class="inline-flex items-center justify-center rounded-2xl border border-blue-300/20 bg-slate-950/50 px-4 py-2 text-sm font-semibold text-blue-100 transition hover:bg-blue-400/20 hover:text-white"
+    >
+      Back Home
+    </a>
+  </div>
+</section>
+
+<% if (pageError) { %>
+  <%- include("../partials/error", { message: pageError }) %>
+<% } %>
+
+<% if (view) { %>
+  <%- include("./partials/workspace", { session, view }) %>
+<% } %>

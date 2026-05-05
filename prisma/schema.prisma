@@ -24,6 +24,7 @@ model Event {
   description   String
   location      String
   category      String
+  emoji         String?
   status        String
   capacity      Int?
   startDatetime DateTime
@@ -33,6 +34,7 @@ model Event {
   updatedAt     DateTime    @updatedAt
   rsvps         EventRsvp[]
   comments      Comment[]
+  invites       EventInvite[]
 }
 
 model EventRsvp {
@@ -55,11 +57,50 @@ model Comment {
 }
 
 model User {
-  id           String   @id
-  email        String   @unique
-  displayName  String
-  role         String
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                     String          @id
+  email                  String          @unique
+  displayName            String
+  role                   String
+  passwordHash           String
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  freindsList            Friend[]        @relation("UserFriends")
+  friendedBy             Friend[]        @relation("FriendOfUsers")
+  outgoingFriendRequests FriendRequest[] @relation("OutgoingFriendRequests")
+  ingoingFriendRequests  FriendRequest[] @relation("IngoingFriendRequests")
+  outgoingEventInvites   EventInvite[]   @relation("OutgoingEventInvites")
+  incomingEventInvites   EventInvite[]   @relation("IncomingEventInvites")
+}
+
+model Friend {
+  userId    String
+  friendId  String
+  createdAt DateTime @default(now())
+  user      User     @relation("UserFriends", fields: [userId], references: [id], onDelete: Cascade)
+  friend    User     @relation("FriendOfUsers", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@id([userId, friendId])
+}
+
+model FriendRequest {
+  requesterId String
+  recipientId String
+  createdAt   DateTime @default(now())
+  requester   User     @relation("OutgoingFriendRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  recipient   User     @relation("IngoingFriendRequests", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@id([requesterId, recipientId])
+}
+
+model EventInvite {
+  id          Int      @id @default(autoincrement())
+  eventId     Int
+  senderId    String
+  recipientId String
+  createdAt   DateTime @default(now())
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sender      User     @relation("OutgoingEventInvites", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient   User     @relation("IncomingEventInvites", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, senderId, recipientId])
 }

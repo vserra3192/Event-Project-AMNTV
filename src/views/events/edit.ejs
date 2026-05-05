@@ -69,6 +69,19 @@
           </div>
 
           <div>
+            <label class="text-sm font-medium text-blue-100/70">Event Emoji</label>
+            <select
+              name="emoji"
+              class="mt-1 w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+            >
+              <option value="" <%= formData.emoji === "" ? "selected" : "" %>>None</option>
+              <% ["🎉", "🎸", "🍿", "🎂", "📚", "👾", "💒", "👻", "🍕", "🏆", "✈️"].forEach((emoji) => { %>
+                <option value="<%= emoji %>" <%= formData.emoji === emoji ? "selected" : "" %>><%= emoji %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div>
             <label class="text-sm font-medium text-blue-100/70">Location</label>
             <input
               type="text"

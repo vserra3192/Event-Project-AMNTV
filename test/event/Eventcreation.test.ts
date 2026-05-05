@@ -57,6 +57,8 @@ describe('Event Creation', () => {
       const response = await agent.get('/events/new');
       expect(response.status).toBe(200);
       expect(response.text).toContain('Create New Event');
+      expect(response.text).toContain('Event Emoji');
+      expect(response.text).toContain('🎉');
     });
 
     it('should create an event with valid data and redirect to the detail page', async () => {
@@ -73,7 +75,7 @@ describe('Event Creation', () => {
       const createResponse = await agent
         .post('/events/new')
         .type('form')
-        .send(validEventData);
+        .send({ ...validEventData, emoji: '🎸' });
 
       const detailResponse = await agent.get(createResponse.headers.location);
 
@@ -82,6 +84,7 @@ describe('Event Creation', () => {
       expect(detailResponse.text).toContain('A hands-on workshop about web development');
       expect(detailResponse.text).toContain('Room 101');
       expect(detailResponse.text).toContain('Workshop');
+      expect(detailResponse.text).toContain('🎸');
     });
 
     it('should create an event with unlimited capacity when capacity is left empty', async () => {
@@ -95,6 +98,15 @@ describe('Event Creation', () => {
       const detailResponse = await agent.get(response.headers.location);
       expect(detailResponse.status).toBe(200);
       expect(detailResponse.text).toContain('Unlimited');
+    });
+
+    it('should allow creating an event without an emoji', async () => {
+      const response = await agent
+        .post('/events/new')
+        .type('form')
+        .send({ ...validEventData, emoji: '' });
+
+      expect(response.status).toBe(302);
     });
 
     it('should return an HX-Redirect header when submitted via HTMX', async () => {
@@ -220,6 +232,16 @@ describe('Event Creation', () => {
 
       expect(response.status).toBe(400);
       expect(response.text).toContain('Capacity must be a positive integer');
+    });
+
+    it('should return 400 when emoji is not one of the provided options', async () => {
+      const response = await agent
+        .post('/events/new')
+        .type('form')
+        .send({ ...validEventData, emoji: '🔥' });
+
+      expect(response.status).toBe(400);
+      expect(response.text).toContain('Emoji must be selected from the provided options');
     });
   });
 

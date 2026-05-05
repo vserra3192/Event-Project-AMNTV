@@ -76,6 +76,11 @@ class AdminUserService implements IAdminUserService {
       email,
       displayName,
       role: input.role,
+      freindsList: [],
+      outgoingFriendRequests: [],
+      ingoingFriendRequests: [],
+      outgoingEventInvites: [],
+      incomingEventInvites: [],
       passwordHash: this.passwordHasher.hash(password),
     });
 

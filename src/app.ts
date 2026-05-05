@@ -3,6 +3,7 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
+import { IFriendsController } from "./auth/FriendsController";
 import { IEventController } from "./controller/EventController";
 import {
   AuthenticationRequired,
@@ -39,6 +40,7 @@ class ExpressApp implements IApp {
     private readonly authController: IAuthController,
     private readonly eventController: IEventController,
     private readonly commentController: ICommentController,
+    private readonly friendsController: IFriendsController,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -205,6 +207,7 @@ class ExpressApp implements IApp {
           {
             title: typeof req.body.title === "string" ? req.body.title : "",
             category: typeof req.body.category === "string" ? req.body.category : "",
+            emoji: typeof req.body.emoji === "string" ? req.body.emoji : "",
             location: typeof req.body.location === "string" ? req.body.location : "",
             description:
               typeof req.body.description === "string" ? req.body.description : "",
@@ -346,6 +349,164 @@ class ExpressApp implements IApp {
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`GET /events for ${browserSession.browserLabel}`);
         await this.eventController.showAllEvents(res, browserSession);
+      }),
+    );
+
+    this.app.get(
+      "/friends",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        this.logger.info(`GET /friends for ${browserSession.browserLabel}`);
+        await this.friendsController.showFriendsPage(
+          res,
+          browserSession,
+          currentUser.userId,
+        );
+      }),
+    );
+
+    this.app.get(
+      "/friends/search",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        const query = typeof req.query.q === "string" ? req.query.q : "";
+        this.logger.info(`GET /friends/search?q=${query} for ${browserSession.browserLabel}`);
+        await this.friendsController.searchUsers(
+          res,
+          browserSession,
+          currentUser.userId,
+          query,
+        );
+      }),
+    );
+
+    this.app.post(
+      "/friends/requests",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        await this.friendsController.sendFriendRequest(
+          res,
+          browserSession,
+          currentUser.userId,
+          typeof req.body.userId === "string" ? req.body.userId : "",
+        );
+      }),
+    );
+
+    this.app.post(
+      "/friends/requests/:requesterId/accept",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        await this.friendsController.acceptFriendRequest(
+          res,
+          browserSession,
+          currentUser.userId,
+          typeof req.params.requesterId === "string" ? req.params.requesterId : "",
+        );
+      }),
+    );
+
+    this.app.post(
+      "/friends/requests/:requesterId/decline",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        await this.friendsController.declineFriendRequest(
+          res,
+          browserSession,
+          currentUser.userId,
+          typeof req.params.requesterId === "string" ? req.params.requesterId : "",
+        );
+      }),
+    );
+
+    this.app.post(
+      "/friends/:friendId/remove",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        await this.friendsController.removeFriend(
+          res,
+          browserSession,
+          currentUser.userId,
+          typeof req.params.friendId === "string" ? req.params.friendId : "",
+        );
       }),
     );
 
@@ -585,7 +746,8 @@ export function CreateApp(
   authController: IAuthController,
   eventController: IEventController,
   commentController: ICommentController,
+  friendsController: IFriendsController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, eventController, commentController, logger);
+  return new ExpressApp(authController, eventController, commentController, friendsController, logger);
 }

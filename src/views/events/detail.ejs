@@ -26,6 +26,12 @@
           <dt class="text-sm font-medium text-blue-100/70">Category</dt>
           <dd class="text-white"><%= event.category %></dd>
         </div>
+        <% if (event.emoji) { %>
+          <div>
+            <dt class="text-sm font-medium text-blue-100/70">Emoji</dt>
+            <dd class="text-2xl leading-none"><%= event.emoji %></dd>
+          </div>
+        <% } %>
         <div>
           <dt class="text-sm font-medium text-blue-100/70">Organizer</dt>
           <dd class="text-white"><%= organizerName %></dd>

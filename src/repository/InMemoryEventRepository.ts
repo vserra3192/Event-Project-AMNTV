@@ -9,6 +9,7 @@ export interface IEvent {
   description: string;
   location: string;
   category: string;
+  emoji: string | null;
   status: EventStatus;
   capacity: number | null;
   startDatetime: Date;
@@ -24,6 +25,7 @@ export type CreateEventInput = {
   description: string;
   location: string;
   category: string;
+  emoji: string | null;
   status: EventStatus;
   capacity: number | null;
   startDatetime: Date;
@@ -36,6 +38,7 @@ export type UpdateEventInput = {
   description: string;
   location: string;
   category: string;
+  emoji: string | null;
   status: EventStatus;
   capacity: number | null;
   startDatetime: Date;
@@ -71,6 +74,7 @@ class InMemoryEventRepository implements IEventRepository {
         description: input.description,
         location: input.location,
         category: input.category,
+        emoji: input.emoji,
         status: input.status,
         capacity: input.capacity,
         startDatetime: input.startDatetime,
@@ -167,6 +171,7 @@ class InMemoryEventRepository implements IEventRepository {
         description: input.description,
         location: input.location,
         category: input.category,
+        emoji: input.emoji,
         status: input.status,
         capacity: input.capacity,
         startDatetime: input.startDatetime,

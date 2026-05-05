@@ -8,4 +8,9 @@ export interface IUserRepository {
   listUsers(): Promise<Result<IUserRecord[], AuthError>>;
   createUser(user: IUserRecord): Promise<Result<IUserRecord, AuthError>>;
   deleteUser(id: string): Promise<Result<boolean, AuthError>>;
+  sendFriendRequest(fromUserId: string, toUserId: string): Promise<Result<boolean, AuthError>>;
+  acceptFriendRequest(userId: string, requesterId: string): Promise<Result<boolean, AuthError>>;
+  declineFriendRequest(userId: string, requesterId: string): Promise<Result<boolean, AuthError>>;
+  getFriendList(userId: string): Promise<Result<IUserRecord[], AuthError>>;
+  removeFriend(userId: string, friendId: string): Promise<Result<boolean, AuthError>>;
 }

@@ -74,6 +74,7 @@ describe('All Events Routes', () => {
           description: 'A test conference event',
           location: 'Conference Hall',
           category: 'Conference',
+          emoji: '🎉',
           status: 'published',
           capacity: '100',
           startDatetime: '2026-05-15T09:00',
@@ -87,6 +88,7 @@ describe('All Events Routes', () => {
       expect(allEventsResponse.status).toBe(200);
       expect(allEventsResponse.text).toContain('Test Conference');
       expect(allEventsResponse.text).toContain('Conference');
+      expect(allEventsResponse.text).toContain('🎉');
       expect(allEventsResponse.text).toContain('Available Events');
     });
 
