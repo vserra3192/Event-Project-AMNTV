@@ -59,6 +59,9 @@ describe('Event Creation', () => {
       expect(response.text).toContain('Create New Event');
       expect(response.text).toContain('Event Emoji');
       expect(response.text).toContain('🎉');
+      expect(response.text).toContain("'🎉': 'Party'");
+      expect(response.text).toContain("'🏆': 'Competition'");
+      expect(response.text).toContain("fillCategory");
     });
 
     it('should create an event with valid data and redirect to the detail page', async () => {
