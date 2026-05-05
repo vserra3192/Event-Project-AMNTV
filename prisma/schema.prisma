@@ -53,3 +53,13 @@ model Comment {
 
   event Event @relation(fields: [eventId], references: [id])
 }
+
+model User {
+  id           String   @id
+  email        String   @unique
+  displayName  String
+  role         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
