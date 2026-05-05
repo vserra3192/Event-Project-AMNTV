@@ -306,6 +306,48 @@ class PrismaUserRepository implements IUserRepository {
       return Err(UnexpectedDependencyError("Unable to remove friend."));
     }
   }
+
+  async sendEventInvite(eventId: number, senderId: string, recipientId: string): Promise<Result<boolean, AuthError>> {
+    try {
+      await this.ensureDemoUsers();
+      if (!Number.isInteger(eventId) || eventId < 1 || senderId === recipientId) {
+        return Ok(false);
+      }
+
+      const [sender, recipient, friendship, event] = await Promise.all([
+        this.prisma.user.findUnique({ where: { id: senderId }, select: { id: true } }),
+        this.prisma.user.findUnique({ where: { id: recipientId }, select: { id: true } }),
+        this.prisma.friend.findUnique({
+          where: { userId_friendId: { userId: senderId, friendId: recipientId } },
+        }),
+        this.prisma.event.findUnique({ where: { id: eventId }, select: { id: true } }),
+      ]);
+
+      if (!sender || !recipient || !friendship || !event) {
+        return Ok(false);
+      }
+
+      await this.prisma.eventInvite.upsert({
+        where: {
+          eventId_senderId_recipientId: {
+            eventId,
+            senderId,
+            recipientId,
+          },
+        },
+        update: {},
+        create: {
+          eventId,
+          senderId,
+          recipientId,
+        },
+      });
+
+      return Ok(true);
+    } catch {
+      return Err(UnexpectedDependencyError("Unable to send event invite."));
+    }
+  }
 }
 
 export function CreatePrismaUserRepository(prisma?: PrismaClient): IUserRepository {

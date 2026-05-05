@@ -2,6 +2,7 @@ import { Ok, Err, type Result } from '../lib/result';
 import { type EventError, EventNotFound, InvalidId, UnexpectedRepositoryError } from './Errors';
 
 export type EventStatus = 'draft' | 'published' | 'cancelled' | 'past';
+export type EventRsvpPolicy = 'anyone' | 'friends-only' | 'invite-only';
 
 export interface IEvent {
   id: number;
@@ -11,6 +12,7 @@ export interface IEvent {
   category: string;
   emoji: string | null;
   status: EventStatus;
+  rsvpPolicy: EventRsvpPolicy;
   capacity: number | null;
   startDatetime: Date;
   endDatetime: Date;
@@ -27,6 +29,7 @@ export type CreateEventInput = {
   category: string;
   emoji: string | null;
   status: EventStatus;
+  rsvpPolicy?: EventRsvpPolicy;
   capacity: number | null;
   startDatetime: Date;
   endDatetime: Date;
@@ -40,6 +43,7 @@ export type UpdateEventInput = {
   category: string;
   emoji: string | null;
   status: EventStatus;
+  rsvpPolicy?: EventRsvpPolicy;
   capacity: number | null;
   startDatetime: Date;
   endDatetime: Date;
@@ -76,6 +80,7 @@ class InMemoryEventRepository implements IEventRepository {
         category: input.category,
         emoji: input.emoji,
         status: input.status,
+        rsvpPolicy: input.rsvpPolicy ?? 'anyone',
         capacity: input.capacity,
         startDatetime: input.startDatetime,
         endDatetime: input.endDatetime,
@@ -173,6 +178,7 @@ class InMemoryEventRepository implements IEventRepository {
         category: input.category,
         emoji: input.emoji,
         status: input.status,
+        rsvpPolicy: input.rsvpPolicy ?? existing.rsvpPolicy,
         capacity: input.capacity,
         startDatetime: input.startDatetime,
         endDatetime: input.endDatetime,

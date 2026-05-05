@@ -17,6 +17,7 @@ beforeAll(async () => { //create test.db schema based on our dev.db schema incas
       "category" TEXT NOT NULL,
       "emoji" TEXT,
       "status" TEXT NOT NULL,
+      "rsvpPolicy" TEXT NOT NULL DEFAULT 'anyone',
       "capacity" INTEGER,
       "startDatetime" DATETIME NOT NULL,
       "endDatetime" DATETIME NOT NULL,
@@ -30,6 +31,12 @@ beforeAll(async () => { //create test.db schema based on our dev.db schema incas
     await prisma.$executeRawUnsafe(`ALTER TABLE "Event" ADD COLUMN "emoji" TEXT`);
   } catch {
     // Older test databases may already have this optional column.
+  }
+
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Event" ADD COLUMN "rsvpPolicy" TEXT NOT NULL DEFAULT 'anyone'`);
+  } catch {
+    // Older test databases may already have this column.
   }
 
   await prisma.$executeRawUnsafe(`

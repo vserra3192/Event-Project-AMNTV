@@ -7,6 +7,7 @@ CREATE TABLE "Event" (
     "category" TEXT NOT NULL,
     "emoji" TEXT,
     "status" TEXT NOT NULL,
+    "rsvpPolicy" TEXT NOT NULL DEFAULT 'anyone',
     "capacity" INTEGER,
     "startDatetime" DATETIME NOT NULL,
     "endDatetime" DATETIME NOT NULL,

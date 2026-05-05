@@ -1,6 +1,7 @@
 import { Err, Ok, type Result } from "../lib/result";
-import { IEvent, IEventRepository, CreateEventInput, EventStatus} from "../repository/InMemoryEventRepository";
+import { IEvent, IEventRepository, CreateEventInput, EventStatus, EventRsvpPolicy} from "../repository/InMemoryEventRepository";
 import { type EventError, UnexpectedRepositoryError, ValidationError, InvalidEventState, EventNotFound, InvalidId, InvalidSearchInput, UnautherizedError} from "../repository/Errors";
+import type { IUserRepository } from "../auth/UserRepository";
 
 export interface CreateEventServiceInput {
   title: string;
@@ -9,6 +10,7 @@ export interface CreateEventServiceInput {
   category: string;
   emoji: string | null;
   status: EventStatus;
+  rsvpPolicy?: EventRsvpPolicy;
   capacity: number | null;
   startDatetime: Date;
   endDatetime: Date;
@@ -28,9 +30,11 @@ export interface IEventService {
   cancelEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
   archiveExpiredEvents(): Promise<Result<number, EventError>>;
   getActiveEvents(): Promise<Result<IEvent[], EventError>>;
+  getActiveEventsForUser(userId: string, userRole: string): Promise<Result<IEvent[], EventError>>;
   getPastEvents(): Promise<Result<IEvent[], EventError>>;
   getEventsBySearch(query: string): Promise<Result<IEvent[], EventError>>;
-  rsvpEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>>;
+  getEventsBySearchForUser(query: string, userId: string, userRole: string): Promise<Result<IEvent[], EventError>>;
+  rsvpEvent(eventId: number, userId: string, userRole?: string): Promise<Result<IEvent, EventError>>;
   rsvpCancelEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>>;
   getUsersRSVPedEvents(userId: string): Promise<Result<IEvent[], EventError>>;
   getAllRSVPedUserByEventId(eventId: number): Promise<Result<string[], EventError>>;
@@ -51,7 +55,7 @@ class EventService implements IEventService {
     "✈️",
   ]);
 
-  constructor(private readonly repo: IEventRepository) {}
+  constructor(private readonly repo: IEventRepository, private readonly userRepo?: IUserRepository) {}
 
   private validateEventInput(input: CreateEventServiceInput): Result<void, EventError> {
     if (input.title.trim().length === 0) {
@@ -96,7 +100,51 @@ class EventService implements IEventService {
       return Err(ValidationError("Capacity must be a positive integer when provided."));
     }
 
+    if (input.rsvpPolicy && !["anyone", "friends-only", "invite-only"].includes(input.rsvpPolicy)) {
+      return Err(ValidationError("Who can RSVP? must be anyone, friends-only, or invite-only."));
+    }
+
     return Ok(undefined);
+  }
+
+  private async canUserJoinEvent(event: IEvent, userId: string, userRole: string): Promise<boolean> {
+    if (event.status !== "published") {
+      return false;
+    }
+
+    if (event.organizerId === userId || userRole === "admin") {
+      return true;
+    }
+
+    if (event.rsvpPolicy === "anyone") {
+      return true;
+    }
+
+    if (!this.userRepo || userId.trim().length === 0) {
+      return false;
+    }
+
+    const userResult = await this.userRepo.findById(userId);
+    if (!userResult.ok || !userResult.value) {
+      return false;
+    }
+
+    if (event.rsvpPolicy === "friends-only") {
+      return userResult.value.freindsList.includes(event.organizerId);
+    }
+
+    return userResult.value.incomingEventInvites.some((invite) => invite.eventId === event.id);
+  }
+
+  private async filterJoinableEvents(events: IEvent[], userId: string, userRole: string): Promise<IEvent[]> {
+    const eligibility = await Promise.all(
+      events.map(async (event) => ({
+        event,
+        canJoin: await this.canUserJoinEvent(event, userId, userRole),
+      })),
+    );
+
+    return eligibility.filter((entry) => entry.canJoin).map((entry) => entry.event);
   }
  
   async createEvent(
@@ -115,6 +163,7 @@ class EventService implements IEventService {
       category: input.category.trim(),
       emoji: input.emoji,
       status: input.status,
+      rsvpPolicy: input.rsvpPolicy ?? "anyone",
       capacity: input.capacity,
       startDatetime: input.startDatetime,
       endDatetime: input.endDatetime,
@@ -137,7 +186,17 @@ class EventService implements IEventService {
     return Ok(result.value);
   }
 
-  async rsvpEvent(eventId: number, userId: string): Promise<Result<IEvent, EventError>> {
+  async rsvpEvent(eventId: number, userId: string, userRole = ""): Promise<Result<IEvent, EventError>> {
+    const eventResult = await this.getEventByID(eventId);
+    if (!eventResult.ok) {
+      return eventResult;
+    }
+
+    const canJoin = await this.canUserJoinEvent(eventResult.value, userId, userRole);
+    if (!canJoin) {
+      return Err(UnautherizedError("You do not have permission to RSVP for this event."));
+    }
+
     return this.repo.rsvpEvent(eventId, userId);
   }
 
@@ -253,6 +312,7 @@ class EventService implements IEventService {
       category: input.category.trim(),
       emoji: input.emoji,
       status: input.status,
+      rsvpPolicy: input.rsvpPolicy ?? editableEventResult.value.rsvpPolicy,
       capacity: input.capacity,
       startDatetime: input.startDatetime,
       endDatetime: input.endDatetime,
@@ -299,6 +359,15 @@ class EventService implements IEventService {
     }
 
     return this.repo.getEventBySearch(trimmedQuery);
+  }
+
+  async getEventsBySearchForUser(query: string, userId: string, userRole: string): Promise<Result<IEvent[], EventError>> {
+    const result = await this.getEventsBySearch(query);
+    if (!result.ok) {
+      return result;
+    }
+
+    return Ok(await this.filterJoinableEvents(result.value, userId, userRole));
   }
 
   async cancelEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>> {
@@ -367,6 +436,15 @@ class EventService implements IEventService {
     );
   }
 
+  async getActiveEventsForUser(userId: string, userRole: string): Promise<Result<IEvent[], EventError>> {
+    const result = await this.getActiveEvents();
+    if (!result.ok) {
+      return result;
+    }
+
+    return Ok(await this.filterJoinableEvents(result.value, userId, userRole));
+  }
+
   async getPastEvents(): Promise<Result<IEvent[], EventError>> {
     const result = await this.repo.getAllEvents();
     if (result.ok === false) {
@@ -391,6 +469,6 @@ class EventService implements IEventService {
   }
 }
 
-export function CreateEventService(repo: IEventRepository): IEventService {
-  return new EventService(repo);
+export function CreateEventService(repo: IEventRepository, userRepo?: IUserRepository): IEventService {
+  return new EventService(repo, userRepo);
 }

@@ -1,6 +1,6 @@
 import { PrismaClient, Prisma, type Event as PrismaEvent, type EventRsvp as PrismaEventRsvp } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
-import { IEventRepository, type IEvent, type CreateEventInput, type UpdateEventInput, type EventStatus } from './InMemoryEventRepository';
+import { IEventRepository, type IEvent, type CreateEventInput, type UpdateEventInput, type EventStatus, type EventRsvpPolicy } from './InMemoryEventRepository';
 import { Ok, Err, type Result } from '../lib/result';
 import { type EventError, EventNotFound, InvalidId, UnexpectedRepositoryError } from './Errors';
 
@@ -20,6 +20,7 @@ export class PrismaEventRepository implements IEventRepository {
       category: event.category,
       emoji: event.emoji,
       status: event.status as EventStatus,
+      rsvpPolicy: event.rsvpPolicy as EventRsvpPolicy,
       capacity: event.capacity,
       startDatetime: event.startDatetime,
       endDatetime: event.endDatetime,
@@ -172,6 +173,7 @@ export class PrismaEventRepository implements IEventRepository {
           category: input.category,
           emoji: input.emoji,
           status: input.status,
+          rsvpPolicy: input.rsvpPolicy,
           capacity: input.capacity,
           startDatetime: input.startDatetime,
           endDatetime: input.endDatetime,

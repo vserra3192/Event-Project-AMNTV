@@ -212,6 +212,8 @@ class ExpressApp implements IApp {
             description:
               typeof req.body.description === "string" ? req.body.description : "",
             status: typeof req.body.status === "string" ? req.body.status : "draft",
+            rsvpPolicy:
+              typeof req.body.rsvpPolicy === "string" ? req.body.rsvpPolicy : "anyone",
             capacity: typeof req.body.capacity === "string" ? req.body.capacity : "",
             startDatetime:
               typeof req.body.startDatetime === "string" ? req.body.startDatetime : "",
@@ -375,6 +377,19 @@ class ExpressApp implements IApp {
           browserSession,
           currentUser.userId,
         );
+      }),
+    );
+
+    this.app.get(
+      "/invites",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /invites for ${browserSession.browserLabel}`);
+        await this.eventController.showInvitesInbox(res, browserSession);
       }),
     );
 
@@ -656,7 +671,27 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) return;
         const browserSession = touchAppSession(sessionStore(req));
         this.logger.info(`POST /events/${req.params.id}/rsvp for ${browserSession.browserLabel}`);
-        await this.eventController.handleRsvpEvent(res, browserSession, Number(req.params.id));
+        await this.eventController.handleRsvpEvent(
+          res,
+          browserSession,
+          Number(req.params.id),
+          typeof req.query.redirect === 'string' ? req.query.redirect : undefined,
+        );
+      }),
+    );
+
+    this.app.post(
+      '/events/:id/invites',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = touchAppSession(sessionStore(req));
+        this.logger.info(`POST /events/${req.params.id}/invites for ${browserSession.browserLabel}`);
+        await this.eventController.handleSendEventInvite(
+          res,
+          browserSession,
+          Number(req.params.id),
+          typeof req.body.recipientId === 'string' ? req.body.recipientId : '',
+        );
       }),
     );
 
@@ -666,7 +701,12 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) return;
         const browserSession = touchAppSession(sessionStore(req));
         this.logger.info(`POST /events/${req.params.id}/rsvp/cancel for ${browserSession.browserLabel}`);
-        await this.eventController.handleRsvpCancelEvent(res, browserSession, Number(req.params.id));
+        await this.eventController.handleRsvpCancelEvent(
+          res,
+          browserSession,
+          Number(req.params.id),
+          typeof req.query.redirect === 'string' ? req.query.redirect : undefined,
+        );
       }),
     );
 

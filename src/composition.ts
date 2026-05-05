@@ -31,8 +31,8 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const friendsController = CreateFriendsController(authUsers, resolvedLogger);
 
   const eventRepo = usePrismaRepo ? CreatePrismaEventRepository() : CreateInMemoryEventRepository();
-  const eventService = CreateEventService(eventRepo);
-  const eventController = CreateController(eventService, resolvedLogger, adminUserService);
+  const eventService = CreateEventService(eventRepo, authUsers);
+  const eventController = CreateController(eventService, resolvedLogger, adminUserService, authUsers);
 
   const commentRepo = usePrismaRepo ? CreatePrismaCommentRepository() : new InMemoryCommentRepository();
   const commentService = new CommentService(commentRepo, eventRepo);
