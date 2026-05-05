@@ -205,6 +205,7 @@ class ExpressApp implements IApp {
           {
             title: typeof req.body.title === "string" ? req.body.title : "",
             category: typeof req.body.category === "string" ? req.body.category : "",
+            emoji: typeof req.body.emoji === "string" ? req.body.emoji : "",
             location: typeof req.body.location === "string" ? req.body.location : "",
             description:
               typeof req.body.description === "string" ? req.body.description : "",
