@@ -53,6 +53,23 @@ beforeAll(async () => { //create test.db schema based on our dev.db schema incas
         ON DELETE RESTRICT ON UPDATE CASCADE
     )
   `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "User" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "email" TEXT NOT NULL,
+      "displayName" TEXT NOT NULL,
+      "role" TEXT NOT NULL,
+      "passwordHash" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key"
+    ON "User"("email")
+  `);
 });
 
 beforeEach(async () => {
