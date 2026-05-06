@@ -264,15 +264,19 @@ class EventController implements IEventController {
 
     async showAllEvents(res: Response, session: IAppBrowserSession): Promise<void> {
         await this.service.archiveExpiredEvents();
-        const result = await this.service.getActiveEvents();
+        const userId = session.authenticatedUser?.userId ?? '';
+        const userRole = session.authenticatedUser?.role ?? '';
+        const result = await this.service.getEventsForUser(userId, userRole);
         await this.renderEventsSection(res, session, result, false, false);
     }
 
     async showEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void> {
         await this.service.archiveExpiredEvents();
+        const userId = session.authenticatedUser?.userId ?? '';
+        const userRole = session.authenticatedUser?.role ?? '';
         const result = isArchive
             ? await this.service.getPastEvents()
-            : await this.service.getActiveEvents();
+            : await this.service.getEventsForUser(userId, userRole);
         await this.renderEventsSection(res, session, result, isArchive, true);
     }
 
