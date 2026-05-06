@@ -53,6 +53,7 @@ export interface IFriendsController {
     currentUserId: string,
     requesterId: string,
     panel?: boolean,
+    inbox?: boolean,
   ): Promise<void>;
   declineFriendRequest(
     res: Response,
@@ -60,6 +61,7 @@ export interface IFriendsController {
     currentUserId: string,
     requesterId: string,
     panel?: boolean,
+    inbox?: boolean,
   ): Promise<void>;
   removeFriend(
     res: Response,
@@ -150,6 +152,22 @@ class FriendsController implements IFriendsController {
       notice,
       pageError,
     });
+  }
+
+  private getInboxSignature(user: IUserRecord): string {
+    const incomingInvites = user.incomingEventInvites
+      .map((invite) => `event:${invite.eventId}:${invite.senderId}:${invite.recipientId}`);
+    const incomingRequests = user.ingoingFriendRequests
+      .map((requesterId) => `friend:${requesterId}`);
+
+    return [...incomingInvites, ...incomingRequests].sort().join("|");
+  }
+
+  private async markInboxSeen(session: IAppBrowserSession, currentUserId: string): Promise<void> {
+    const userResult = await this.users.findById(currentUserId);
+    if (userResult.ok && userResult.value) {
+      session.inboxSeenSignature = this.getInboxSignature(userResult.value);
+    }
   }
 
   private async renderFriendsPage(
@@ -313,6 +331,7 @@ class FriendsController implements IFriendsController {
     currentUserId: string,
     requesterId: string,
     panel = false,
+    inbox = false,
   ): Promise<void> {
     const result = await this.users.acceptFriendRequest(currentUserId, requesterId);
     if (result.ok === false) {
@@ -326,6 +345,12 @@ class FriendsController implements IFriendsController {
     }
 
     this.logger.info(`Accepted friend request from ${requesterId} for ${currentUserId}`);
+    await this.markInboxSeen(session, currentUserId);
+    if (inbox) {
+      res.status(200).send("");
+      return;
+    }
+
     await this.renderFriendsWorkspace(res, session, currentUserId, "", "Friend request accepted.", null, 200, panel);
   }
 
@@ -335,6 +360,7 @@ class FriendsController implements IFriendsController {
     currentUserId: string,
     requesterId: string,
     panel = false,
+    inbox = false,
   ): Promise<void> {
     const result = await this.users.declineFriendRequest(currentUserId, requesterId);
     if (result.ok === false) {
@@ -348,6 +374,12 @@ class FriendsController implements IFriendsController {
     }
 
     this.logger.info(`Declined friend request from ${requesterId} for ${currentUserId}`);
+    await this.markInboxSeen(session, currentUserId);
+    if (inbox) {
+      res.status(200).send("");
+      return;
+    }
+
     await this.renderFriendsWorkspace(res, session, currentUserId, "", "Friend request declined.", null, 200, panel);
   }
 
