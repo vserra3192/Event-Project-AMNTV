@@ -21,6 +21,7 @@ export interface IEditEventForm {
 
 export interface IEventController {
     showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
+    showArchivedDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
     showDashboardEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void>;
     showAllEvents(res: Response, session: IAppBrowserSession): Promise<void>;
     showEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void>;
@@ -187,6 +188,23 @@ class EventController implements IEventController {
         res.status(200);
         this.logger.info('Dashboard data fetched successfully');
         res.render('dashboard', { data: result.value, session, isArchive: false });
+    }
+
+    async showArchivedDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
+        await this.service.archiveExpiredEvents();
+        const currentUserId = session.authenticatedUser?.userId ?? '';
+        const isAdmin = session.authenticatedUser?.role === 'admin';
+        const result = await (isAdmin ? this.service.getPastEvents() : this.service.getPastUserEvents(currentUserId));
+
+        if (!result.ok) {
+            this.logger.error('Error fetching archived dashboard data');
+            res.status(500).send('Error fetching archived dashboard data');
+            return;
+        }
+
+        res.status(200);
+        this.logger.info('Archived dashboard data fetched successfully');
+        res.render('dashboard', { data: result.value, session, isArchive: true });
     }
 
     async showDashboardEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void> {

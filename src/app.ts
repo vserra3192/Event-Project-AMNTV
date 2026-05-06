@@ -524,6 +524,19 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/dashboard/archive",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /dashboard/archive for ${browserSession.browserLabel}`);
+        await this.eventController.showArchivedDashboard(res, browserSession);
+      }),
+    );
+
+    this.app.get(
       "/dashboard/list",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
