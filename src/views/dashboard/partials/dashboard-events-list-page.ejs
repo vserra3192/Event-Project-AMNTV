@@ -1,6 +1,6 @@
-<section id="dashboard-events-list-container" class="rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
+<section id="dashboard-events-list-container" class="rounded-3xl border border-blue-300/15 bg-slate-900/70 px-4 py-5 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl sm:px-6 sm:py-6 lg:px-7 lg:py-7">
   <div class="mb-4">
-    <h2 class="text-xl font-semibold text-white mb-2">Your Events</h2>
+    <h2 class="mb-2 text-xl font-semibold text-white sm:text-2xl">Your Events</h2>
     <div class="flex flex-wrap gap-2 mt-4">
       <a
         href="/dashboard"
@@ -8,7 +8,7 @@
         hx-target="#dashboard-events-list-container"
         hx-swap="outerHTML"
         hx-push-url="/dashboard"
-        class="px-3 py-1 rounded text-sm border <%= !isArchive ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 border-blue-600 hover:shadow-blue-900/80' : 'bg-slate-900/70 text-blue-100/80' %>"
+        class="inline-flex cursor-pointer items-center justify-center rounded-2xl border px-4 py-2 text-sm font-semibold <%= !isArchive ? 'border-blue-600 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-blue-900/80' : 'border-blue-300/20 bg-slate-900/70 text-blue-100/80 hover:bg-blue-400/15' %>"
       >
         Active Events
       </a>
@@ -19,7 +19,7 @@
         hx-target="#dashboard-events-list-container"
         hx-swap="outerHTML"
         hx-push-url="/dashboard/archive"
-        class="px-3 py-1 rounded text-sm border <%= isArchive ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 border-blue-600 hover:shadow-blue-900/80' : 'bg-slate-900/70 text-blue-100/80 hover:bg-blue-400/15' %>"
+        class="inline-flex cursor-pointer items-center justify-center rounded-2xl border px-4 py-2 text-sm font-semibold <%= isArchive ? 'border-blue-600 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-blue-900/80' : 'border-blue-300/20 bg-slate-900/70 text-blue-100/80 hover:bg-blue-400/15' %>"
       >
         Archived Events
       </a>
@@ -86,7 +86,7 @@
     <% const cancelled = data.filter(event => event.status === 'cancelled'); %>
     <% const past = data.filter(event => event.status === 'past'); %>
 
-    <section x-data="{ cancelledOpen: false, pastOpen: false }" class="space-y-4">
+    <section x-data="{ cancelledOpen: <%= cancelled.length > 0 ? 'true' : 'false' %>, pastOpen: true }" class="space-y-4">
       <section class="rounded-3xl border border-red-300/30 bg-red-500/10 p-5">
         <div class="flex items-center justify-between gap-4">
           <div>
@@ -96,10 +96,10 @@
           <button
             type="button"
             x-on:click="cancelledOpen = !cancelledOpen"
-            class="inline-flex items-center gap-2 rounded-full bg-red-500/90 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-950/40 transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400/60"
+            class="inline-flex cursor-pointer items-center gap-2 rounded-full bg-red-500/90 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-950/40 transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400/60"
           >
             <span x-text="cancelledOpen ? 'Collapse' : 'Expand'"></span>
-            <span x-text="cancelledOpen ? '-' : '+'"></span>
+            <span class="text-red-100/80"><%= cancelled.length %></span>
           </button>
         </div>
 
@@ -125,10 +125,10 @@
           <button
             type="button"
             x-on:click="pastOpen = !pastOpen"
-            class="inline-flex items-center gap-2 rounded-full bg-red-500/90 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-950/40 transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400/60"
+            class="inline-flex cursor-pointer items-center gap-2 rounded-full bg-red-500/90 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-950/40 transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400/60"
           >
             <span x-text="pastOpen ? 'Collapse' : 'Expand'"></span>
-            <span x-text="pastOpen ? '-' : '+'"></span>
+            <span class="text-red-100/80"><%= past.length %></span>
           </button>
         </div>
 
