@@ -150,29 +150,49 @@
       </section>
     <% } %>
 
-    <section class="mt-6 rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
-      <h2 class="text-xl font-semibold text-white mb-4">Comments</h2>
+    <section class="mt-6 rounded-3xl border border-blue-300/15 bg-slate-900/70 px-4 py-5 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl sm:px-6 sm:py-6 lg:px-7 lg:py-7">
+      <div class="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-white sm:text-2xl">Comments</h2>
+          <p class="text-sm leading-6 text-blue-100/70">Discuss event details, updates, and questions with other attendees.</p>
+        </div>
+      </div>
 
       <form
-        class="mb-6 space-y-2"
+        class="mb-6 space-y-3"
+        x-data="{ content: '', maxLength: 280, get remaining() { return this.maxLength - this.content.length; } }"
         hx-post="/events/<%= event.id %>/comments"
         hx-target="#comments"
         hx-swap="innerHTML"
-        hx-on::after-request="this.reset()"
+        x-on:htmx:after-request="if ($event.detail.successful) content = ''"
       >
-        <textarea
-          name="content"
-          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
-          placeholder="Write a comment..."
-          required
-        ></textarea>
+        <div class="relative">
+          <textarea
+            name="content"
+            class="min-h-28 w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 pr-20 text-sm leading-6 text-white shadow-inner shadow-slate-900 transition focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60 sm:min-h-32 sm:text-base"
+            placeholder="Write a comment for this event..."
+            x-model="content"
+            maxlength="280"
+            required
+          ></textarea>
 
-        <button
-          type="submit"
-          class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-blue-900/80 cursor-pointer"
-        >
-          Post Comment
-        </button>
+          <div
+            class="pointer-events-none absolute bottom-3 right-4 text-xs font-medium"
+            :class="remaining < 25 ? 'text-amber-300' : 'text-slate-400'"
+            x-text="`${content.length}/${maxLength}`"
+          ></div>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-sm text-blue-100/65" x-text="content.trim().length === 0 ?  'Ready to post your comment.'"></p>
+          <button
+            type="submit"
+            class="inline-flex cursor-pointer items-center justify-center rounded-2xl bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-blue-900/80 disabled:cursor-not-allowed disabled:opacity-50 sm:px-5"
+            :disabled="content.trim().length === 0"
+          >
+            Post Comment
+          </button>
+        </div>
       </form>
 
       <div
