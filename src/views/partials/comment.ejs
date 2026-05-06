@@ -28,7 +28,7 @@
       <div class="flex items-center gap-2 self-start sm:self-center">
         <button
           type="button"
-          class="rounded-full border border-red-400/30 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-red-200 transition hover:bg-red-500/10"
+          class="cursor-pointer rounded-full border border-red-400/30 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-red-200 transition hover:bg-red-500/10"
           x-show="!confirmDelete"
           x-on:click="confirmDelete = true"
         >
@@ -38,14 +38,14 @@
           <span class="text-xs text-blue-100/60">Delete comment?</span>
           <button
             type="button"
-            class="rounded-full border border-blue-300/25 px-3 py-1 text-xs font-medium text-blue-100/80 transition hover:bg-blue-400/10"
+            class="cursor-pointer rounded-full border border-blue-300/25 px-3 py-1 text-xs font-medium text-blue-100/80 transition hover:bg-blue-400/10"
             x-on:click="confirmDelete = false"
           >
             Cancel
           </button>
           <button
             type="button"
-            class="rounded-full bg-red-500 px-3 py-1 text-xs font-semibold text-white transition hover:bg-red-400"
+            class="cursor-pointer rounded-full bg-red-500 px-3 py-1 text-xs font-semibold text-white transition hover:bg-red-400"
             hx-post="/comments/<%= comment.id %>/delete?eventId=<%= comment.eventId %>"
             hx-target="#comments"
             hx-swap="innerHTML"
