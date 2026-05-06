@@ -40,7 +40,7 @@ export class CommentService implements ICommentService {
     private readonly eventRepo: IEventRepository,
   ) {}
 
-  private async ensureCommentsAvailable(eventId: number): Promise<Result<void, CommentServiceError>> {
+  private async getEventForComments(eventId: number): Promise<Result<{ status: string }, CommentServiceError>> {
     const eventResult = await this.eventRepo.getEventById(eventId);
     if (!eventResult.ok) {
       if (!isCommentError(eventResult.value)) {
@@ -49,8 +49,31 @@ export class CommentService implements ICommentService {
       return Err(eventResult.value);
     }
 
-    if (eventResult.value.status !== "past") {
-      return Err(Forbidden("Comments are only available on past events."));
+    return Ok(eventResult.value);
+  }
+
+  private async ensureCommentsReadable(eventId: number): Promise<Result<void, CommentServiceError>> {
+    const eventResult = await this.getEventForComments(eventId);
+    if (eventResult.ok === false) {
+      return Err(eventResult.value);
+    }
+
+    if (eventResult.value.status === "draft") {
+      return Err(Forbidden("Comments are not available on draft events."));
+    }
+
+    return Ok(undefined);
+  }
+
+  private async ensureCommentsWritable(eventId: number): Promise<Result<void, CommentServiceError>> {
+    const eventResult = await this.getEventForComments(eventId);
+    if (eventResult.ok === false) {
+      return Err(eventResult.value);
+    }
+
+    const status = eventResult.value.status;
+    if (status === "draft" || status === "cancelled") {
+      return Err(Forbidden("Comments cannot be changed on draft or cancelled events."));
     }
 
     return Ok(undefined);
@@ -61,7 +84,7 @@ export class CommentService implements ICommentService {
       return Err(InvalidContent("Invalid event ID."));
     }
 
-    const available = await this.ensureCommentsAvailable(eventId);
+    const available = await this.ensureCommentsReadable(eventId);
     if (available.ok === false) {
       return Err(available.value);
     }
@@ -87,7 +110,7 @@ export class CommentService implements ICommentService {
       return Err(InvalidContent("Content cannot be empty."));
     }
 
-    const available = await this.ensureCommentsAvailable(eventId);
+    const available = await this.ensureCommentsWritable(eventId);
     if (available.ok === false) {
       return Err(available.value);
     }
@@ -128,8 +151,8 @@ export class CommentService implements ICommentService {
     }
 
     const event = eventResult.value;
-    if (event.status !== "past") {
-      return Err(Forbidden("Comments are only available on past events."));
+    if (event.status === "draft" || event.status === "cancelled") {
+      return Err(Forbidden("Comments cannot be changed on draft or cancelled events."));
     }
 
     const isAuthor = comment.userId === actor.userId;

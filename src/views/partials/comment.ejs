@@ -33,7 +33,7 @@
       );
   %>
 
-    <% if (canDelete) { %>
+    <% if (canDelete && canManageComments) { %>
       <div class="flex items-center gap-2 self-start sm:self-center">
         <button
           type="button"

@@ -401,7 +401,9 @@ Promise<Result<IComment[], CommentServiceError>>
 Notes:
 
 - Rejects non-integer or less-than-1 event IDs with `InvalidContent`.
-- Current implementation only allows comments on `past` events.
+- Verifies the event exists before returning comments.
+- Comments are readable on `published`, `past`, and `cancelled` events.
+- Returns `Forbidden` for `draft` events.
 
 ### `addComment(eventId, content, actor)`
 
@@ -428,7 +430,9 @@ Notes:
 - Rejects non-integer or less-than-1 event IDs with `InvalidContent`.
 - Rejects empty or whitespace-only content with `InvalidContent`.
 - Trims content before saving.
-- Current implementation only allows comments on `past` events.
+- Verifies the event exists before saving.
+- Comments are available on `published` and `past` events.
+- Returns `Forbidden` for `draft` or `cancelled` events.
 
 ### `deleteComment(commentId, actor)`
 
@@ -453,4 +457,5 @@ Notes:
 
 - Rejects non-integer or less-than-1 comment IDs with `InvalidContent`.
 - Allows deletion by the comment author, an admin, or the event organizer.
-- Current implementation only allows comment deletion on `past` events.
+- Comment deletion authorization applies on `published` and `past` events.
+- Returns `Forbidden` for comments on `draft` or `cancelled` events.
