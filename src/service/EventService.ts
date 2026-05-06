@@ -8,7 +8,7 @@ export interface CreateEventServiceInput {
   description: string;
   location: string;
   category: string;
-  emoji: string | null;
+  emoji?: string | null;
   status: EventStatus;
   rsvpPolicy?: EventRsvpPolicy;
   capacity: number | null;
@@ -74,10 +74,11 @@ class EventService implements IEventService {
       return Err(ValidationError("Category is required."));
     }
 
-    if (
-      input.emoji !== null &&
-      !EventService.VALID_EVENT_EMOJIS.has(input.emoji)
-    ) {
+    const emoji = typeof input.emoji === "string" && input.emoji.trim().length > 0
+      ? input.emoji
+      : null;
+
+    if (emoji !== null && !EventService.VALID_EVENT_EMOJIS.has(emoji)) {
       return Err(ValidationError("Emoji must be selected from the provided options."));
     }
 
@@ -161,7 +162,7 @@ class EventService implements IEventService {
       description: input.description.trim(),
       location: input.location.trim(),
       category: input.category.trim(),
-      emoji: input.emoji,
+      emoji: typeof input.emoji === "string" && input.emoji.trim().length > 0 ? input.emoji : null,
       status: input.status,
       rsvpPolicy: input.rsvpPolicy ?? "anyone",
       capacity: input.capacity,
@@ -324,7 +325,7 @@ class EventService implements IEventService {
       description: input.description.trim(),
       location: input.location.trim(),
       category: input.category.trim(),
-      emoji: input.emoji,
+      emoji: typeof input.emoji === "string" && input.emoji.trim().length > 0 ? input.emoji : null,
       status: input.status,
       rsvpPolicy: input.rsvpPolicy ?? editableEventResult.value.rsvpPolicy,
       capacity: input.capacity,

@@ -121,7 +121,8 @@ class EventController implements IEventController {
         const capacityText = form.capacity.trim();
         const capacity =
         capacityText.length === 0 ? null : Number.parseInt(capacityText, 10);
-        const emoji = form.emoji.trim().length === 0 ? null : form.emoji;
+        const emojiRaw = typeof form.emoji === "string" ? form.emoji : "";
+        const emoji = emojiRaw.trim().length === 0 ? null : emojiRaw;
         const rsvpPolicy = VALID_RSVP_POLICIES.includes(form.rsvpPolicy as typeof VALID_RSVP_POLICIES[number])
             ? form.rsvpPolicy as typeof VALID_RSVP_POLICIES[number]
             : "anyone";
