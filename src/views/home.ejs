@@ -32,15 +32,26 @@
 
 <section
   class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]"
-  x-data="{ friendsOpen: false }"
+  x-data="{ friendsOpen: false, searchMode: false }"
 >
   <div class="min-w-0 space-y-5">
-    <div class="mb-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div
+      x-show="!searchMode"
+      class="mb-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+    >
       <div>
         <h2 class="text-2xl font-semibold text-white mb-2">Find Events</h2>
         <p class="text-blue-100/70 mb-0">Browse events you can RSVP to.</p>
       </div>
-      <form action="/events/search" method="get" class="flex w-full gap-3 md:max-w-md">
+      <form
+        action="/events/search"
+        method="get"
+        hx-get="/events/search/results"
+        hx-target="#home-events"
+        hx-swap="innerHTML"
+        x-on:submit="searchMode = true"
+        class="flex w-full gap-3 md:max-w-md"
+      >
         <input
           type="text"
           name="q"
