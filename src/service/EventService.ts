@@ -19,7 +19,7 @@ export interface IEventService {
   getAllEvents(): Promise<Result<IEvent[], EventError>>;
   getEventByID(id: number): Promise<Result<IEvent, EventError>>;
   getUserEvents(userId: string): Promise<Result<IEvent[], EventError>>;
-  getEventsForUser(userId: string): Promise<Result<IEvent[], EventError>>;
+  getEventsForUser(userId: string, userRole?: string): Promise<Result<IEvent[], EventError>>;
   getActiveUserEvents(userId: string): Promise<Result<IEvent[], EventError>>;
   getPastUserEvents(userId: string): Promise<Result<IEvent[], EventError>>;
   getEditableEvent(eventId: number, actingUserId: string, actingUserRole: string): Promise<Result<IEvent, EventError>>;
@@ -154,11 +154,15 @@ class EventService implements IEventService {
     return Ok(userEvents.value);
   }
 
-  async getEventsForUser(userId: string): Promise<Result<IEvent[], EventError>> {
+  async getEventsForUser(userId: string, userRole?: string): Promise<Result<IEvent[], EventError>> {
     const result = await this.repo.getAllEvents();
     if (result.ok === false) {
       return Err(UnexpectedRepositoryError(result.value.message));
     }
+    if (userRole === "admin"){
+      return Ok(result.value);
+    }
+    
     return Ok(
       result.value.filter(e =>
         e.status === "published" ||
