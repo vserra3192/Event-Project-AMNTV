@@ -1,4 +1,4 @@
-<section id="events-list-container" class="rounded-3xl border border-blue-300/15 bg-slate-900/70 px-4 py-5 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl sm:px-6 sm:py-6 lg:px-7 lg:py-7">
+<section id="events-list-container" class="rounded-3xl border <%= isArchive ? 'border-slate-300/15 bg-slate-950/60 shadow-[0_25px_70px_-40px_rgba(15,23,42,0.95)]' : 'border-blue-300/15 bg-slate-900/70 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)]' %> px-4 py-5 backdrop-blur-xl sm:px-6 sm:py-6 lg:px-7 lg:py-7">
   <%
     const cancelled = data.filter(event => event.status === 'cancelled');
     const past = data.filter(event => event.status === 'past');
@@ -8,11 +8,11 @@
     <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h2 class="text-xl font-semibold text-white sm:text-2xl mb-2"><%= isArchive ? 'Event Archive' : 'Available Events' %></h2>
-        <p class="text-sm leading-6 text-blue-100/70 sm:text-base">
-          <%= isArchive ? 'Browse archived events.' : 'Browse current events.' %>
+        <p class="text-sm leading-6 <%= isArchive ? 'text-slate-300/75' : 'text-blue-100/70' %> sm:text-base">
+          <%= isArchive ? 'Browse archived events by final outcome.' : 'Browse current events.' %>
         </p>
       </div>
-      <div class="rounded-2xl border border-blue-300/15 bg-slate-950/35 px-4 py-3 text-sm text-blue-100/80">
+      <div class="rounded-2xl border <%= isArchive ? 'border-slate-300/15 bg-slate-900/70 text-slate-300/80' : 'border-blue-300/15 bg-slate-950/35 text-blue-100/80' %> px-4 py-3 text-sm">
         <span class="text-white font-semibold"><%= data.length %></span>
         <%= data.length === 1 ? ' event' : ' events' %>
       </div>
@@ -51,24 +51,74 @@
         <% }) %>
       </ul>
     <% } else { %>
-      <section x-data="{ pastOpen: true, cancelledOpen: <%= cancelled.length > 0 ? 'true' : 'false' %> }" class="space-y-4">
-        <section class="rounded-3xl border border-slate-300/20 bg-slate-950/30 p-4 sm:p-5">
+      <section
+        x-data="{
+          archiveFilter: 'all',
+          setArchiveFilter(next) { this.archiveFilter = next; },
+          clearArchiveFilter() { this.archiveFilter = 'all'; },
+          hasActiveArchiveFilter() { return this.archiveFilter !== 'all'; }
+        }"
+        class="space-y-4"
+      >
+        <div class="rounded-2xl border border-slate-300/15 bg-slate-900/75 p-3 sm:p-4">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h3 class="text-sm font-semibold uppercase tracking-[0.25em] text-slate-300/65">Archive Filters</h3>
+              <p class="mt-1 text-sm text-slate-300/75">Filter archived events by final status.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="inline-flex flex-wrap rounded-2xl border border-slate-300/15 bg-slate-950/70 p-1">
+                <button
+                  type="button"
+                  x-on:click="setArchiveFilter('all')"
+                  :class="archiveFilter === 'all' ? 'bg-slate-100 text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-slate-800/80'"
+                  class="inline-flex cursor-pointer items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition"
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  x-on:click="setArchiveFilter('past')"
+                  :class="archiveFilter === 'past' ? 'bg-slate-100 text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-slate-800/80'"
+                  class="inline-flex cursor-pointer items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition"
+                >
+                  Past
+                </button>
+                <button
+                  type="button"
+                  x-on:click="setArchiveFilter('cancelled')"
+                  :class="archiveFilter === 'cancelled' ? 'bg-slate-100 text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-slate-800/80'"
+                  class="inline-flex cursor-pointer items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition"
+                >
+                  Cancelled
+                </button>
+              </div>
+
+              <button
+                type="button"
+                x-cloak
+                x-show="hasActiveArchiveFilter()"
+                x-on:click="clearArchiveFilter()"
+                class="inline-flex cursor-pointer items-center justify-center rounded-xl border border-slate-300/20 bg-slate-900/80 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <section x-show="archiveFilter === 'all' || archiveFilter === 'past'" class="rounded-3xl border border-slate-300/20 bg-slate-900/55 p-4 sm:p-5">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 class="text-lg font-semibold text-white">Past Events</h3>
-              <p class="text-sm text-blue-100/70">Events that finished.</p>
+              <p class="text-sm text-slate-300/75">Events that finished naturally.</p>
             </div>
-            <button
-              type="button"
-              x-on:click="pastOpen = !pastOpen"
-              class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-slate-300/20 bg-slate-800/80 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700/80"
-            >
-              <span x-text="pastOpen ? 'Collapse' : 'Expand'"></span>
-              <span class="text-blue-100/60"><%= past.length %></span>
-            </button>
+            <span class="inline-flex items-center rounded-full border border-slate-300/15 bg-slate-950/75 px-4 py-2 text-sm font-semibold text-slate-200">
+              <%= past.length %> <%= past.length === 1 ? 'event' : 'events' %>
+            </span>
           </div>
 
-          <div x-cloak x-show="pastOpen" class="mt-5 space-y-3">
+          <div class="mt-5 space-y-3">
             <% if (past.length > 0) { %>
               <ul class="list-none m-0 grid gap-3.5 p-0">
                 <% past.forEach((event) => { %>
@@ -76,28 +126,23 @@
                 <% }) %>
               </ul>
             <% } else { %>
-              <p class="rounded-2xl border border-dashed border-slate-300/20 bg-slate-950/30 px-4 py-5 text-sm text-blue-100/70">No past events are archived yet.</p>
+              <p class="rounded-2xl border border-dashed border-slate-300/20 bg-slate-950/30 px-4 py-5 text-sm text-slate-300/75">No past events are archived yet.</p>
             <% } %>
           </div>
         </section>
 
-        <section class="rounded-3xl border border-red-300/20 bg-red-500/8 p-4 sm:p-5">
+        <section x-show="archiveFilter === 'all' || archiveFilter === 'cancelled'" class="rounded-3xl border border-slate-300/20 bg-slate-900/55 p-4 sm:p-5">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 class="text-lg font-semibold text-white">Cancelled Events</h3>
-              <p class="text-sm text-blue-100/70">Events that were cancelled.</p>
+              <p class="text-sm text-slate-300/75">Events that were cancelled before completion.</p>
             </div>
-            <button
-              type="button"
-              x-on:click="cancelledOpen = !cancelledOpen"
-              class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-red-300/25 bg-red-500/85 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-400"
-            >
-              <span x-text="cancelledOpen ? 'Collapse' : 'Expand'"></span>
-              <span class="text-red-100/80"><%= cancelled.length %></span>
-            </button>
+            <span class="inline-flex items-center rounded-full border border-slate-300/15 bg-slate-950/75 px-4 py-2 text-sm font-semibold text-slate-200">
+              <%= cancelled.length %> <%= cancelled.length === 1 ? 'event' : 'events' %>
+            </span>
           </div>
 
-          <div x-cloak x-show="cancelledOpen" class="mt-5 space-y-3">
+          <div class="mt-5 space-y-3">
             <% if (cancelled.length > 0) { %>
               <ul class="list-none m-0 grid gap-3.5 p-0">
                 <% cancelled.forEach((event) => { %>
@@ -105,15 +150,15 @@
                 <% }) %>
               </ul>
             <% } else { %>
-              <p class="rounded-2xl border border-dashed border-red-300/20 bg-red-950/15 px-4 py-5 text-sm text-blue-100/70">No cancelled events are archived yet.</p>
+              <p class="rounded-2xl border border-dashed border-slate-300/20 bg-slate-950/30 px-4 py-5 text-sm text-slate-300/75">No cancelled events are archived yet.</p>
             <% } %>
           </div>
         </section>
       </section>
     <% } %>
   <% } else { %>
-    <div class="rounded-2xl border border-dashed border-blue-300/20 bg-slate-950/30 px-4 py-8 text-center sm:px-6">
-      <p class="text-sm text-blue-100/70 sm:text-base"><%= isArchive ? 'No archived events are available yet.' : 'No events available at this time.' %></p>
+    <div class="rounded-2xl border border-dashed <%= isArchive ? 'border-slate-300/20 bg-slate-950/40' : 'border-blue-300/20 bg-slate-950/30' %> px-4 py-8 text-center sm:px-6">
+      <p class="text-sm <%= isArchive ? 'text-slate-300/75' : 'text-blue-100/70' %> sm:text-base"><%= isArchive ? 'No archived events are available yet.' : 'No events available at this time.' %></p>
     </div>
   <% } %>
 </section>
