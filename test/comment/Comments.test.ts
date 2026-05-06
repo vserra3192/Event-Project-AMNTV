@@ -1,7 +1,7 @@
 import { CommentService } from "../../src/service/CommentService";
 import { CreateEventService } from "../../src/service/EventService";
-import { InMemoryCommentRepository } from "../../src/repository/InMemoryCommentRepository";
-import { CreateInMemoryEventRepository } from "../../src/repository/InMemoryEventRepository";
+import { CreatePrismaCommentRepository } from "../../src/repository/PrismaCommentRepository";
+import { CreatePrismaEventRepository } from "../../src/repository/PrismaEventRepository";
 
 const createUser = (id: string, role: "user" | "admin" = "user") => ({
   userId: id,
@@ -10,8 +10,8 @@ const createUser = (id: string, role: "user" | "admin" = "user") => ({
 });
 
 function setup() {
-  const commentRepo = new InMemoryCommentRepository();
-  const eventRepo = CreateInMemoryEventRepository();
+  const commentRepo = CreatePrismaCommentRepository();
+  const eventRepo = CreatePrismaEventRepository();
 
   const eventService = CreateEventService(eventRepo);
   const commentService = new CommentService(commentRepo, eventRepo);
@@ -26,6 +26,7 @@ async function createEvent(eventService: any, organizerId: string) {
       description: "Test",
       location: "Test",
       category: "Test",
+      emoji: null,
       status: "published",
       capacity: null,
       startDatetime: new Date(Date.now() + 10000),
