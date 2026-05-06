@@ -1,9 +1,9 @@
 import { CreateEventService } from "../../src/service/EventService";
-import { CreateInMemoryEventRepository } from "../../src/repository/InMemoryEventRepository";
+import { CreatePrismaEventRepository } from "../../src/repository/PrismaEventRepository";
 import type { CreateEventServiceInput } from "../../src/service/EventService";
 
 test("archiveExpiredEvents transitions expired events to past", async () => {
-  const repo = CreateInMemoryEventRepository();
+  const repo = CreatePrismaEventRepository();
   const service = CreateEventService(repo);
 
   const now = new Date();
@@ -13,6 +13,7 @@ test("archiveExpiredEvents transitions expired events to past", async () => {
     description: "desc",
     location: "loc",
     category: "cat",
+    emoji: null,
     status: "published",
     capacity: null,
     startDatetime: new Date(now.getTime() - 24 * 60 * 60 * 1000 * 2),
@@ -37,7 +38,7 @@ test("archiveExpiredEvents transitions expired events to past", async () => {
 });
 
 test("archiveExpiredEvents does not modify non-expired events", async () => {
-  const repo = CreateInMemoryEventRepository();
+  const repo = CreatePrismaEventRepository();
   const service = CreateEventService(repo);
 
   const now = new Date();
@@ -47,6 +48,7 @@ test("archiveExpiredEvents does not modify non-expired events", async () => {
     description: "desc",
     location: "loc",
     category: "cat",
+    emoji: null,
     status: "published",
     capacity: null,
     startDatetime: new Date(now.getTime() + 24 * 60 * 60 * 1000),
@@ -71,7 +73,7 @@ test("archiveExpiredEvents does not modify non-expired events", async () => {
 });
 
 test("getPastEvents returns only past events sorted by end date", async () => {
-  const repo = CreateInMemoryEventRepository();
+  const repo = CreatePrismaEventRepository();
   const service = CreateEventService(repo);
 
   const now = new Date();
@@ -81,6 +83,7 @@ test("getPastEvents returns only past events sorted by end date", async () => {
     description: "desc",
     location: "loc",
     category: "cat",
+    emoji: null,
     status: "past",
     capacity: null,
     startDatetime: new Date(now.getTime() - 24 * 60 * 60 * 1000 * 10),
@@ -92,6 +95,7 @@ test("getPastEvents returns only past events sorted by end date", async () => {
     description: "desc",
     location: "loc",
     category: "cat",
+    emoji: null,
     status: "past",
     capacity: null,
     startDatetime: new Date(now.getTime() - 24 * 60 * 60 * 1000 * 20),
