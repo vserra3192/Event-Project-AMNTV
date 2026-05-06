@@ -11,9 +11,18 @@ function timeAgo(date) {
 }
 %>
 
-<div id="comments-list">
+<div id="comments-list" class="space-y-3 sm:space-y-4">
+  <div class="flex items-center justify-between border-b border-blue-300/10 pb-3">
+    <p class="text-sm font-medium text-blue-100/80">
+      <span class="text-white"><%= list.length %></span>
+      <%= list.length === 1 ? 'comment' : 'comments' %>
+    </p>
+  </div>
+
   <% if (list.length === 0) { %>
-    <p class="text-blue-100/70">No comments yet.</p>
+    <div class="rounded-2xl border border-dashed border-blue-300/20 bg-slate-950/30 px-4 py-6 text-center sm:px-6">
+      <p class="text-sm text-blue-100/70 sm:text-base">No comments yet. Be the first to start the conversation.</p>
+    </div>
   <% } %>
 
   <% list.forEach(comment => { %>
