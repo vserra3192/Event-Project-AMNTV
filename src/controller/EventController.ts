@@ -306,7 +306,7 @@ class EventController implements IEventController {
         await this.service.archiveExpiredEvents();
         const currentUser = session.authenticatedUser;
         const result = currentUser?.role === 'admin'
-            ? await this.service.getAllEvents()
+            ? await this.service.getActiveEvents()
             : await this.service.getActiveEventsForUser(currentUser?.userId ?? '', currentUser?.role ?? '');
         await this.renderEventsSection(res, session, result, false, false);
     }
@@ -317,7 +317,7 @@ class EventController implements IEventController {
         const result = isArchive
             ? await this.service.getPastEvents()
             : currentUser?.role === 'admin'
-                ? await this.service.getAllEvents()
+                ? await this.service.getActiveEvents()
                 : await this.service.getActiveEventsForUser(currentUser?.userId ?? '', currentUser?.role ?? '');
         await this.renderEventsSection(res, session, result, isArchive, true);
     }
