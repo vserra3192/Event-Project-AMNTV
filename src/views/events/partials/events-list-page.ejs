@@ -13,8 +13,7 @@
         </p>
       </div>
       <div class="rounded-2xl border <%= isArchive ? 'border-slate-300/15 bg-slate-900/70 text-slate-300/80' : 'border-blue-300/15 bg-slate-950/35 text-blue-100/80' %> px-4 py-3 text-sm">
-        <span class="text-white font-semibold"><%= data.length %></span>
-        <%= data.length === 1 ? ' event' : ' events' %>
+        <span class="text-white font-semibold">Displaying <%= data.length %> <%= data.length === 1 ? 'event' : 'events' %></span>
       </div>
     </div>
 
