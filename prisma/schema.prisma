@@ -26,6 +26,7 @@ model Event {
   category      String
   emoji         String?
   status        String
+  rsvpPolicy    String      @default("anyone")
   capacity      Int?
   startDatetime DateTime
   endDatetime   DateTime

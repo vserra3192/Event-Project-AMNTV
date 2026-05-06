@@ -1,6 +1,7 @@
 <%
 const list = comments || [];
 const latestCommentId = typeof newCommentId === 'number' ? newCommentId : null;
+const canManageComments = eventStatus !== 'cancelled';
 
 function timeAgo(date) {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -69,7 +70,7 @@ function timeAgo(date) {
 
   <div x-ref="commentItems" class="space-y-3 sm:space-y-4">
     <% list.forEach(comment => { %>
-      <%- include('comment', { comment, user, timeAgo, animate: comment.id === latestCommentId }) %>
+      <%- include('comment', { comment, user, timeAgo, animate: comment.id === latestCommentId, canManageComments }) %>
     <% }) %>
   </div>
 </div>

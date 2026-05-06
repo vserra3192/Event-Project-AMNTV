@@ -28,35 +28,45 @@ export interface IFriendsController {
     session: IAppBrowserSession,
     currentUserId: string,
   ): Promise<void>;
+  showFriendsPanel(
+    res: Response,
+    session: IAppBrowserSession,
+    currentUserId: string,
+  ): Promise<void>;
   searchUsers(
     res: Response,
     session: IAppBrowserSession,
     currentUserId: string,
     query: string,
+    panel?: boolean,
   ): Promise<void>;
   sendFriendRequest(
     res: Response,
     session: IAppBrowserSession,
     currentUserId: string,
     targetUserId: string,
+    panel?: boolean,
   ): Promise<void>;
   acceptFriendRequest(
     res: Response,
     session: IAppBrowserSession,
     currentUserId: string,
     requesterId: string,
+    panel?: boolean,
   ): Promise<void>;
   declineFriendRequest(
     res: Response,
     session: IAppBrowserSession,
     currentUserId: string,
     requesterId: string,
+    panel?: boolean,
   ): Promise<void>;
   removeFriend(
     res: Response,
     session: IAppBrowserSession,
     currentUserId: string,
     friendId: string,
+    panel?: boolean,
   ): Promise<void>;
 }
 
@@ -176,6 +186,7 @@ class FriendsController implements IFriendsController {
     notice: string | null = null,
     pageError: string | null = null,
     status = 200,
+    panel = false,
   ): Promise<void> {
     const model = await this.buildViewModel(currentUserId, query, notice, pageError);
     if (model.ok === false) {
@@ -186,7 +197,7 @@ class FriendsController implements IFriendsController {
       return;
     }
 
-    res.status(status).render("friends/partials/workspace", {
+    res.status(status).render(panel ? "friends/partials/panel" : "friends/partials/workspace", {
       session,
       view: model.value,
       layout: false,
@@ -225,11 +236,20 @@ class FriendsController implements IFriendsController {
     await this.renderFriendsPage(res, session, currentUserId);
   }
 
+  async showFriendsPanel(
+    res: Response,
+    session: IAppBrowserSession,
+    currentUserId: string,
+  ): Promise<void> {
+    await this.renderFriendsWorkspace(res, session, currentUserId, "", null, null, 200, true);
+  }
+
   async searchUsers(
     res: Response,
     session: IAppBrowserSession,
     currentUserId: string,
     query: string,
+    panel = false,
   ): Promise<void> {
     const trimmed = query.trim();
     const pageError =
@@ -237,7 +257,7 @@ class FriendsController implements IFriendsController {
         ? "Search must be at least 2 characters."
         : null;
 
-    await this.renderFriendsWorkspace(res, session, currentUserId, query, null, pageError);
+    await this.renderFriendsWorkspace(res, session, currentUserId, query, null, pageError, 200, panel);
   }
 
   async sendFriendRequest(
@@ -245,13 +265,14 @@ class FriendsController implements IFriendsController {
     session: IAppBrowserSession,
     currentUserId: string,
     targetUserId: string,
+    panel = false,
   ): Promise<void> {
     const currentUserResult = await this.users.findById(currentUserId);
     if (currentUserResult.ok === false || !currentUserResult.value) {
       const error = currentUserResult.ok === false
         ? UnexpectedDependencyError(currentUserResult.value.message)
         : UserNotFound("User not found.");
-      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, error.message, this.mapErrorStatus(error));
+      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, error.message, this.mapErrorStatus(error), panel);
       return;
     }
 
@@ -259,23 +280,23 @@ class FriendsController implements IFriendsController {
     if (targetResult.ok === false) {
       const status = this.mapErrorStatus(targetResult.value);
       this.logger.warn(`Friend request failed: ${targetResult.value.message}`);
-      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, targetResult.value.message, status);
+      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, targetResult.value.message, status, panel);
       return;
     }
 
     if (currentUserResult.value.freindsList.includes(targetUserId)) {
-      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, "You are already friends.", 409);
+      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, "You are already friends.", 409, panel);
       return;
     }
 
     if (currentUserResult.value.outgoingFriendRequests.includes(targetUserId)) {
-      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, "Friend request already sent.", 409);
+      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, "Friend request already sent.", 409, panel);
       return;
     }
 
     const result = await this.users.sendFriendRequest(currentUserId, targetUserId);
     if (result.ok === false) {
-      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, result.value.message, this.mapErrorStatus(result.value));
+      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, result.value.message, this.mapErrorStatus(result.value), panel);
       return;
     }
 
@@ -283,7 +304,7 @@ class FriendsController implements IFriendsController {
     const message = currentUserResult.value.ingoingFriendRequests.includes(targetUserId)
       ? `Accepted ${targetResult.value.displayName}'s friend request.`
       : `Sent ${targetResult.value.displayName} a friend request.`;
-    await this.renderFriendsWorkspace(res, session, currentUserId, "", message);
+    await this.renderFriendsWorkspace(res, session, currentUserId, "", message, null, 200, panel);
   }
 
   async acceptFriendRequest(
@@ -291,20 +312,21 @@ class FriendsController implements IFriendsController {
     session: IAppBrowserSession,
     currentUserId: string,
     requesterId: string,
+    panel = false,
   ): Promise<void> {
     const result = await this.users.acceptFriendRequest(currentUserId, requesterId);
     if (result.ok === false) {
-      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, result.value.message, this.mapErrorStatus(result.value));
+      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, result.value.message, this.mapErrorStatus(result.value), panel);
       return;
     }
 
     if (!result.value) {
-      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, "Friend request not found.", 404);
+      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, "Friend request not found.", 404, panel);
       return;
     }
 
     this.logger.info(`Accepted friend request from ${requesterId} for ${currentUserId}`);
-    await this.renderFriendsWorkspace(res, session, currentUserId, "", "Friend request accepted.");
+    await this.renderFriendsWorkspace(res, session, currentUserId, "", "Friend request accepted.", null, 200, panel);
   }
 
   async declineFriendRequest(
@@ -312,20 +334,21 @@ class FriendsController implements IFriendsController {
     session: IAppBrowserSession,
     currentUserId: string,
     requesterId: string,
+    panel = false,
   ): Promise<void> {
     const result = await this.users.declineFriendRequest(currentUserId, requesterId);
     if (result.ok === false) {
-      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, result.value.message, this.mapErrorStatus(result.value));
+      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, result.value.message, this.mapErrorStatus(result.value), panel);
       return;
     }
 
     if (!result.value) {
-      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, "Friend request not found.", 404);
+      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, "Friend request not found.", 404, panel);
       return;
     }
 
     this.logger.info(`Declined friend request from ${requesterId} for ${currentUserId}`);
-    await this.renderFriendsWorkspace(res, session, currentUserId, "", "Friend request declined.");
+    await this.renderFriendsWorkspace(res, session, currentUserId, "", "Friend request declined.", null, 200, panel);
   }
 
   async removeFriend(
@@ -333,20 +356,21 @@ class FriendsController implements IFriendsController {
     session: IAppBrowserSession,
     currentUserId: string,
     friendId: string,
+    panel = false,
   ): Promise<void> {
     const result = await this.users.removeFriend(currentUserId, friendId);
     if (result.ok === false) {
-      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, result.value.message, this.mapErrorStatus(result.value));
+      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, result.value.message, this.mapErrorStatus(result.value), panel);
       return;
     }
 
     if (!result.value) {
-      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, "Friend not found.", 404);
+      await this.renderFriendsWorkspace(res, session, currentUserId, "", null, "Friend not found.", 404, panel);
       return;
     }
 
     this.logger.info(`Removed friend ${friendId} for ${currentUserId}`);
-    await this.renderFriendsWorkspace(res, session, currentUserId, "", "Friend removed.");
+    await this.renderFriendsWorkspace(res, session, currentUserId, "", "Friend removed.", null, 200, panel);
   }
 }
 

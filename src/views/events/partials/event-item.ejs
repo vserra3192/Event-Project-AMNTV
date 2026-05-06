@@ -12,6 +12,9 @@
           <%= event.category %>
         </span>
       </p>
+      <p class="text-xs text-blue-100/50 mt-2 mb-0">
+        RSVP: <%= event.rsvpPolicy === "friends-only" ? "Friends only" : event.rsvpPolicy === "invite-only" ? "Invite only" : "Anyone" %>
+      </p>
     </div>
     <div class="sm:text-right">
       <%- include("../../partials/status-badge", { status: event.status, eventId: event.id }) %>

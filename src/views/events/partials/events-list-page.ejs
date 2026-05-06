@@ -36,16 +36,16 @@
         hx-target="#events-list-container"
         hx-swap="outerHTML"
         hx-push-url="/events/archive"
-        class="inline-flex cursor-pointer items-center justify-center rounded-2xl border px-4 py-2 text-sm font-semibold transition <%= isArchive ? 'border-blue-600 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white shadow-lg shadow-blue-900/60 hover:-translate-y-0.5 hover:shadow-blue-900/80' : 'border-blue-300/20 bg-slate-900/70 text-blue-100/80 hover:bg-blue-400/15 hover:text-white' %>"
+        class="inline-flex cursor-pointer items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold transition <%= isArchive ? 'border-slate-300/30 bg-slate-100 text-slate-950 shadow-sm' : 'border-blue-300/15 bg-slate-900/50 text-blue-100/65 hover:bg-blue-400/10 hover:text-blue-100' %>"
       >
-        Archived Events
+        Event Archive
       </a>
     </div>
   </div>
 
   <% if (data && data.length > 0) { %>
     <% if (!isArchive) { %>
-      <ul class="list-none m-0 grid gap-3.5 p-0">
+      <ul class="max-h-[34rem] list-none m-0 grid gap-3.5 overflow-y-auto p-0 pr-2">
         <% data.forEach((event) => { %>
           <%- include('./event-item', { event, session }) %>
         <% }) %>
