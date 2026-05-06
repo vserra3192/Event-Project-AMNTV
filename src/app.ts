@@ -509,6 +509,7 @@ class ExpressApp implements IApp {
           currentUser.userId,
           typeof req.params.requesterId === "string" ? req.params.requesterId : "",
           req.query.panel === "true",
+          req.query.inbox === "true",
         );
       }),
     );
@@ -536,6 +537,7 @@ class ExpressApp implements IApp {
           currentUser.userId,
           typeof req.params.requesterId === "string" ? req.params.requesterId : "",
           req.query.panel === "true",
+          req.query.inbox === "true",
         );
       }),
     );
