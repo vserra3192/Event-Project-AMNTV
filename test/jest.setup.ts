@@ -15,7 +15,9 @@ beforeAll(async () => { //create test.db schema based on our dev.db schema incas
       "description" TEXT NOT NULL,
       "location" TEXT NOT NULL,
       "category" TEXT NOT NULL,
+      "emoji" TEXT,
       "status" TEXT NOT NULL,
+      "rsvpPolicy" TEXT NOT NULL DEFAULT 'anyone',
       "capacity" INTEGER,
       "startDatetime" DATETIME NOT NULL,
       "endDatetime" DATETIME NOT NULL,
@@ -24,6 +26,18 @@ beforeAll(async () => { //create test.db schema based on our dev.db schema incas
       "updatedAt" DATETIME NOT NULL
     )
   `);
+
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Event" ADD COLUMN "emoji" TEXT`);
+  } catch {
+    // Older test databases may already have this optional column.
+  }
+
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Event" ADD COLUMN "rsvpPolicy" TEXT NOT NULL DEFAULT 'anyone'`);
+  } catch {
+    // Older test databases may already have this column.
+  }
 
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "EventRsvp" (
@@ -53,12 +67,86 @@ beforeAll(async () => { //create test.db schema based on our dev.db schema incas
         ON DELETE RESTRICT ON UPDATE CASCADE
     )
   `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "User" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "email" TEXT NOT NULL,
+      "displayName" TEXT NOT NULL,
+      "role" TEXT NOT NULL,
+      "passwordHash" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key"
+    ON "User"("email")
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "Friend" (
+      "userId" TEXT NOT NULL,
+      "friendId" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY ("userId", "friendId"),
+      CONSTRAINT "Friend_userId_fkey"
+        FOREIGN KEY ("userId") REFERENCES "User" ("id")
+        ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "Friend_friendId_fkey"
+        FOREIGN KEY ("friendId") REFERENCES "User" ("id")
+        ON DELETE CASCADE ON UPDATE CASCADE
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "FriendRequest" (
+      "requesterId" TEXT NOT NULL,
+      "recipientId" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY ("requesterId", "recipientId"),
+      CONSTRAINT "FriendRequest_requesterId_fkey"
+        FOREIGN KEY ("requesterId") REFERENCES "User" ("id")
+        ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "FriendRequest_recipientId_fkey"
+        FOREIGN KEY ("recipientId") REFERENCES "User" ("id")
+        ON DELETE CASCADE ON UPDATE CASCADE
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "EventInvite" (
+      "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      "eventId" INTEGER NOT NULL,
+      "senderId" TEXT NOT NULL,
+      "recipientId" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "EventInvite_eventId_fkey"
+        FOREIGN KEY ("eventId") REFERENCES "Event" ("id")
+        ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "EventInvite_senderId_fkey"
+        FOREIGN KEY ("senderId") REFERENCES "User" ("id")
+        ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "EventInvite_recipientId_fkey"
+        FOREIGN KEY ("recipientId") REFERENCES "User" ("id")
+        ON DELETE CASCADE ON UPDATE CASCADE
+    )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "EventInvite_eventId_senderId_recipientId_key"
+    ON "EventInvite"("eventId", "senderId", "recipientId")
+  `);
 });
 
 beforeEach(async () => {
   await prisma.comment.deleteMany();
   await prisma.eventRsvp.deleteMany();
+  await prisma.eventInvite.deleteMany();
   await prisma.event.deleteMany();
+  await prisma.friendRequest.deleteMany();
+  await prisma.friend.deleteMany();
 });
 
 afterAll(async () => {

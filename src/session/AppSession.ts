@@ -18,6 +18,7 @@ export interface IAppBrowserSession {
   createdAt: string;
   lastSeenAt: string;
   authenticatedUser: IAuthenticatedUserSession | null;
+  inboxSeenSignature?: string;
 }
 
 export type AppSessionStore = Session &
@@ -57,7 +58,7 @@ function ensureAppSession(
 }
 
 function snapshotSession(session: IAppBrowserSession): IAppBrowserSession {
-  return { ...session };
+  return session;
 }
 
 export function recordPageView(

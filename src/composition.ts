@@ -1,7 +1,8 @@
 import { CreateAdminUserService } from "./auth/AdminUserService";
 import { CreateAuthController } from "./auth/AuthController";
 import { CreateAuthService } from "./auth/AuthService";
-import { CreateInMemoryUserRepository } from "./auth/InMemoryUserRepository";
+import { CreateFriendsController } from "./auth/FriendsController";
+import { CreatePrismaUserRepository } from "./auth/PrismaUserRepository";
 import { CreatePasswordHasher } from "./auth/PasswordHasher";
 import { CreateApp } from "./app";
 import type { IApp } from "./contracts";
@@ -22,19 +23,20 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
 
   // Authentication & authorization wiring
-  const authUsers = CreateInMemoryUserRepository();
+  const authUsers = CreatePrismaUserRepository();
   const passwordHasher = CreatePasswordHasher();
   const authService = CreateAuthService(authUsers, passwordHasher);
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
+  const friendsController = CreateFriendsController(authUsers, resolvedLogger);
 
   const eventRepo = usePrismaRepo ? CreatePrismaEventRepository() : CreateInMemoryEventRepository();
-  const eventService = CreateEventService(eventRepo);
-  const eventController = CreateController(eventService, resolvedLogger, adminUserService);
+  const eventService = CreateEventService(eventRepo, authUsers);
+  const eventController = CreateController(eventService, resolvedLogger, adminUserService, authUsers);
 
   const commentRepo = usePrismaRepo ? CreatePrismaCommentRepository() : new InMemoryCommentRepository();
   const commentService = new CommentService(commentRepo, eventRepo);
   const commentController = new CommentController(commentService, resolvedLogger, adminUserService, eventService);
 
-  return CreateApp(authController, eventController, commentController, resolvedLogger);
+  return CreateApp(authController, eventController, commentController, friendsController, resolvedLogger);
 }

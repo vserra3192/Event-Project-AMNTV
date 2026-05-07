@@ -1,0 +1,55 @@
+<section id="rsvp-list-container" class="rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
+  <div class="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div>
+      <h2 class="text-xl font-semibold text-white mb-2"><%= isPast ? "Past RSVP's" : "Upcoming RSVP's" %></h2>
+      <p class="text-blue-100/70 mb-0">
+        <% if (data && data.length > 0) { %>
+          Displaying <%= data.length %> event<%= data.length === 1 ? "" : "s" %>.
+        <% } else { %>
+          No <%= isPast ? "past" : "upcoming" %> RSVP's.
+        <% } %>
+      </p>
+    </div>
+
+    <div class="flex gap-2">
+      <a
+        href="/events/rsvp"
+        hx-get="/events/rsvp/list?type=upcoming"
+        hx-target="#rsvp-list-container"
+        hx-swap="outerHTML"
+        class="rounded-xl border px-4 py-2 text-sm font-semibold transition <%= !isPast ? 'border-blue-600 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white shadow-lg shadow-blue-900/60' : 'border-blue-300/20 bg-slate-900/70 text-blue-100/80 hover:bg-blue-400/15 hover:text-white' %>"
+      >
+        Upcoming
+      </a>
+      <a
+        href="/events/rsvp?type=past"
+        hx-get="/events/rsvp/list?type=past"
+        hx-target="#rsvp-list-container"
+        hx-swap="outerHTML"
+        class="rounded-xl border px-4 py-2 text-sm font-semibold transition <%= isPast ? 'border-blue-600 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white shadow-lg shadow-blue-900/60' : 'border-blue-300/20 bg-slate-900/70 text-blue-100/80 hover:bg-blue-400/15 hover:text-white' %>"
+      >
+        Past
+      </a>
+    </div>
+  </div>
+
+  <% if (data && data.length > 0) { %>
+    <ul class="list-none m-0 p-0 grid gap-3.5 xl:grid-cols-2">
+      <% data.forEach((event) => { %>
+        <%- include('./event-item', { event, session }) %>
+      <% }) %>
+    </ul>
+  <% } else { %>
+    <div class="text-center py-12">
+      <p class="text-blue-100/70">No <%= isPast ? "past" : "upcoming" %> RSVP's yet.</p>
+      <% if (!isPast) { %>
+        <a
+          href="/home"
+          class="mt-4 inline-flex items-center justify-center px-5 py-3 bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 rounded-lg hover:shadow-blue-900/80"
+        >
+          Find Events
+        </a>
+      <% } %>
+    </div>
+  <% } %>
+</section>

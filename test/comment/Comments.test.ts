@@ -1,7 +1,7 @@
 import { CommentService } from "../../src/service/CommentService";
 import { CreateEventService } from "../../src/service/EventService";
-import { InMemoryCommentRepository } from "../../src/repository/InMemoryCommentRepository";
-import { CreateInMemoryEventRepository } from "../../src/repository/InMemoryEventRepository";
+import { CreatePrismaCommentRepository } from "../../src/repository/PrismaCommentRepository";
+import { CreatePrismaEventRepository } from "../../src/repository/PrismaEventRepository";
 
 const createUser = (id: string, role: "user" | "admin" = "user") => ({
   userId: id,
@@ -10,8 +10,8 @@ const createUser = (id: string, role: "user" | "admin" = "user") => ({
 });
 
 function setup() {
-  const commentRepo = new InMemoryCommentRepository();
-  const eventRepo = CreateInMemoryEventRepository();
+  const commentRepo = CreatePrismaCommentRepository();
+  const eventRepo = CreatePrismaEventRepository();
 
   const eventService = CreateEventService(eventRepo);
   const commentService = new CommentService(commentRepo, eventRepo);
@@ -19,14 +19,15 @@ function setup() {
   return { eventService, commentService };
 }
 
-async function createEvent(eventService: any, organizerId: string) {
+async function createEvent(eventService: any, organizerId: string, status = "published") {
   const result = await eventService.createEvent(
     {
       title: "Test Event",
       description: "Test",
       location: "Test",
       category: "Test",
-      status: "published",
+      emoji: null,
+      status,
       capacity: null,
       startDatetime: new Date(Date.now() + 10000),
       endDatetime: new Date(Date.now() + 20000),
@@ -66,6 +67,55 @@ test("should reject empty comment content", async () => {
   if (result.ok) return;
 
   expect(result.value.name).toBe("InvalidContent");
+});
+
+test("should reject comments on draft events", async () => {
+  const { eventService, commentService } = setup();
+
+  const user = createUser("user1");
+  const event = await createEvent(eventService, "org1", "draft");
+
+  const result = await commentService.addComment(event.id, "Hello world", user);
+
+  expect(result.ok).toBe(false);
+  if (result.ok) return;
+
+  expect(result.value.name).toBe("Forbidden");
+});
+
+test("should reject comments on cancelled events", async () => {
+  const { eventService, commentService } = setup();
+
+  const user = createUser("user1");
+  const event = await createEvent(eventService, "org1", "cancelled");
+
+  const result = await commentService.addComment(event.id, "Hello world", user);
+
+  expect(result.ok).toBe(false);
+  if (result.ok) return;
+
+  expect(result.value.name).toBe("Forbidden");
+});
+
+test("should display existing comments on cancelled events", async () => {
+  const { eventService, commentService } = setup();
+
+  const organizer = createUser("org1");
+  const user = createUser("user1");
+  const event = await createEvent(eventService, organizer.userId);
+  const created = await commentService.addComment(event.id, "Before cancellation", user);
+  expect(created.ok).toBe(true);
+
+  const cancelled = await eventService.cancelEvent(event.id, organizer.userId, organizer.role);
+  expect(cancelled.ok).toBe(true);
+
+  const result = await commentService.getCommentsByEventId(event.id);
+
+  expect(result.ok).toBe(true);
+  if (!result.ok) return;
+
+  expect(result.value).toHaveLength(1);
+  expect(result.value[0].content).toBe("Before cancellation");
 });
 
 test("author should be able to delete their own comment", async () => {

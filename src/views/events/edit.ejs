@@ -1,9 +1,9 @@
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
-  <h1 class="text-3xl font-bold text-slate-900 mb-3">
+<section class="mb-6 rounded-3xl border border-blue-300/15 bg-slate-900/60 px-7 py-6 shadow-[0_25px_60px_-35px_rgba(15,105,255,0.45)] backdrop-blur-lg">
+  <h1 class="text-2xl md:text-3xl font-semibold text-white mb-3">
     Edit: <%= formData.title %>
   </h1>
-  <p class="text-slate-500">
-    Update event details and save your changes.
+  <p class="text-blue-100/70">
+    Update event details and choose how the event should be saved.
   </p>
 </section>
 
@@ -11,123 +11,229 @@
   <%- include("../partials/error", { message: pageError }) %>
 <% } %>
 
-<section class="max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
-  <form method="POST" action="/events/<%= eventId %>/edit">
-    <div class="space-y-6">
+<section class="max-w-3xl rounded-3xl border border-blue-300/15 bg-slate-900/70 px-7 py-7 shadow-[0_25px_70px_-40px_rgba(15,105,255,0.52)] backdrop-blur-xl">
+  <form
+    method="POST"
+    action="/events/<%= eventId %>/edit"
+    class="space-y-6"
+    x-data="{
+      emojiCategories: {
+        '🎉': 'Party',
+        '🎸': 'Concert',
+        '🍿': 'Movie',
+        '🎂': 'Birthday',
+        '📚': 'Study',
+        '👾': 'Gaming',
+        '💒': 'Wedding',
+        '👻': 'Spooky',
+        '🍕': 'Dinner',
+        '🏆': 'Competition',
+        '✈️': 'Travel'
+      },
+      initialState: '',
+      hasUnsavedChanges: false,
+      isSubmitting: false,
+      formState() {
+        return new URLSearchParams(new FormData(this.$refs.editEventForm)).toString();
+      },
+      fillCategory(emoji) {
+        const category = this.$refs.category;
+        if (category.value.trim().length === 0 && this.emojiCategories[emoji]) {
+          category.value = this.emojiCategories[emoji];
+          this.updateDirtyState();
+        }
+      },
+      updateDirtyState() {
+        this.hasUnsavedChanges = this.formState() !== this.initialState;
+      },
+      init() {
+        this.$nextTick(() => {
+          this.initialState = this.formState();
+        });
+      }
+    }"
+    x-ref="editEventForm"
+    x-on:input="updateDirtyState()"
+    x-on:change="updateDirtyState()"
+    x-on:submit="isSubmitting = true"
+    x-on:beforeunload.window="if (hasUnsavedChanges && !isSubmitting) { $event.preventDefault(); $event.returnValue = ''; }"
+  >
+    <div>
+      <label for="title" class="block text-sm font-medium text-blue-100/80 mb-2">Event Title *</label>
+      <input
+        type="text"
+        id="title"
+        name="title"
+        required
+        value="<%= formData.title %>"
+        class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+        placeholder="Enter event title"
+      />
+    </div>
 
+    <div x-data="{ count: <%= JSON.stringify(formData.description.length) %>, max: 500 }">
+      <label for="description" class="block text-sm font-medium text-blue-100/80 mb-2">Description *</label>
+      <textarea
+        id="description"
+        name="description"
+        rows="4"
+        maxlength="500"
+        required
+        x-on:input="count = $event.target.value.length"
+        class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+        placeholder="Describe your event"
+      ><%= formData.description %></textarea>
+      <p class="text-xs mt-1" x-bind:class="count >= 450 ? 'text-red-300' : 'text-blue-100/70'">
+        <span x-text="count"></span> / <span x-text="max"></span> characters
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <h2 class="text-xl font-semibold mb-4">Event Information</h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-          <div>
-            <label class="text-sm font-medium text-slate-500">Category</label>
-            <input
-              type="text"
-              name="category"
-              value="<%= formData.category %>"
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
-              required
-            />
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-slate-500">Status</label>
-            <select
-              name="status"
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
-            >
-              <option value="draft" <%= formData.status === "draft" ? "selected" : "" %>>Draft</option>
-              <option value="published" <%= formData.status === "published" ? "selected" : "" %>>Published</option>
-              <option value="cancelled" <%= formData.status === "cancelled" ? "selected" : "" %>>Cancelled</option>
-              <option value="past" <%= formData.status === "past" ? "selected" : "" %>>Past</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-slate-500">Location</label>
-            <input
-              type="text"
-              name="location"
-              value="<%= formData.location %>"
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
-              required
-            />
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-slate-500">Capacity</label>
-            <input
-              type="number"
-              name="capacity"
-              min="1"
-              value="<%= formData.capacity %>"
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
-            />
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-slate-500">Start Time</label>
-            <input
-              type="datetime-local"
-              name="startDatetime"
-              value="<%= formData.startDatetime %>"
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
-              required
-            />
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-slate-500">End Time</label>
-            <input
-              type="datetime-local"
-              name="endDatetime"
-              value="<%= formData.endDatetime %>"
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
-              required
-            />
-          </div>
-
-        </div>
-      </div>
-
-      <div>
-        <label class="text-sm font-medium text-slate-500">Title</label>
+        <label for="location" class="block text-sm font-medium text-blue-100/80 mb-2">Location *</label>
         <input
           type="text"
-          name="title"
-          value="<%= formData.title %>"
-          class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+          id="location"
+          name="location"
           required
+          value="<%= formData.location %>"
+          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+          placeholder="Event location"
         />
       </div>
 
       <div>
-        <label class="text-sm font-medium text-slate-500">Description</label>
-        <textarea
-          name="description"
-          rows="4"
-          class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-slate-900"
+        <label for="category" class="block text-sm font-medium text-blue-100/80 mb-2">Category *</label>
+        <input
+          type="text"
+          id="category"
+          name="category"
+          x-ref="category"
           required
-        ><%= formData.description %></textarea>
+          value="<%= formData.category %>"
+          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+          placeholder="e.g., Conference, Workshop, Social"
+        />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label for="startDatetime" class="block text-sm font-medium text-blue-100/80 mb-2">Start Date & Time *</label>
+        <input
+          type="datetime-local"
+          id="startDatetime"
+          name="startDatetime"
+          required
+          value="<%= formData.startDatetime %>"
+          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+        />
       </div>
 
-      <div class="flex gap-4">
+      <div>
+        <label for="endDatetime" class="block text-sm font-medium text-blue-100/80 mb-2">End Date & Time *</label>
+        <input
+          type="datetime-local"
+          id="endDatetime"
+          name="endDatetime"
+          required
+          value="<%= formData.endDatetime %>"
+          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+        />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label for="capacity" class="block text-sm font-medium text-blue-100/80 mb-2">Capacity</label>
+        <input
+          type="number"
+          id="capacity"
+          name="capacity"
+          min="1"
+          value="<%= formData.capacity %>"
+          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+          placeholder="Leave empty for unlimited"
+        />
+      </div>
+
+      <div>
+        <label for="rsvpPolicy" class="block text-sm font-medium text-blue-100/80 mb-2">Who can RSVP?</label>
+        <select
+          id="rsvpPolicy"
+          name="rsvpPolicy"
+          class="w-full rounded-2xl border border-blue-300/20 bg-slate-950/60 px-4 py-3 text-sm text-white shadow-inner shadow-slate-900 focus:border-blue-400 focus:bg-slate-950/80 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+        >
+          <option value="anyone" <%= formData.rsvpPolicy === "anyone" ? "selected" : "" %>>Anyone</option>
+          <option value="friends-only" <%= formData.rsvpPolicy === "friends-only" ? "selected" : "" %>>Friends only</option>
+          <option value="invite-only" <%= formData.rsvpPolicy === "invite-only" ? "selected" : "" %>>Invite only</option>
+        </select>
+      </div>
+    </div>
+
+    <fieldset>
+      <legend class="block text-sm font-medium text-blue-100/80 mb-2">Event Emoji</legend>
+      <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
+        <input type="radio" id="emoji-none" name="emoji" value="" class="sr-only peer/none" <%= formData.emoji === "" ? "checked" : "" %> />
+        <label
+          for="emoji-none"
+          class="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-blue-300/20 bg-slate-950/60 text-xs font-semibold text-blue-100/80 transition hover:border-blue-300/50 hover:bg-blue-400/15 peer-checked/none:border-blue-300 peer-checked/none:bg-blue-500/25 peer-checked/none:text-white"
+        >
+          None
+        </label>
+        <% ["🎉", "🎸", "🍿", "🎂", "📚", "👾", "💒", "👻", "🍕", "🏆", "✈️"].forEach((emoji, index) => { %>
+          <input
+            type="radio"
+            id="emoji-<%= index %>"
+            name="emoji"
+            value="<%= emoji %>"
+            class="sr-only peer/emoji-<%= index %>"
+            x-on:change="fillCategory('<%= emoji %>')"
+            <%= formData.emoji === emoji ? "checked" : "" %>
+          />
+          <label
+            for="emoji-<%= index %>"
+            class="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-blue-300/20 bg-slate-950/60 text-2xl transition hover:border-blue-300/50 hover:bg-blue-400/15 peer-checked/emoji-<%= index %>:border-blue-300 peer-checked/emoji-<%= index %>:bg-blue-500/25"
+          >
+            <%= emoji %>
+          </label>
+        <% }) %>
+      </div>
+    </fieldset>
+
+    <div class="flex flex-wrap gap-3">
+      <button
+        type="submit"
+        name="status"
+        value="draft"
+        class="inline-flex items-center justify-center rounded-2xl border border-blue-300/30 bg-blue-400/20 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-blue-100 shadow-lg shadow-blue-900/30 transition duration-200 hover:-translate-y-0.5 hover:bg-blue-400/30 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Save as Draft
+      </button>
+      <button
+        type="submit"
+        name="status"
+        value="published"
+        class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg shadow-blue-900/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-blue-900/80 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Publish
+      </button>
+      <% if (formData.status === "published") { %>
         <button
           type="submit"
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          formaction="/events/<%= eventId %>/cancel"
+          formmethod="POST"
+          class="inline-flex items-center justify-center rounded-2xl bg-red-500/90 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg shadow-red-950/40 transition duration-200 hover:-translate-y-0.5 hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
         >
-          Save Changes
+          Cancel Event
         </button>
-
-        <a
-          href="/events/<%= eventId %>"
-          class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500"
-        >
-          Cancel
-        </a>
-      </div>
-
+      <% } %>
+      <a
+        href="/events/<%= eventId %>"
+        class="inline-flex items-center justify-center rounded-2xl border border-blue-300/20 bg-slate-800/80 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-blue-100/80 transition hover:bg-blue-400/20 hover:text-white focus:outline-none focus:ring-2 focus:ring-slate-500"
+      >
+        Discard
+      </a>
     </div>
   </form>
 </section>

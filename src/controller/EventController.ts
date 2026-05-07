@@ -6,13 +6,17 @@ import type { Result } from '../lib/result';
 import type { EventError } from '../repository/Errors';
 import type { EventStatus, IEvent} from '../repository/InMemoryEventRepository';
 import type { IAdminUserService } from '../auth/AdminUserService';
+import type { IUserRepository } from '../auth/UserRepository';
+import type { IUserRecord } from '../auth/User';
 
 export interface IEditEventForm {
   title: string;
   category: string;
+  emoji: string;
   location: string;
   description: string;
   status: string;
+  rsvpPolicy: string;
   capacity: string;
   startDatetime: string;
   endDatetime: string;
@@ -20,6 +24,7 @@ export interface IEditEventForm {
 
 export interface IEventController {
     showEventDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
+    showArchivedDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
     showDashboardEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void>;
     showAllEvents(res: Response, session: IAppBrowserSession): Promise<void>;
     showEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void>;
@@ -32,22 +37,45 @@ export interface IEventController {
     showUserEvents(res: Response, session: IAppBrowserSession): Promise<void>;
     searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
     searchEventsPartial(res: Response, session: IAppBrowserSession, query: string): Promise<void>;
+    showInvitesInbox(res: Response, session: IAppBrowserSession): Promise<void>;
+    handleSendEventInvite(res: Response, session: IAppBrowserSession, eventId: number, recipientId: string): Promise<void>;
     showArchivedEvents(res: Response, session: IAppBrowserSession): Promise<void>;
-    handleRsvpEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
-    handleRsvpCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
+    handleRsvpEvent(res: Response, session: IAppBrowserSession, eventId: number, redirectTo?: string): Promise<void>;
+    handleRsvpCancelEvent(res: Response, session: IAppBrowserSession, eventId: number, redirectTo?: string): Promise<void>;
+    showRSVPDashboard(res: Response, session: IAppBrowserSession): Promise<void>;
+    showRSVPList(res: Response, session: IAppBrowserSession, isPast: boolean): Promise<void>;
+    showInboxIndicator(res: Response, session: IAppBrowserSession): Promise<void>;
+    showRSVPedUsers(res: Response, session: IAppBrowserSession, eventId: number): Promise<void>;
+    handleRemoveRSVPedUser(res: Response, session: IAppBrowserSession, eventId: number, userId: string): Promise<void>;
 }
 
 const VALID_STATUSES: EventStatus[] = ['draft', 'published', 'cancelled', 'past'];
+const VALID_RSVP_POLICIES = ['anyone', 'friends-only', 'invite-only'] as const;
+type EventInviteCard = {
+    event: IEvent;
+    senderName: string;
+};
+type OutgoingEventInviteCard = {
+    event: IEvent;
+    recipientName: string;
+};
+type FriendRequestCard = {
+    id: string;
+    displayName: string;
+    email: string;
+};
 
 class EventController implements IEventController {
     private service: IEventService;
     private logger: ILoggingService;
     private adminUserService: IAdminUserService;
+    private userRepository: IUserRepository;
 
-    constructor(service: IEventService, logger: ILoggingService, adminUserService: IAdminUserService) {
+    constructor(service: IEventService, logger: ILoggingService, adminUserService: IAdminUserService, userRepository: IUserRepository) {
         this.service = service;
         this.logger = logger;
         this.adminUserService = adminUserService;
+        this.userRepository = userRepository;
     }
 
     private mapErrorStatus(error: EventError): number {
@@ -74,9 +102,11 @@ class EventController implements IEventController {
         return {
             title: event.title,
             category: event.category,
+            emoji: event.emoji ?? "",
             location: event.location,
             description: event.description,
             status: event.status,
+            rsvpPolicy: event.rsvpPolicy,
             capacity: event.capacity === null ? "" : String(event.capacity),
             startDatetime: this.toDatetimeLocalValue(new Date(event.startDatetime)),
             endDatetime: this.toDatetimeLocalValue(new Date(event.endDatetime)),
@@ -91,25 +121,40 @@ class EventController implements IEventController {
         const capacityText = form.capacity.trim();
         const capacity =
         capacityText.length === 0 ? null : Number.parseInt(capacityText, 10);
+        const emojiRaw = typeof form.emoji === "string" ? form.emoji : "";
+        const emoji = emojiRaw.trim().length === 0 ? null : emojiRaw;
+        const rsvpPolicy = VALID_RSVP_POLICIES.includes(form.rsvpPolicy as typeof VALID_RSVP_POLICIES[number])
+            ? form.rsvpPolicy as typeof VALID_RSVP_POLICIES[number]
+            : "anyone";
 
         return {
             title: form.title,
             category: form.category,
+            emoji,
             location: form.location,
             description: form.description,
             status,
+            rsvpPolicy,
             capacity,
             startDatetime: new Date(form.startDatetime),
             endDatetime: new Date(form.endDatetime),
         };
     }
 
-    async handleRsvpEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
-        const result = await this.service.rsvpEvent(eventId, session.authenticatedUser?.userId ?? '');
+    async handleRsvpEvent(res: Response, session: IAppBrowserSession, eventId: number, redirectTo?: string): Promise<void> {
+        const result = await this.service.rsvpEvent(
+            eventId,
+            session.authenticatedUser?.userId ?? '',
+            String(session.authenticatedUser?.role ?? ''),
+        );
         if (!result.ok) {
             this.logger.error('Error RSVPing for event');
             const error = result.value as EventError;
             res.status(this.mapErrorStatus(error)).send(error.message);
+            return;
+        }
+        if (redirectTo) {
+            res.redirect(redirectTo);
             return;
         }
         res.status(200).render("events/partials/event-item", {
@@ -119,7 +164,7 @@ class EventController implements IEventController {
         });
     }
 
-    async handleRsvpCancelEvent(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+    async handleRsvpCancelEvent(res: Response, session: IAppBrowserSession, eventId: number, redirectTo?: string): Promise<void> {
         const result = await this.service.rsvpCancelEvent(eventId, session.authenticatedUser?.userId ?? '');
         if (!result.ok) {
             this.logger.error('Error cancelling RSVP for event');
@@ -127,11 +172,46 @@ class EventController implements IEventController {
             res.status(this.mapErrorStatus(error)).send(error.message);
             return;
         }
+        if (redirectTo) {
+            res.redirect(redirectTo);
+            return;
+        }
         res.status(200).render("events/partials/event-item", {
             event: result.value,
             session,
             layout: false,
         });
+    }
+
+    async handleRemoveRSVPedUser(res: Response, session: IAppBrowserSession, eventId: number, userId: string): Promise<void> {
+        const currentUser = session.authenticatedUser;
+        if (!currentUser) {
+            res.status(401).render('partials/error', { message: 'Authentication required.', layout: false });
+            return;
+        }
+
+        const eventResult = await this.service.getEventByID(eventId);
+        if (!eventResult.ok) {
+            const error = eventResult.value as EventError;
+            res.status(this.mapErrorStatus(error)).render('partials/error', { message: error.message, layout: false });
+            return;
+        }
+
+        const isOwner = currentUser.userId === eventResult.value.organizerId;
+        const isAdmin = currentUser.role === 'admin';
+        if (!isOwner && !isAdmin) {
+            res.status(403).render('partials/error', { message: 'You are not authorized to manage RSVPs for this event.', layout: false });
+            return;
+        }
+
+        const result = await this.service.rsvpCancelEvent(eventId, userId);
+        if (!result.ok) {
+            const error = result.value as EventError;
+            res.status(this.mapErrorStatus(error)).render('partials/error', { message: error.message, layout: false });
+            return;
+        }
+
+        await this.showRSVPedUsers(res, session, eventId);
     }
 
 
@@ -149,6 +229,23 @@ class EventController implements IEventController {
         res.status(200);
         this.logger.info('Dashboard data fetched successfully');
         res.render('dashboard', { data: result.value, session, isArchive: false });
+    }
+
+    async showArchivedDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
+        await this.service.archiveExpiredEvents();
+        const currentUserId = session.authenticatedUser?.userId ?? '';
+        const isAdmin = session.authenticatedUser?.role === 'admin';
+        const result = await (isAdmin ? this.service.getPastEvents() : this.service.getPastUserEvents(currentUserId));
+
+        if (!result.ok) {
+            this.logger.error('Error fetching archived dashboard data');
+            res.status(500).send('Error fetching archived dashboard data');
+            return;
+        }
+
+        res.status(200);
+        this.logger.info('Archived dashboard data fetched successfully');
+        res.render('dashboard', { data: result.value, session, isArchive: true });
     }
 
     async showDashboardEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void> {
@@ -208,20 +305,29 @@ class EventController implements IEventController {
 
     async showAllEvents(res: Response, session: IAppBrowserSession): Promise<void> {
         await this.service.archiveExpiredEvents();
-        const result = await this.service.getActiveEvents();
+        const currentUser = session.authenticatedUser;
+        const result = currentUser?.role === 'admin'
+            ? await this.service.getActiveEvents()
+            : await this.service.getActiveEventsForUser(currentUser?.userId ?? '', currentUser?.role ?? '');
         await this.renderEventsSection(res, session, result, false, false);
     }
 
     async showEventsList(res: Response, session: IAppBrowserSession, isArchive: boolean): Promise<void> {
         await this.service.archiveExpiredEvents();
+        const currentUser = session.authenticatedUser;
         const result = isArchive
             ? await this.service.getPastEvents()
-            : await this.service.getActiveEvents();
+            : currentUser?.role === 'admin'
+                ? await this.service.getActiveEvents()
+                : await this.service.getActiveEventsForUser(currentUser?.userId ?? '', currentUser?.role ?? '');
         await this.renderEventsSection(res, session, result, isArchive, true);
     }
 
     async searchEvents(res: Response, session: IAppBrowserSession, query: string): Promise<void> {
-        const result = await this.service.getEventsBySearch(query);
+        const currentUser = session.authenticatedUser;
+        const result = currentUser
+            ? await this.service.getEventsBySearchForUser(query, currentUser.userId, currentUser.role)
+            : await this.service.getEventsBySearch(query);
         if (result.ok === false) {
             const statusCode = this.mapErrorStatus(result.value);
             this.logger.warn(`Invalid search request with query "${query}": ${result.value.message}`);
@@ -239,7 +345,10 @@ class EventController implements IEventController {
     }
 
     async searchEventsPartial(res: Response, session: IAppBrowserSession, query: string): Promise<void> {
-        const result = await this.service.getEventsBySearch(query);
+        const currentUser = session.authenticatedUser;
+        const result = currentUser
+            ? await this.service.getEventsBySearchForUser(query, currentUser.userId, currentUser.role)
+            : await this.service.getEventsBySearch(query);
         if (result.ok === false) {
             const statusCode = this.mapErrorStatus(result.value);
             this.logger.warn(`Invalid search request with query "${query}": ${result.value.message}`);
@@ -264,10 +373,16 @@ class EventController implements IEventController {
         const description = typeof body.description === 'string' ? body.description : '';
         const location = typeof body.location === 'string' ? body.location : '';
         const category = typeof body.category === 'string' ? body.category : '';
+        const emojiRaw = typeof body.emoji === 'string' ? body.emoji : '';
+        const emoji = emojiRaw.trim().length === 0 ? null : emojiRaw;
         const statusRaw = typeof body.status === 'string' ? body.status : '';
         const status: EventStatus = VALID_STATUSES.includes(statusRaw as EventStatus)
             ? (statusRaw as EventStatus)
             : 'draft';
+        const rsvpPolicyRaw = typeof body.rsvpPolicy === 'string' ? body.rsvpPolicy : '';
+        const rsvpPolicy = VALID_RSVP_POLICIES.includes(rsvpPolicyRaw as typeof VALID_RSVP_POLICIES[number])
+            ? rsvpPolicyRaw as typeof VALID_RSVP_POLICIES[number]
+            : 'anyone';
         const capacityRaw = typeof body.capacity === 'string' ? body.capacity.trim() : '';
         const capacity = capacityRaw === '' ? null : parseInt(capacityRaw, 10);
         const startDatetime = new Date(typeof body.startDatetime === 'string' ? body.startDatetime : '');
@@ -278,7 +393,9 @@ class EventController implements IEventController {
             description,
             location,
             category,
+            emoji,
             status,
+            rsvpPolicy,
             capacity,
             startDatetime,
             endDatetime,
@@ -330,9 +447,89 @@ class EventController implements IEventController {
         }
         const organizerRes = await this.adminUserService.findUserById(event.organizerId);
         const organizerName = organizerRes.ok && organizerRes.value ? organizerRes.value.displayName : 'Unkown Organizer';
+        const inviteFriends = await this.getInviteFriends(event, session);
+        const invitedRecipientIds = await this.getInvitedRecipientIds(event.id, session.authenticatedUser?.userId ?? "");
         this.logger.info(`Fetched event detail for id ${eventId}`);
         res.status(200);
-        res.render('events/detail', { event, organizerName, session, pageError: null });
+        res.render('events/detail', { event, organizerName, session, pageError: null, inviteFriends, invitedRecipientIds });
+    }
+
+    private async getInviteFriends(event: IEvent, session: IAppBrowserSession): Promise<IUserRecord[]> {
+        const currentUser = session.authenticatedUser;
+        if (!currentUser || currentUser.userId !== event.organizerId) {
+            return [];
+        }
+
+        const friendsResult = await this.userRepository.getFriendList(currentUser.userId);
+        if (!friendsResult.ok) {
+            return [];
+        }
+
+        return friendsResult.value;
+    }
+
+    private async getInvitedRecipientIds(eventId: number, senderId: string): Promise<string[]> {
+        const senderResult = await this.userRepository.findById(senderId);
+        if (!senderResult.ok || !senderResult.value) {
+            return [];
+        }
+
+        return senderResult.value.outgoingEventInvites
+            .filter((invite) => invite.eventId === eventId)
+            .map((invite) => invite.recipientId);
+    }
+
+    private getInboxSignature(user: IUserRecord): string {
+        const incomingInvites = user.incomingEventInvites
+            .map((invite) => `event:${invite.eventId}:${invite.senderId}:${invite.recipientId}`);
+        const incomingRequests = user.ingoingFriendRequests
+            .map((requesterId) => `friend:${requesterId}`);
+
+        return [...incomingInvites, ...incomingRequests].sort().join("|");
+    }
+
+    async handleSendEventInvite(res: Response, session: IAppBrowserSession, eventId: number, recipientId: string): Promise<void> {
+        const currentUser = session.authenticatedUser;
+        if (!currentUser) {
+            res.status(401).render('partials/error', { message: 'Please log in to continue.', layout: false });
+            return;
+        }
+
+        const eventResult = await this.service.getEventByID(eventId);
+        if (!eventResult.ok) {
+            const error = eventResult.value as EventError;
+            res.status(this.mapErrorStatus(error)).render('partials/error', { message: error.message, layout: false });
+            return;
+        }
+
+        if (eventResult.value.organizerId !== currentUser.userId) {
+            res.status(403).render('partials/error', { message: 'Only the event organizer can send invites.', layout: false });
+            return;
+        }
+
+        if (eventResult.value.status !== 'published') {
+            res.status(409).render('partials/error', { message: 'Invites are only available for published events.', layout: false });
+            return;
+        }
+
+        const sendResult = await this.userRepository.sendEventInvite(eventId, currentUser.userId, recipientId);
+        const inviteFriends = await this.getInviteFriends(eventResult.value, session);
+        const invitedRecipientIds = await this.getInvitedRecipientIds(eventId, currentUser.userId);
+        let pageError: string | null = null;
+        if (!sendResult.ok) {
+            pageError = (sendResult.value as { message: string }).message;
+        } else {
+            pageError = sendResult.value ? null : 'Could not send that invite.';
+        }
+
+        res.status(sendResult.ok && sendResult.value ? 200 : 400).render('events/partials/invite-panel', {
+            event: eventResult.value,
+            session,
+            inviteFriends,
+            invitedRecipientIds,
+            pageError,
+            layout: false,
+        });
     }
     
     async showEventEdit(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
@@ -373,9 +570,11 @@ class EventController implements IEventController {
                 formData: {
                 title: "",
                 category: "",
+                emoji: "",
                 location: "",
                 description: "",
                 status: "draft",
+                rsvpPolicy: "anyone",
                 capacity: "",
                 startDatetime: "",
                 endDatetime: "",
@@ -491,8 +690,11 @@ class EventController implements IEventController {
 
           res.status(status).render("events/detail", {
             event: eventResult.value,
+            organizerName: "Unknown Organizer",
             session,
             pageError: result.value.message,
+            inviteFriends: [],
+            invitedRecipientIds: [],
           });
           return;
         }
@@ -555,8 +757,11 @@ class EventController implements IEventController {
 
           res.status(status).render("events/detail", {
             event: eventResult.value,
+            organizerName: "Unknown Organizer",
             session,
             pageError: result.value.message,
+            inviteFriends: [],
+            invitedRecipientIds: [],
           });
           return;
         }
@@ -587,8 +792,176 @@ class EventController implements IEventController {
 
         res.status(200).render("events/archive", {data: result.value, session, isArchive: true});
     }
+
+    async showInvitesInbox(res: Response, session: IAppBrowserSession): Promise<void> {
+        const currentUser = session.authenticatedUser;
+        if (!currentUser) {
+            res.status(401).render('partials/error', { message: 'Please log in to continue.', layout: false });
+            return;
+        }
+
+        const userResult = await this.userRepository.findById(currentUser.userId);
+        if (!userResult.ok || !userResult.value) {
+            res.status(500).render('partials/error', { message: 'Could not load your invites.', layout: false });
+            return;
+        }
+
+        session.inboxSeenSignature = this.getInboxSignature(userResult.value);
+
+        const usersResult = await this.adminUserService.listUsers();
+        const usersById = new Map(
+            usersResult.ok ? usersResult.value.map((user) => [user.id, user]) : [],
+        );
+
+        const cards: EventInviteCard[] = [];
+        for (const invite of userResult.value.incomingEventInvites) {
+            const eventResult = await this.service.getEventByID(invite.eventId);
+            if (!eventResult.ok) {
+                continue;
+            }
+
+            if (eventResult.value.status === 'past' || eventResult.value.status === 'cancelled') {
+                continue;
+            }
+
+            cards.push({
+                event: eventResult.value,
+                senderName: usersById.get(invite.senderId)?.displayName ?? 'Unknown sender',
+            });
+        }
+
+        const outgoingInvites: OutgoingEventInviteCard[] = [];
+        for (const invite of userResult.value.outgoingEventInvites) {
+            const eventResult = await this.service.getEventByID(invite.eventId);
+            if (!eventResult.ok) {
+                continue;
+            }
+
+            if (eventResult.value.status === 'past' || eventResult.value.status === 'cancelled') {
+                continue;
+            }
+
+            outgoingInvites.push({
+                event: eventResult.value,
+                recipientName: usersById.get(invite.recipientId)?.displayName ?? 'Unknown recipient',
+            });
+        }
+
+        const incomingFriendRequests: FriendRequestCard[] = userResult.value.ingoingFriendRequests
+            .map((requesterId) => usersById.get(requesterId))
+            .filter((user): user is IUserRecord => user !== undefined)
+            .map((user) => ({
+                id: user.id,
+                displayName: user.displayName,
+                email: user.email,
+            }));
+
+        const outgoingFriendRequests: FriendRequestCard[] = userResult.value.outgoingFriendRequests
+            .map((recipientId) => usersById.get(recipientId))
+            .filter((user): user is IUserRecord => user !== undefined)
+            .map((user) => ({
+                id: user.id,
+                displayName: user.displayName,
+                email: user.email,
+            }));
+
+        res.status(200).render('events/invites', {
+            invites: cards,
+            outgoingInvites,
+            incomingFriendRequests,
+            outgoingFriendRequests,
+            session,
+            pageError: null,
+        });
+    }
+
+    async showRSVPDashboard(res: Response, session: IAppBrowserSession): Promise<void> {
+        const userId = session.authenticatedUser?.userId ?? '';
+        const result = await this.service.getUsersRSVPedEvents(userId);
+        if (!result.ok) {
+            const error = result.value as EventError;
+            this.logger.error(`Error fetching RSVP dashboard for user ${userId}: ${error.message}`);
+            res.status(500).render('partials/error', { message: 'Could not load your RSVPs.', layout: false });
+            return;
+        }
+        const now = new Date();
+        const upcoming = result.value.filter((event) => event.status !== 'past' && event.status !== 'cancelled' && event.endDatetime >= now);
+        this.logger.info(`Fetched ${result.value.length} RSVPed events for user ${userId}`);
+        res.status(200).render('events/rsvp-dashboard', { data: upcoming, session, pageError: null, isPast: false });
+    }   
+
+    async showRSVPList(res: Response, session: IAppBrowserSession, isPast: boolean): Promise<void> {
+        const userId = session.authenticatedUser?.userId ?? '';
+        const result = await this.service.getUsersRSVPedEvents(userId);
+        if (!result.ok) {
+            const error = result.value as EventError;
+            this.logger.error(`Error fetching RSVP list for user ${userId}: ${error.message}`);
+            res.status(500).render('partials/error', { message: 'Could not load your RSVPs.', layout: false });
+            return;
+        }
+
+        const now = new Date();
+        const data = result.value.filter((event) => {
+            const past = event.status === 'past' || event.status === 'cancelled' || event.endDatetime < now;
+            return isPast ? past : !past;
+        });
+
+        res.status(200).render('events/partials/rsvp-list', {
+            data,
+            session,
+            isPast,
+            layout: false,
+        });
+    }
+
+    async showInboxIndicator(res: Response, session: IAppBrowserSession): Promise<void> {
+        const currentUser = session.authenticatedUser;
+        if (!currentUser) {
+            res.status(200).send('');
+            return;
+        }
+
+        const userResult = await this.userRepository.findById(currentUser.userId);
+        const hasPending = userResult.ok && userResult.value
+            ? this.getInboxSignature(userResult.value) !== (session.inboxSeenSignature ?? "")
+            : false;
+
+        res.status(200).render('events/partials/inbox-indicator', {
+            hasPending,
+            layout: false,
+        });
+    }
+
+    async showRSVPedUsers(res: Response, session: IAppBrowserSession, eventId: number): Promise<void> {
+        const result = await this.service.getAllRSVPedUserByEventId(eventId);
+        if (!result.ok) {
+            const error = result.value as EventError;
+            this.logger.error(`Error fetching RSVPed users for event ${eventId}: ${error.message}`);
+            res.status(500).render('partials/error', { message: 'Could not load RSVPed users.', layout: false });
+            return;
+        }
+
+        const attendees = await Promise.all(
+            result.value.map(async (userId) => {
+                const userResult = await this.adminUserService.findUserById(userId);
+                return {
+                    id: userId,
+                    displayName: userResult.ok && userResult.value ? userResult.value.displayName : 'Unknown attendee',
+                };
+            }),
+        );
+
+        this.logger.info(`Fetched ${attendees.length} RSVPed users for event ${eventId}`);
+        res.status(200).render('events/rsvped-users', {
+            data: attendees,
+            eventId,
+            session,
+            pageError: null,
+            layout: false,
+        });
+    }
 }
 
-export function CreateController(service: IEventService, logger: ILoggingService, adminUserService: IAdminUserService): IEventController {
-    return new EventController(service, logger, adminUserService);
+export function CreateController(service: IEventService, logger: ILoggingService, adminUserService: IAdminUserService, userRepository: IUserRepository): IEventController {
+    return new EventController(service, logger, adminUserService, userRepository);
 }

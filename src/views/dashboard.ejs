@@ -1,14 +1,28 @@
-<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
-  <h1 class="text-3xl font-bold text-slate-900 mb-3">Dashboard</h1>
-  <p class="text-slate-500">
-    Manage your upcoming events.
+<section class="mb-6 rounded-3xl border <%= isArchive ? 'border-slate-300/15 bg-slate-950/55 shadow-[0_25px_60px_-35px_rgba(15,23,42,0.85)]' : 'border-blue-300/15 bg-slate-900/60 shadow-[0_25px_60px_-35px_rgba(15,105,255,0.45)]' %> px-7 py-6 backdrop-blur-lg">
+  <h1 class="mb-3 text-3xl font-semibold text-white"><%= isArchive ? 'Dashboard Archive' : 'Dashboard' %></h1>
+  <p class="<%= isArchive ? 'text-slate-300/75' : 'text-blue-100/70' %>">
+    <%= isArchive ? 'Review your archived events with the same muted archive treatment used in the event archive.' : 'Manage your upcoming events.' %>
   </p>
   <% if (session.authenticatedUser) { %>
-    <p class="text-slate-500 mt-2 mb-0">
-      Signed in as <strong class="text-slate-700"><%= session.authenticatedUser.displayName %></strong>
+    <p class="<%= isArchive ? 'text-slate-300/75' : 'text-blue-100/70' %> mt-2 mb-0">
+      Signed in as <strong class="<%= isArchive ? 'text-slate-100' : 'text-blue-100/80' %>"><%= session.authenticatedUser.displayName %></strong>
       (<%= session.authenticatedUser.role %>).
     </p>
+    <div class="mt-4 flex flex-wrap gap-3">
+      <a
+        href="/events/rsvp"
+        class="inline-flex items-center gap-2 rounded-lg bg-slate-800/70 px-4 py-2 <%= isArchive ? 'text-slate-200 hover:bg-slate-700/80' : 'text-blue-100/80 hover:bg-slate-800/80' %>"
+      >
+        View My RSVPs
+      </a>
+      <a
+        href="/events/new"
+        class="inline-flex items-center gap-2 rounded-lg border px-4 py-2 transition <%= isArchive ? 'border-slate-300/20 bg-slate-900/75 text-slate-200 hover:bg-slate-800 hover:text-white' : 'border-blue-300/20 bg-slate-950/40 text-blue-100/80 hover:bg-blue-400/15 hover:text-white' %>"
+      >
+        Create Event
+      </a>
+    </div>
   <% } %>
 </section>
 
-<%- include('./dashboard/partials/dashboard-events-list-page', { data, session, isArchive: false }) %>
+<%- include('./dashboard/partials/dashboard-events-list-page', { data, session, isArchive }) %>

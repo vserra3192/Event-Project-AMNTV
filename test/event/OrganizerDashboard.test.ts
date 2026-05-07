@@ -88,6 +88,7 @@ describe('Organizer Dashboard Routes', () => {
           description: 'Test Description',
           location: 'Test Location',
           category: 'Test Category',
+          emoji: '🏆',
           status: 'draft',
           capacity: '10',
           startDatetime: '2027-04-20T10:00',
@@ -161,6 +162,7 @@ describe('Organizer Dashboard Routes', () => {
           description: 'Event by organizer',
           location: 'Test Location',
           category: 'Test Category',
+          emoji: '🏆',
           status: 'draft',
           capacity: '20',
           startDatetime: '2027-04-25T10:00',
@@ -202,6 +204,7 @@ describe('Organizer Dashboard Routes', () => {
       expect(response.status).toBe(200);
       expect(response.text).toContain('Organizer Event 1');
       expect(response.text).toContain('Organizer Event 2');
+      expect(response.text).toContain('🏆');
       expect(response.text).not.toContain('Admin Event');
     });
 

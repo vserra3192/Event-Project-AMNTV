@@ -3,6 +3,7 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
+import { IFriendsController } from "./auth/FriendsController";
 import { IEventController } from "./controller/EventController";
 import {
   AuthenticationRequired,
@@ -39,6 +40,7 @@ class ExpressApp implements IApp {
     private readonly authController: IAuthController,
     private readonly eventController: IEventController,
     private readonly commentController: ICommentController,
+    private readonly friendsController: IFriendsController,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -205,10 +207,13 @@ class ExpressApp implements IApp {
           {
             title: typeof req.body.title === "string" ? req.body.title : "",
             category: typeof req.body.category === "string" ? req.body.category : "",
+            emoji: typeof req.body.emoji === "string" ? req.body.emoji : "",
             location: typeof req.body.location === "string" ? req.body.location : "",
             description:
               typeof req.body.description === "string" ? req.body.description : "",
             status: typeof req.body.status === "string" ? req.body.status : "draft",
+            rsvpPolicy:
+              typeof req.body.rsvpPolicy === "string" ? req.body.rsvpPolicy : "anyone",
             capacity: typeof req.body.capacity === "string" ? req.body.capacity : "",
             startDatetime:
               typeof req.body.startDatetime === "string" ? req.body.startDatetime : "",
@@ -350,6 +355,221 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/friends",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        this.logger.info(`GET /friends for ${browserSession.browserLabel}`);
+        await this.friendsController.showFriendsPage(
+          res,
+          browserSession,
+          currentUser.userId,
+        );
+      }),
+    );
+
+    this.app.get(
+      "/friends/panel",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        await this.friendsController.showFriendsPanel(
+          res,
+          browserSession,
+          currentUser.userId,
+        );
+      }),
+    );
+
+    this.app.get(
+      "/invites",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /invites for ${browserSession.browserLabel}`);
+        await this.eventController.showInvitesInbox(res, browserSession);
+      }),
+    );
+
+    this.app.get(
+      "/inbox/indicator",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        await this.eventController.showInboxIndicator(res, browserSession);
+      }),
+    );
+
+    this.app.get(
+      "/friends/search",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        const query = typeof req.query.q === "string" ? req.query.q : "";
+        this.logger.info(`GET /friends/search?q=${query} for ${browserSession.browserLabel}`);
+        await this.friendsController.searchUsers(
+          res,
+          browserSession,
+          currentUser.userId,
+          query,
+          req.query.panel === "true",
+        );
+      }),
+    );
+
+    this.app.post(
+      "/friends/requests",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        await this.friendsController.sendFriendRequest(
+          res,
+          browserSession,
+          currentUser.userId,
+          typeof req.body.userId === "string" ? req.body.userId : "",
+          req.query.panel === "true",
+        );
+      }),
+    );
+
+    this.app.post(
+      "/friends/requests/:requesterId/accept",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        await this.friendsController.acceptFriendRequest(
+          res,
+          browserSession,
+          currentUser.userId,
+          typeof req.params.requesterId === "string" ? req.params.requesterId : "",
+          req.query.panel === "true",
+          req.query.inbox === "true",
+        );
+      }),
+    );
+
+    this.app.post(
+      "/friends/requests/:requesterId/decline",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        await this.friendsController.declineFriendRequest(
+          res,
+          browserSession,
+          currentUser.userId,
+          typeof req.params.requesterId === "string" ? req.params.requesterId : "",
+          req.query.panel === "true",
+          req.query.inbox === "true",
+        );
+      }),
+    );
+
+    this.app.post(
+      "/friends/:friendId/remove",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = touchAppSession(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        await this.friendsController.removeFriend(
+          res,
+          browserSession,
+          currentUser.userId,
+          typeof req.params.friendId === "string" ? req.params.friendId : "",
+          req.query.panel === "true",
+        );
+      }),
+    );
+
+    this.app.get(
       "/dashboard",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) {
@@ -359,6 +579,19 @@ class ExpressApp implements IApp {
         const browserSession = recordPageView(sessionStore(req));
         this.logger.info(`GET /dashboard for ${browserSession.browserLabel}`);
         await this.eventController.showEventDashboard(res, browserSession);
+      }),
+    );
+
+    this.app.get(
+      "/dashboard/archive",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /dashboard/archive for ${browserSession.browserLabel}`);
+        await this.eventController.showArchivedDashboard(res, browserSession);
       }),
     );
 
@@ -447,6 +680,26 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      '/events/rsvp',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events/rsvp for ${browserSession.browserLabel}`);
+        await this.eventController.showRSVPDashboard(res, browserSession);
+      }),
+    );
+
+    this.app.get(
+      '/events/:id/rsvped-users',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /events/${req.params.id}/rsvped-users for ${browserSession.browserLabel}`);
+        await this.eventController.showRSVPedUsers(res, browserSession, Number(req.params.id));
+      }),
+    );
+
+    this.app.get(
       '/events/:id',
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
@@ -462,7 +715,38 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) return;
         const browserSession = touchAppSession(sessionStore(req));
         this.logger.info(`POST /events/${req.params.id}/rsvp for ${browserSession.browserLabel}`);
-        await this.eventController.handleRsvpEvent(res, browserSession, Number(req.params.id));
+        await this.eventController.handleRsvpEvent(
+          res,
+          browserSession,
+          Number(req.params.id),
+          typeof req.query.redirect === 'string' ? req.query.redirect : undefined,
+        );
+      }),
+    );
+
+    this.app.get(
+      '/events/rsvp/list',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = recordPageView(sessionStore(req));
+        const isPast = typeof req.query.type === "string" && req.query.type === "past";
+        this.logger.info(`GET /events/rsvp/list?type=${isPast ? "past" : "upcoming"} for ${browserSession.browserLabel}`);
+        await this.eventController.showRSVPList(res, browserSession, isPast);
+      }),
+    );
+
+    this.app.post(
+      '/events/:id/invites',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = touchAppSession(sessionStore(req));
+        this.logger.info(`POST /events/${req.params.id}/invites for ${browserSession.browserLabel}`);
+        await this.eventController.handleSendEventInvite(
+          res,
+          browserSession,
+          Number(req.params.id),
+          typeof req.body.recipientId === 'string' ? req.body.recipientId : '',
+        );
       }),
     );
 
@@ -472,7 +756,27 @@ class ExpressApp implements IApp {
         if (!this.requireAuthenticated(req, res)) return;
         const browserSession = touchAppSession(sessionStore(req));
         this.logger.info(`POST /events/${req.params.id}/rsvp/cancel for ${browserSession.browserLabel}`);
-        await this.eventController.handleRsvpCancelEvent(res, browserSession, Number(req.params.id));
+        await this.eventController.handleRsvpCancelEvent(
+          res,
+          browserSession,
+          Number(req.params.id),
+          typeof req.query.redirect === 'string' ? req.query.redirect : undefined,
+        );
+      }),
+    );
+
+    this.app.post(
+      '/events/:id/rsvped-users/:userId/remove',
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const browserSession = touchAppSession(sessionStore(req));
+        this.logger.info(`POST /events/${req.params.id}/rsvped-users/${req.params.userId}/remove for ${browserSession.browserLabel}`);
+        await this.eventController.handleRemoveRSVPedUser(
+          res,
+          browserSession,
+          Number(req.params.id),
+          String(req.params.userId),
+        );
       }),
     );
 
@@ -550,7 +854,8 @@ export function CreateApp(
   authController: IAuthController,
   eventController: IEventController,
   commentController: ICommentController,
+  friendsController: IFriendsController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, eventController, commentController, logger);
+  return new ExpressApp(authController, eventController, commentController, friendsController, logger);
 }

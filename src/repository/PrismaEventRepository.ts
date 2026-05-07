@@ -1,6 +1,6 @@
 import { PrismaClient, Prisma, type Event as PrismaEvent, type EventRsvp as PrismaEventRsvp } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
-import { IEventRepository, type IEvent, type CreateEventInput, type UpdateEventInput, type EventStatus } from './InMemoryEventRepository';
+import { IEventRepository, type IEvent, type CreateEventInput, type UpdateEventInput, type EventStatus, type EventRsvpPolicy } from './InMemoryEventRepository';
 import { Ok, Err, type Result } from '../lib/result';
 import { type EventError, EventNotFound, InvalidId, UnexpectedRepositoryError } from './Errors';
 
@@ -18,7 +18,9 @@ export class PrismaEventRepository implements IEventRepository {
       description: event.description,
       location: event.location,
       category: event.category,
+      emoji: event.emoji,
       status: event.status as EventStatus,
+      rsvpPolicy: event.rsvpPolicy as EventRsvpPolicy,
       capacity: event.capacity,
       startDatetime: event.startDatetime,
       endDatetime: event.endDatetime,
@@ -97,7 +99,7 @@ export class PrismaEventRepository implements IEventRepository {
         where: {
           organizerId,
           status: {
-            not: 'past',
+            notIn: ['past', 'cancelled'],
           },
           endDatetime: {
             gte: now,
@@ -124,6 +126,7 @@ export class PrismaEventRepository implements IEventRepository {
           organizerId,
           OR: [
             { status: 'past' },
+            { status: 'cancelled' },
             {
               endDatetime: {
                 lt: now,
@@ -168,7 +171,9 @@ export class PrismaEventRepository implements IEventRepository {
           description: input.description,
           location: input.location,
           category: input.category,
+          emoji: input.emoji,
           status: input.status,
+          rsvpPolicy: input.rsvpPolicy,
           capacity: input.capacity,
           startDatetime: input.startDatetime,
           endDatetime: input.endDatetime,
@@ -350,6 +355,50 @@ export class PrismaEventRepository implements IEventRepository {
       return Err(
         UnexpectedRepositoryError(
           `Failed to cancel rsvp for event: ${error instanceof Error ? error.message : String(error)}`
+        )
+      );
+    }
+  }
+
+  async getUsersRSVPedEvents(userId: string): Promise<Result<IEvent[], EventError>> {
+    try {
+      const rsvps = await this.prisma.eventRsvp.findMany({
+        where: { userId },
+        include: {
+          event: {
+            include: { rsvps: true },
+          },
+        },
+      });
+      const events = rsvps.map((rsvp) => this.mapEvent(rsvp.event as PrismaEvent & { rsvps: PrismaEventRsvp[] }));
+      return Ok(events);
+    } catch (error) {
+      return Err(
+        UnexpectedRepositoryError(
+          `Failed to fetch user's RSVPed events: ${error instanceof Error ? error.message : String(error)}`
+        )
+      );
+    }
+
+  }
+
+  async getAllRSVPedUserByEventId(eventId: number): Promise<Result<string[], EventError>> {
+    try {
+      if (!Number.isInteger(eventId) || eventId < 1) {
+        return Err(InvalidId(`${eventId} is not a valid event id.`));
+      }
+      const event = await this.prisma.event.findUnique({
+        where: { id: eventId },
+        include: { rsvps: true },
+      });
+      if (event === null) {
+        return Err(EventNotFound(`Event with id ${eventId} was not found.`));
+      }
+      return Ok(event.rsvps.map((rsvp) => rsvp.userId));
+    } catch (error) {
+      return Err(
+        UnexpectedRepositoryError(
+          `Failed to fetch all users who rsvped for the event: ${error instanceof Error ? error.message : String(error)}`
         )
       );
     }

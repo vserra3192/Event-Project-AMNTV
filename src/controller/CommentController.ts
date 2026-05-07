@@ -34,7 +34,7 @@ export class CommentController implements ICommentController {
     private readonly events: IEventService,
   ) {}
 
-  private async loadComments(eventId: number): Promise<Result<{ comments: (IComment & { displayName?: string })[]; organizerId: string }, CommentServiceError>> {
+  private async loadComments(eventId: number): Promise<Result<{ comments: (IComment & { displayName?: string })[]; organizerId: string; eventStatus: string }, CommentServiceError>> {
     const commentsResult = await this.service.getCommentsByEventId(eventId);
     if (commentsResult.ok === false) {
       return commentsResult;
@@ -66,6 +66,7 @@ export class CommentController implements ICommentController {
       value: {
         comments: enriched,
         organizerId: eventResult.value.organizerId,
+        eventStatus: eventResult.value.status,
       },
     };
   }
@@ -82,7 +83,9 @@ export class CommentController implements ICommentController {
 
     res.status(200).render("partials/comments", {
       comments: result.value.comments,
+      newCommentId: null,
       organizerId: result.value.organizerId,
+      eventStatus: result.value.eventStatus,
       user: session.authenticatedUser,
       layout: false,
     });
@@ -118,7 +121,9 @@ export class CommentController implements ICommentController {
 
     res.status(200).render("partials/comments", {
       comments: updated.value.comments,
+      newCommentId: result.value.id,
       organizerId: updated.value.organizerId,
+      eventStatus: updated.value.eventStatus,
       user: session.authenticatedUser,
       layout: false,
     });
@@ -154,7 +159,9 @@ export class CommentController implements ICommentController {
 
     res.status(200).render("partials/comments", {
       comments: updated.value.comments,
+      newCommentId: null,
       organizerId: updated.value.organizerId,
+      eventStatus: updated.value.eventStatus,
       user: session.authenticatedUser,
       layout: false,
     });
